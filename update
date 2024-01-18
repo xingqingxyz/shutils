@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ $1 = -h || $1 = --help ]]; then
+  printf "Usage: %q <package>\n" "$BASH_SOURCE"
+  exit
+fi
+
+if [ $(whoami) != root ]; then
+  echo "Please run this script as root"
+  exit
+fi
+
+bash "$(dirname $(realpath "$BASH_SOURCE"))/pkgs/$1.sh"

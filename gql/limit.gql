@@ -1,0 +1,8 @@
+query getRemain {
+  rateLimit {
+    limit
+    remaining
+    used
+    resetAt
+  }
+}

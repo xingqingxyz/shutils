@@ -1,0 +1,135 @@
+unknown:
+
+rust:
+  - ripgrep
+  - fd-find
+  - bat
+  - hyperfine
+  - hexyl
+  - deno
+  - ruff
+  - stylua?
+  - sad?
+  - taplo?
+  - alacritty
+  - mezterm
+  - warp?
+  - thunderbird?
+  - firefox
+
+go:
+  - fzf
+  - esbuild
+  - docker
+
+c:
+  make:
+    - fzy
+    - vim
+    - nginx?
+    - redis?
+    - mysql?
+    - git?
+    - bash?
+    - ed?
+    - coreutils?
+    - diffutils?
+    - gawk
+    - gnumake
+    - llvm?
+    - clang?
+    - gcc?
+  cmake:
+    - neovim
+    - cmake
+
+cpp:
+  - glow?
+  - nodejs
+  - fontforge?
+  - imagemagick?
+  - sd?
+  - gh?
+  - jq?
+  - yq?
+  - shellfmt?
+  - shellcheck?
+  - chronium
+  - chrome
+  - edge
+  - vlc?
+  - nix
+  - valgrind?
+
+zig:
+  - bunjs
+
+haskell:
+  - pandoc
+  - pan? # news viewer
+
+purescript:
+  - insect
+
+lua:
+  - lua-language-server
+  - luv
+  - luajit
+
+python:
+  - xmljson
+  - imgcat
+  - pyright
+  - black
+  - fontforge-script
+
+typescript:
+  nobundle:
+    - prettier
+    - rxjs
+    - angular
+    - svelte
+    - svelte-toolkit
+    - redux
+    - redux-toolkit
+    - react-redux
+    - react-router
+    - react-router-dom
+    - nextjs
+    - nestjs
+    - nuxtjs
+    - vite
+    - vue
+    - vueuse
+    - vue-router
+    - typescript-eslint
+    - volar
+    - tailwindcss
+    - antd
+    - element-plus
+    - vitepress
+    - bash-language-server
+    - yaml-language-server
+    - prisma-language-server?
+    - awk-ide?
+  electron:
+    - altair
+    - github-desktop
+    - docker-desktop
+    - qq(linux)
+    - vscode
+
+javascript:
+  nobundle:
+    - react
+    - react-dom
+    - eslint
+
+shellscript:
+  - yadm
+  - nvm
+  - bat-extras
+  - asdf
+  - z.sh
+  - lsix
+  - oh-my-posh?
