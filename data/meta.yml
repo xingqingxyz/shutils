@@ -1,4 +1,0 @@
-nixos-gnome:
-  url: https://channels.nixos.org/nixos-23.11/latest-nixos-gnome-x86_64-linux.iso
-  sha256: 103407787779567434268614
-  api: yes

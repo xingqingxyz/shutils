@@ -1,0 +1,16 @@
+_pkg() {
+  mapfile -t COMPREPLY < <({
+    case "${COMP_WORDS[1]}" in
+      upgrade)
+        local -a a=("${BASH_SOURCE[0]%/*}/../pkgs/"*.sh)
+        for i in "${!a[@]}"; do
+          a[i]=$(basename "${a[i]}" .sh)
+        done
+        compgen -W "${a[*]}" -- "$2"
+        ;;
+      *) [ "$COMP_CWORD" = 1 ] && compgen -W 'upgrade' -- "$2" ;;
+    esac || compgen -W '-h --help -v --version' -- "$2"
+  })
+}
+
+complete -o nosort -F _pkg pkg

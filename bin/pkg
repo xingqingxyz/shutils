@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+case "$1" in
+  -h | --help)
+    echo "Usage: $0 upgrade ...<package>"
+    ;;
+  -v | --version)
+    echo 'pkg 0.0.0'
+    ;;
+  upgrade)
+    if [ -z "$2" ]; then
+      echo 'no package specicfied to upgrade' >&2
+      exit 1
+    fi
+    while [ -n "$2" ]; do
+      bash "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/pkgs/$2.sh"
+      shift
+    done
+    ;;
+  *)
+    echo "unknown command: $1" >&2
+    exit 1
+    ;;
+esac

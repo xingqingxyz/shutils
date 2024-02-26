@@ -1,0 +1,25 @@
+_npx() {
+  local prev
+  if [ "$3" = = ]; then
+    prev=${COMP_WORDS[COMP_CWORD - 2]}
+  else
+    prev=$3
+  fi
+  mapfile -t COMPREPLY < <({
+    case "$prev" in
+      --package)
+        # local -a a=('./node_modules/.bin/'*)
+        # for i in "${!a[@]}"; do
+        #   a[i]=$(basename "${a[i]}")
+        # done
+        # compgen -W "${a[*]}" -- "$2"
+        compgen -W "$(jq -r '.dependencies + .devDependencies|keys|.[]' < package.json)" -- "$2"
+        ;;
+      *)
+        false
+        ;;
+    esac || compgen -W '-w --workspace --package -c --call -ws --workspaces --include-workspace-root --help -v --version' -- "$2"
+  })
+}
+
+complete -o nosort -o default -F _npx npx

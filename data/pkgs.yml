@@ -1,135 +1,169 @@
 unknown:
+multi:
+  - thunderbird
 
 rust:
-  - ripgrep
-  - fd-find
-  - bat
-  - hyperfine
-  - hexyl
-  - deno
-  - ruff
-  - stylua?
-  - sad?
-  - taplo?
   - alacritty
-  - mezterm
-  - warp?
-  - thunderbird?
+  - ast-grep
+  - bat
+  - delta
+  - deno
+  - fd-find
   - firefox
+  - hexyl
+  - hyperfine
+  - mezterm
+  - nil
+  - nixpkgs-fmt
+  - postgres_lsp
+  - pylyzer
+  - ripgrep
+  - ruff
+  - sad
+  - sd
+  - skim
+  - statix # nix linter
+  - stylua
+  - taplo
+  - typst
+  - typst-lsp
+  - typstfmt
+  - uv # pip replacer
+  - vale # ?
+  - warp
+  - wasm-pack
+  - yazi
+  - zed
 
 go:
-  - fzf
-  - esbuild
   - docker
+  - esbuild
+  - fzf
+  - gh
+  - glow
+  - jq-lsp
+  - jqp
+  - lazygit
+  - oh-my-posh
+  - shfmt
+  - sqls
+  - yq
+  - zk # note taking
 
 c:
-  make:
-    - fzy
-    - vim
-    - nginx?
-    - redis?
-    - mysql?
-    - git?
-    - bash?
-    - ed?
-    - coreutils?
-    - diffutils?
-    - gawk
-    - gnumake
-    - llvm?
-    - clang?
-    - gcc?
-  cmake:
-    - neovim
-    - cmake
+  - bash
+  - chafa
+  - clang
+  - cmake
+  - coreutils
+  - diffutils
+  - ed
+  - fontforge
+  - fzy
+  - gawk
+  - gcc
+  - git
+  - gnumake
+  - imagemagick
+  - jq
+  - llvm
+  - mysql
+  - neovim
+  - nginx
+  - redis
+  - sliver searcher
+  - tmux
+  - tree-sitter
+  - valgrind
+  - vim
+  - vlc
+  - wget
 
 cpp:
-  - glow?
-  - nodejs
-  - fontforge?
-  - imagemagick?
-  - sd?
-  - gh?
-  - jq?
-  - yq?
-  - shellfmt?
-  - shellcheck?
-  - chronium
+  - aria2
   - chrome
+  - chronium
   - edge
-  - vlc?
   - nix
-  - valgrind?
+  - nixd
+  - node
 
 zig:
-  - bunjs
+  - bun
 
 haskell:
+  - nixfmt
+  - pan?
   - pandoc
-  - pan? # news viewer
+  - shellcheck
 
 purescript:
   - insect
 
 lua:
   - lua-language-server
-  - luv
   - luajit
+  - luarocks
+  - luv
 
 python:
-  - xmljson
-  - imgcat
-  - pyright
   - black
   - fontforge-script
+  - imgcat
+  - pyright
+  - xmljson
 
 typescript:
-  nobundle:
-    - prettier
-    - rxjs
-    - angular
-    - svelte
-    - svelte-toolkit
-    - redux
-    - redux-toolkit
-    - react-redux
-    - react-router
-    - react-router-dom
-    - nextjs
-    - nestjs
-    - nuxtjs
-    - vite
-    - vue
-    - vueuse
-    - vue-router
-    - typescript-eslint
-    - volar
-    - tailwindcss
-    - antd
-    - element-plus
-    - vitepress
-    - bash-language-server
-    - yaml-language-server
-    - prisma-language-server?
-    - awk-ide?
-  electron:
-    - altair
-    - github-desktop
-    - docker-desktop
-    - qq(linux)
-    - vscode
+  - angular
+  - antd
+  - awk-ide
+  - bash-language-server
+  - element-plus
+  - nestjs
+  - nextjs
+  - nuxtjs
+  - prettier
+  - prisma-language-server
+  - react-redux
+  - react-router
+  - react-router-dom
+  - redux
+  - redux-toolkit
+  - rxjs
+  - svelte
+  - svelte-toolkit
+  - tailwindcss
+  - typescript-eslint
+  - vite
+  - vitepress
+  - volar
+  - vue
+  - vue-router
+  - vueuse
+  - yaml-language-server
+
+electron:
+  - altair
+  - docker-desktop
+  - github-desktop
+  - qq(linux)
+  - vscode
 
 javascript:
-  nobundle:
-    - react
-    - react-dom
-    - eslint
+  - eslint
+  - react
+  - react-dom
 
 shellscript:
-  - yadm
-  - nvm
-  - bat-extras
   - asdf
-  - z.sh
+  - bat-extras
   - lsix
-  - oh-my-posh?
+  - nvm
+  - yadm
+  - z.sh
+
+java:
+  - watchman
+
+fsharp:
+  - marksman
