@@ -13,7 +13,7 @@ case "$1" in
       exit 1
     fi
     while [ -n "$2" ]; do
-      bash "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/pkgs/$2.sh"
+      bash "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../pkgs/$2.sh"
       shift
     done
     ;;

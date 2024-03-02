@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+if [ "$0" != "$BASH" ]; then
+  echo "Usage: source ${BASH_SOURCE[0]} ...<set_theme args>" >&2
+  exit 1
+fi
+
+set_alacritty_theme() {
+  if [ -z "$ALACRITTY_LOG" ]; then
+    return
+  fi
+  local dir conf_file
+  # dir=$(fd -t d -d 1 -F -I -1 alacritty-theme /nix/store) || return 1
+  dir="$HOME/github/alacritty-theme/themes/"
+  if [ ! -e "$dir$1.toml" ]; then
+    echo "config not found: $1.toml"
+    ls "$dir"
+    return 1
+  fi >&2
+  conf_file=~/.config/alacritty/alacritty.toml
+  echo "$(
+    echo "import = [ \"$dir$1.toml\" ]"
+    tail -n+2 "$conf_file"
+  )" > "$conf_file"
+}
+
+set_bat_theme() {
+  export BAT_THEME="$1"
+  sed -i "s/^export BAT_THEME=.*/export BAT_THEME='$1'/" ~/.bashrc
+}
+
+set_posh_theme() {
+  if [ -z "$POSH_PID" ]; then
+    return
+  fi
+  export POSH_THEME="$HOME/.config/oh-my-posh/$theme.omp.json"
+  sed -i "s|/oh-my-posh/.*\.omp\.json|/oh-my-posh/$theme|" ~/.bashrc
+}
+
+set_wezterm_theme() {
+  if [ "$TERM_PROGRAM" != "WezTerm" ]; then
+    return
+  fi
+  sed -i "s/^config\.color_scheme\s*=.*/config.color_scheme = $1/" ~/.wezterm.lua
+}
+
+set_theme() {
+  local theme i
+  case "$1" in
+    dark | light) theme=$1 ;;
+    *)
+      read -r < <(date +%-H)
+      if ((REPLY >= 8 && REPLY < 17)); then
+        theme=light
+      else
+        theme=dark
+      fi
+      ;;
+  esac
+  case "$XDG_SESSION_DESKTOP" in
+    plasma*)
+      plasma-apply-colorscheme "Breeze${theme@u}"
+      ;;
+    gnome*)
+      gsettings set org.freedesktop.interface color-theme "prefer-$theme"
+      ;;
+  esac
+  local -A themes
+  if [ "$theme" = light ]; then
+    themes=(
+      alacritty ayu_light
+      posh paradox
+      bat GitHub
+      wezterm Andromeda
+    )
+  else
+    themes=(
+      alacritty dracula
+      posh 1_shell
+      bat ''
+      wezterm Andromeda
+    )
+  fi
+  for i in bat posh alacritty wezterm; do
+    "set_${i}_theme" "${themes[i]}"
+  done
+}
+
+set_theme "$@"
