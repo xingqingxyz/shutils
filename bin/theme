@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 if [ "$0" != "$BASH" ]; then
   echo "Usage: source ${BASH_SOURCE[0]} ...<set_theme args>" >&2
   exit 1
@@ -9,44 +7,104 @@ set_alacritty_theme() {
   if [ -z "$ALACRITTY_LOG" ]; then
     return
   fi
-  local dir conf_file
-  # dir=$(fd -t d -d 1 -F -I -1 alacritty-theme /nix/store) || return 1
-  dir="$HOME/github/alacritty-theme/themes/"
-  if [ ! -e "$dir$1.toml" ]; then
-    echo "config not found: $1.toml"
-    ls "$dir"
-    return 1
-  fi >&2
-  conf_file=~/.config/alacritty/alacritty.toml
-  echo "$(
-    echo "import = [ \"$dir$1.toml\" ]"
-    tail -n+2 "$conf_file"
-  )" > "$conf_file"
+  # dir=$(fd -td -d1 -FI1 alacritty-theme /nix/store) || return 1
+  local conf_file="${XDG_CONFIG_HOME:-$HOME/.config}/alacritty/alacritty.toml"
+  [ -f "$conf_file" ] || return 1
+  local theme_file="$HOME/github/alacritty-theme/themes/$1.toml"
+  if [ ! -f "$theme_file" ]; then
+    echo "theme config not found: $theme_file" >&2
+    if [ "$PS1" ]; then
+      fd -FI1 '.' -d1 -tf ~/github/alacritty-theme/themes | sed 's/\.toml$//' \
+        | fzf --preview="$(
+          cat << EOF
+          sed -i '1c import = [ "~/github/alacritty-theme/themes/{}.toml" ]' "$conf_file"
+          bat --plain --color=always --no-pager ~/.bashrc
+EOF
+        )"
+      return
+    else
+      ls ~/github/alacritty-theme/themes >&2
+      return 1
+    fi
+  fi
+  sed -i "1c import = [ \"\$HOME${theme_file:${#HOME}}\" ]" "$conf_file"
 }
 
 set_bat_theme() {
-  export BAT_THEME="$1"
-  sed -i "s/^export BAT_THEME=.*/export BAT_THEME='$1'/" ~/.bashrc
+  export BAT_THEME=$1
+  if ! bat --list-themes | grep -qF "$1"; then
+    echo "theme not found: $1" >&2
+    if [ "$PS1" ]; then
+      # fzf aborted at empty
+      BAT_THEME=$(bat --list-themes | fzf --preview='bat --theme {} --plain --color=always --no-pager ~/.bashrc')
+    else
+      BAT_THEME=''
+    fi
+  fi
+  [ -f ~/.bashrc ] || return 1
+  sed -i "/^export BAT_THEME=/c export BAT_THEME='$BAT_THEME'" ~/.bashrc
 }
 
 set_posh_theme() {
   if [ -z "$POSH_PID" ]; then
     return
   fi
-  export POSH_THEME="$HOME/.config/oh-my-posh/$theme.omp.json"
-  sed -i "s|/oh-my-posh/.*\.omp\.json|/oh-my-posh/$theme|" ~/.bashrc
+  local theme_file="$HOME/.config/oh-my-posh/$1.omp.json"
+  if [ ! -f "$theme_file" ]; then
+    echo "theme config not found: $theme_file" >&2
+    if [ "$PS1" ]; then
+      theme_file="$HOME/.config/oh-my-posh/$(
+        fd -FI1 '.' -d1 -tf ~/.config/oh-my-posh | sed 's/\.omp\.json$//' \
+          | fzf --preview='bat --plain --color=always --no-pager ~/.config/oh-my-posh/{}.omp.json'
+      ).omp.json" || return 1
+    else
+      ls ~/.config/oh-my-posh >&2
+      return 1
+    fi
+  fi
+  export POSH_THEME=$theme_file
+  [ -f ~/.bashrc ] || return 1
+  sed -i "/^\s*export POSH_THEME=/c\  export POSH_THEME='\$HOME${theme_file:${#HOME}}'" ~/.bashrc
 }
 
 set_wezterm_theme() {
   if [ "$TERM_PROGRAM" != "WezTerm" ]; then
     return
   fi
-  sed -i "s/^config\.color_scheme\s*=.*/config.color_scheme = $1/" ~/.wezterm.lua
+  local conf_file="${XDG_CONFIG_HOME:-$HOME/.config}/wezterm/wezterm.lua"
+  if [ ! -f "$conf_file" ]; then
+    [ -f ~/.wezterm.lua ] && conf_file=~/.wezterm.lua || return 1
+  fi
+  local cache="$HOME/.cache/wezterm/themes"
+  if [ ! -e "$cache" ]; then
+    if [ -f ~/github.com/wez/wezterm/docs/colorschemes/data.json ]; then
+      jq -r '.[].metadata.name' < ~/github.com/wez/wezterm/docs/colorschemes/data.json > "$cache"
+    else
+      mkdir -p ~/github.com/wez/wezterm/docs/colorschemes/
+      curl -fL https://kkgithub.com/wez/wezterm/raw/docs/colorschemes/data.json -o ~/github.com/wez/wezterm/docs/colorschemes/data.json || return 1
+    fi
+  fi
+  if ! look "$1" "$cache" > /dev/null; then
+    echo "theme not valid: $1" >&2
+    return 1
+  fi
+  sed -i "/^config\.color_scheme\s*=/c config.color_scheme = '$1'" "$conf_file"
 }
 
+# $1 ? 'alacritty' | 'bat' | 'posh' | 'wezterm' | 'all'
+# $2 ? 'dark' | 'light' | string
 set_theme() {
-  local theme i
   case "$1" in
+    alacritty | bat | posh | wezterm)
+      "set_${1}_theme" "$2" \
+        && echo -n "$(jq "$(printf '.themes.%s."\(.theme)"="%s"' "$1" "$2")" < "$theme_file")" > "$theme_file"
+      return
+      ;;
+    all | '') ;;
+    *) return ;;
+  esac
+  local theme i theme_file=${THEME:-$HOME/.theme.json}
+  case "$2" in
     dark | light) theme=$1 ;;
     *)
       read -r < <(date +%-H)
@@ -57,6 +115,11 @@ set_theme() {
       fi
       ;;
   esac
+  if [[ $theme == $(jq -r .theme < "$theme_file") ]]; then
+    echo "theme already set to $theme" >&2
+    return
+  fi
+  echo -n "$(jq ".theme=\"$theme\"" < "$theme_file")" > "$theme_file"
   case "$XDG_SESSION_DESKTOP" in
     plasma*)
       plasma-apply-colorscheme "Breeze${theme@u}"
@@ -65,24 +128,8 @@ set_theme() {
       gsettings set org.freedesktop.interface color-theme "prefer-$theme"
       ;;
   esac
-  local -A themes
-  if [ "$theme" = light ]; then
-    themes=(
-      alacritty ayu_light
-      posh paradox
-      bat GitHub
-      wezterm Andromeda
-    )
-  else
-    themes=(
-      alacritty dracula
-      posh 1_shell
-      bat ''
-      wezterm Andromeda
-    )
-  fi
   for i in bat posh alacritty wezterm; do
-    "set_${i}_theme" "${themes[i]}"
+    "set_${i}_theme" "$(jq -r ".themes.$i.$theme" < "$theme_file")"
   done
 }
 

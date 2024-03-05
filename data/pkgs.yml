@@ -34,8 +34,10 @@ rust:
   - wasm-pack
   - yazi
   - zed
+  - grex
 
 go:
+  - dasel
   - docker
   - esbuild
   - fzf
@@ -150,6 +152,7 @@ electron:
   - vscode
 
 javascript:
+  - mklisense
   - eslint
   - react
   - react-dom

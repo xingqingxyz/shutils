@@ -1,10 +1,10 @@
 _nvim() {
   case "$3" in
     -u)
-      mapfile -t COMPREPLY < <(compgen -P 'NONE NORC' -- "$2")
+      mapfile -t COMPREPLY < <(compgen -W 'NONE NORC' -- "$2")
       ;;
     -i)
-      mapfile -t COMPREPLY < <(compgen -P 'NONE' -- "$2")
+      mapfile -t COMPREPLY < <(compgen -W 'NONE' -- "$2")
       ;;
     *)
       if [[ "$2" = -V* ]]; then
@@ -16,7 +16,6 @@ _nvim() {
         fi
         return
       fi
-      # shellcheck disable=SC2190
       local -A opt_desc=(
         -t '{tag} Lookup in tags file, locate to it'
         -q '[errorfile] Read errors from errorfile and displays/goto first error'
