@@ -22,7 +22,7 @@ _set_theme() {
           )" -- "$2")
           ;;
         wezterm)
-          mapfile -t COMPREPLY < <(grep -F "$2" ~/.cache/wezterm/themes)
+          mapfile -t COMPREPLY < <(grep -F "$2" ~/.cache/wezterm/themes | sed "s/.*/'&'/")
           ;;
       esac
       ;;

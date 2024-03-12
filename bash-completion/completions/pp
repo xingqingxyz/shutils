@@ -1,0 +1,12 @@
+_pp() {
+  mapfile -t COMPREPLY < <(if [[ $COMP_CWORD = 1 && $2 = '' ]]; then
+    # echo -e '\e[0n'
+    compgen -abckv -A function \
+      | FZF_DEFAULT_OPTS+="--height ${FZF_BIND_HEIGHT:-40%}
+        --bind=ctrl-z:ignore +m --reverse" fzf
+  else
+    compgen -abckv -A function -- "$2"
+  fi)
+}
+
+complete -o nosort -o bashdefault -F _pp pp

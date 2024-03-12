@@ -19,9 +19,6 @@ rust:
   - pylyzer
   - ripgrep
   - ruff
-  - sad
-  - sd
-  - skim
   - statix # nix linter
   - stylua
   - taplo
@@ -29,8 +26,8 @@ rust:
   - typst-lsp
   - typstfmt
   - uv # pip replacer
-  - vale # ?
-  - warp
+  - vale # web framework
+  - warp # a library
   - wasm-pack
   - yazi
   - zed
@@ -59,7 +56,7 @@ c:
   - cmake
   - coreutils
   - diffutils
-  - ed
+  - sed
   - fontforge
   - fzy
   - gawk
@@ -111,6 +108,8 @@ lua:
 python:
   - black
   - fontforge-script
+  - thefuck
+  - navi
   - imgcat
   - pyright
   - xmljson
