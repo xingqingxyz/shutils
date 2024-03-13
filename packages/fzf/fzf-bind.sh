@@ -2,7 +2,7 @@ _fzf_file_widget() {
   local query items out
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
-  mapfile -t items < <(eval "${FZF_CTRL_T_COMMAND:-'fd -H'}" \
+  mapfile -t items < <(eval "${FZF_CTRL_T_COMMAND:-fd -H}" \
     | FZF_DEFAULT_OPTS+=" $FZF_CTRL_T_OPTS --height ${FZF_CTRL_T_HEIGHT:-40%}
       --bind=ctrl-z:ignore --reverse -m --scheme=path" fzf -q "$query")
   out=${items[*]@Q}' '
@@ -12,7 +12,7 @@ _fzf_file_widget() {
 
 _fzf_history() {
   local awk=awk name ver dat opts out
-  read -r name ver dat < <(command mawk -W version 2> /dev/null)
+  read -r name ver dat < <(mawk -W version 2> /dev/null)
   if [[ $name == mawk && $(sort -VC <<< $'1.3.4\n'"$ver") && dat -ge 20230302 ]]; then
     awk=mawk
   fi
@@ -36,7 +36,7 @@ _fzf_z() {
   local query out
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
-  out=$(eval "${FZF_CTRL_T_COMMAND:-'fd -Htd'}" \
+  out=$(eval "${FZF_ALT_C_COMMAND:-fd -Htd}" \
     | FZF_DEFAULT_OPTS+=" ${FZF_ALT_C_OPTS} --height ${FZF_BIND_HEIGHT:-40%}
       --bind=ctrl-z:ignore --reverse --scheme=path +m" fzf -q "$query") || return
   echo "cd -- ${out@Q}"
@@ -68,9 +68,9 @@ else
   bind -m vi-insert -x '"\C-r": _fzf_history'
 
   # CTRL-K Select any shell ident
-  bind -m emacs-standard -x '"\C-k": _fzf_ident'
-  bind -m vi-command -x '"\C-k": _fzf_ident'
-  bind -m vi-insert -x '"\C-k": _fzf_ident'
+  bind -m emacs-standard -x '"\C-o": _fzf_ident'
+  bind -m vi-command -x '"\C-o": _fzf_ident'
+  bind -m vi-insert -x '"\C-o": _fzf_ident'
 fi
 
 # Required to refresh the prompt after fzf

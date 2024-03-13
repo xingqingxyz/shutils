@@ -29,7 +29,7 @@ _mn_preview_ident() {
       declare -fp "$1" | bat -nl bash
       ;;
     *)
-      if [[ ${!1@a} =~ [^aA]*x ]]; then
+      if [[ ${!1@a} == *([^aA])x ]]; then
         _mn_preview_env "$1"
       else
         declare -p "$1" | bat --plain -l bash

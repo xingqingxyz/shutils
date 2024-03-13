@@ -1,5 +1,7 @@
-# - $FZF_COMPLETION_TRIGGER (default: '*')
-# - $FZF_COMPLETION_OPTS    (default: '')
+# -- FZF_COMP_TRIGGER (default: '*')
+# -- FZF_COMP_HEIGHT  (default: 40%)
+# -A FZF_COMP_OPTS    ...
+# -A FZF_COMP_TYPEMAP ...
 
 _fzf_compgen_path() {
   (cd -- "$1" && fd -H)
@@ -25,16 +27,9 @@ _fzf_generic_path_completion() {
       | FZF_DEFAULT_OPTS+=" --scheme=path" fzf -q "$query")
 
     if [ ${#COMPREPLY} != 0 ]; then
-      COMPREPLY=("${COMPREPLY[@]@Q}")
-      COMPREPLY=("${COMPREPLY[@]/#/$dir}")
-      case "$typ" in
-        path)
-          compopt +o nospace
-          ;;
-        dir)
-          compopt -o nospace
-          ;;
-      esac
+      # only produce one result for multi select
+      COMPREPLY=("${COMPREPLY[@]/#/"$dir"}")
+      COMPREPLY=("${COMPREPLY[*]@Q}")
       return
     fi
   fi
@@ -57,7 +52,7 @@ _fzf_compgen_host() {
 _fzf_compgen_ssh() {
   case "$3" in
     -i | -F | -E)
-      _fzf_generic_path_completion path "$@"
+      _fzf_compgen_path "$2"
       ;;
     *)
       local line user=${2%@*}
@@ -92,10 +87,12 @@ _fzf_completion() {
     path | dir) _fzf_generic_path_completion "$1" "$@" ;;
     '') _fzf_generic_path_completion path "$@" ;;
     *)
-      mapfile -t COMPREPLY < <("_fzf_compgen_$typ" | fzf -q "$2")
+      mapfile -t COMPREPLY < <("_fzf_compgen_$typ" "$@" | fzf -q "$2")
       if declare -Fp "_fzf_complete_${typ}_post" &> /dev/null; then
         "_fzf_complete_${typ}_post" "$@"
       fi
+      # conduct to one
+      COMPREPLY=("${COMPREPLY[*]}")
       ;;
   esac then
     "${_FZF_COMP_BACKUP[$1]-:}" "$@"
@@ -106,7 +103,7 @@ _fzf_completion() {
 
 _fzf_setup_completion() {
   local -A types=(
-    [path]='awk bat cat diff diff3 emacs emacsclient ex file ftp g++ gcc gvim head hg hx java javac ld less more mvim nvim patch perl python ruby sed sftp sort source tail tee uniq vi view vim wc xdg-open basename bunzip2 bzip2 chmod chown curl cp dirname du find git grep gunzip gzip hg jar ln ls mv open rm rsync scp svn tar unzip zip'
+    [path]='awk bat cat code diff diff3 file ftp g++ gcc head hg hx java javac ld ldd less more nvim patch perl python py neovide zeovide ruby sed sftp sort source . tail tee uniq vi vim nano wc tee xdg-open readlink realpath basename bunzip2 bzip2 chmod chown curl cp dirname du find git grep gunzip gzip hg jar ln ls mv open rm rsync scp svn tar unzip zip'
     [dir]='cd pushd rmdir mkdir tree z'
     [alias]='alias unalias'
     [variable]='export unset let declare readonly'
@@ -138,10 +135,10 @@ _fzf_completion_loader() {
   [ $? = 124 ] && dec=$(complete -p "$1") || return
   # loaded to -[DEI], not -[FC]
   if [[ $dec =~ ^(.*)?( -C [^ ]+)?( -F [^ ]+)\ (.*)$ ]]; then
-    local fn cmd name
+    local cmd fn name
     dec=${BASH_REMATCH[1]}
-    fn=${BASH_REMATCH[2]}
-    cmd=${BASH_REMATCH[3]}
+    cmd=${BASH_REMATCH[2]}
+    fn=${BASH_REMATCH[3]}
     name=${BASH_REMATCH[4]}
     if [[ $cmd || ($fn && $fn != _minimal) ]]; then
       [ "$fn" ] && _FZF_COMP_BACKUP[$name]=${fn:4}
@@ -151,21 +148,5 @@ _fzf_completion_loader() {
   return 124
 }
 
+_fzf_setup_completion
 complete -F _fzf_completion_loader -D
-
-if ! declare -F _fzf_compgen_path > /dev/null; then
-  _fzf_compgen_path() {
-    echo "$1"
-    command find -L "$1" \
-      -name .git -prune -o -name .hg -prune -o -name .svn -prune -o \( -type d -o -type f -o -type l \) \
-      -a -not -path "$1" -print 2> /dev/null | command sed 's@^\./@@'
-  }
-fi
-
-if ! declare -F _fzf_compgen_dir > /dev/null; then
-  _fzf_compgen_dir() {
-    command find -L "$1" \
-      -name .git -prune -o -name .hg -prune -o -name .svn -prune -o -type d \
-      -a -not -path "$1" -print 2> /dev/null | command sed 's@^\./@@'
-  }
-fi

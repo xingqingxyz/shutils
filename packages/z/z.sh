@@ -16,7 +16,7 @@ Options
         -l list instead of cd
         -r rank based sort
         -t time based sort
-        -x remove cwd from z data
+        -x remove dirs (or $PWD) from z data
 EOF
 }
 
@@ -56,9 +56,9 @@ _z() {
     # shell completion
     [ -f "$datafile" ] || return
     local dir pat
-    COMP_WORDS=("${COMP_WORDS[@]//-*/}")
-    pat=${COMP_WORDS[*]:1}
-    pat="*${pat//+( )/*}*"
+    pat=${COMP_WORDS[*]//-*/}' '
+    pat=${pat#* }
+    pat='*'${pat//+( )/*}
     mapfile -t COMPREPLY < <(
       [[ $pat =~ [[:upper:]] ]] || shopt -s nocasematch
       _z_dirs | while IFS='|' read -r dir _; do
@@ -84,7 +84,8 @@ _z() {
     ) && cat <<< "$out" > "$datafile"
   else
     # main
-    local fnd last typ ech list=${1-1}
+    local fnd last typ ech list
+    [ $# = 0 ] && list=1
     while [ "$1" ]; do
       case "$1" in
         --)
@@ -131,8 +132,7 @@ _z() {
       shift
     done
 
-    if [ "${last:0:1}" = / ]; then
-      # cd if completed
+    if [[ $last == /* ]]; then
       # shellcheck disable=SC2164
       cd -- "$last"
       return
