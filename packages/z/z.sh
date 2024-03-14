@@ -143,7 +143,7 @@ _z() {
     if [ -z "$list$ech" ]; then
       read -r fnd
       # shellcheck disable=SC2164
-      cd -- "$fnd"
+      [ "$fnd" != / ] && cd -- "$fnd"
     else
       cat
     fi < <(_z_dirs | awk -F'|' -v list="$list" -v typ="$typ" -v q="$fnd" \

@@ -3,39 +3,41 @@
 # -A FZF_COMP_OPTS    ...
 # -A FZF_COMP_TYPEMAP ...
 
-_fzf_compgen_path() {
-  (cd -- "$1" && fd -H)
-}
-
-_fzf_compgen_dir() {
-  (cd -- "$1" && fd -Htd)
-}
-
 # $1 = 'path'|'dir'
 # ... comp args
-_fzf_generic_path_completion() {
-  local dir query trigger=${FZF_COMP_TRIGGER:-*} typ=$1
-  shift
+_fzf_complete_path() {
+  # fallback
+  [[ $3 == *"${FZF_COMP_TRIGGER:-*}" ]] || return
 
-  if [[ $2 == *"$trigger" ]]; then
-    dir=$2
-    [[ $dir != */* ]] && dir="./$dir"
-    dir=${2%/*}/
-    query=${2:${#dir}:-${#trigger}}
+  local dir=${3%"${FZF_COMP_TRIGGER:-*}"} query fd_flag
 
-    mapfile -t COMPREPLY < <("_fzf_compgen_$typ" "$dir" \
-      | FZF_DEFAULT_OPTS+=" --scheme=path" fzf -q "$query")
+  # expands after remove trigger
+  # shellcheck disable=SC2086
+  printf -v dir %s $3
 
-    if [ ${#COMPREPLY} != 0 ]; then
-      # only produce one result for multi select
-      COMPREPLY=("${COMPREPLY[@]/#/"$dir"}")
-      COMPREPLY=("${COMPREPLY[*]@Q}")
-      return
-    fi
+  [[ $dir != */* ]] && dir=./$dir
+  # ./abc => ./; /abc => /
+  dir=${dir%/*}/
+
+  case "$1" in
+    dir | gen_dir) fd_flag=-Htd ;;
+    path | gen_path) fd_flag=-H ;;
+  esac
+  if [[ $1 == gen_* ]]; then
+    # compgen must be called in subshell
+    cd -- "$dir" && fd "$fd_flag"
+    return
   fi
 
-  # no trigger or fallback
-  return 1
+  query=${3:${#dir}}
+  mapfile -t COMPREPLY < <(cd -- "$dir" && fd "$fd_flag" | fzf -q "$query")
+
+  # cancels from tui and no need to fallback
+  [ ${#COMPREPLY} = 0 ] && return
+  # quote $dir to prevent erasing '&'
+  COMPREPLY=("${COMPREPLY[@]/#/"$dir"}")
+  # only produce one result for multi select
+  COMPREPLY=("${COMPREPLY[*]@Q}")
 }
 
 _fzf_compgen_host() {
@@ -52,10 +54,10 @@ _fzf_compgen_host() {
 _fzf_compgen_ssh() {
   case "$3" in
     -i | -F | -E)
-      _fzf_compgen_path "$2"
+      _fzf_complete_path gen_path "$@"
       ;;
     *)
-      local line user=${2%@*}
+      local user=${2%@*}
       _fzf_compgen_host | while read -r line; do
         echo "$user@$line"
       done
@@ -75,19 +77,21 @@ _fzf_compgen_proc() {
   ps -eo user,pid,ppid,start,time,command
 }
 
-_fzf_compgen_proc_host() {
-  cut -d' ' -f2
+_fzf_complete_proc_host() {
+  COMPREPLY=("${COMPREPLY[@]#* }")
+  COMPREPLY=("${COMPREPLY[@]%% *}")
 }
 
-_fzf_completion() {
-  local opts=$FZF_DEFAULT_OPTS typ=${_FZF_COMP_TYPEMAP[$1]}
-  FZF_DEFAULT_OPTS+=" ${FZF_COMP_OPTS[$1]} --height ${FZF_COMP_HEIGHT:-40%}
-  --reverse -m --bind=ctrl-z:ignore"
-  if ! case "$typ" in
-    path | dir) _fzf_generic_path_completion "$1" "$@" ;;
-    '') _fzf_generic_path_completion path "$@" ;;
+_fzf_complete() {
+  local typ=${_FZF_COMP_TYPEMAP[$1]-path}
+  if case "$typ" in
+    path | dir) _fzf_complete_path "$typ" "$@" ;;
     *)
-      mapfile -t COMPREPLY < <("_fzf_compgen_$typ" "$@" | fzf -q "$2")
+      mapfile -t COMPREPLY < <(
+        FZF_DEFAULT_OPTS+=" --height ${FZF_COMP_HEIGHT:-40%} --reverse ${FZF_COMP_OPTS[$1]}" \
+          "_fzf_compgen_$typ" "$@" | fzf -q "$2"
+      )
+      # some completer need set compopt, must not be subshell
       if declare -Fp "_fzf_complete_${typ}_post" &> /dev/null; then
         "_fzf_complete_${typ}_post" "$@"
       fi
@@ -95,10 +99,11 @@ _fzf_completion() {
       COMPREPLY=("${COMPREPLY[*]}")
       ;;
   esac then
+    printf '\e[5n'
+  else
+    # fallback
     "${_FZF_COMP_BACKUP[$1]-:}" "$@"
   fi
-  FZF_DEFAULT_OPTS=$opts
-  printf '\e[5n'
 }
 
 _fzf_setup_completion() {
@@ -112,8 +117,8 @@ _fzf_setup_completion() {
     [proc]='kill'
   )
   declare -gA _FZF_COMP_TYPEMAP _FZF_COMP_BACKUP FZF_COMP_OPTS=(
-    [dir]='-m --preview="tree -C {} | head -200"'
-    [path]='-m --preview="bat --plain --color=always {}"'
+    [dir]='-m --scheme=path --preview="tree -C {} | head -200"'
+    [path]='-m --scheme=path --preview="bat --plain --color=always {}"'
     [ssh]='+m --preview="dig {}"'
     [host]='+m'
     [proc]='-m --header-lines=1 --preview "echo {}" --preview-window down:3:wrap --min-height 15'
@@ -129,20 +134,20 @@ _fzf_setup_completion() {
 }
 
 _fzf_completion_loader() {
-  declare -Fp _completion_loader &> /dev/null && _completion_loader "$@"
   local dec
+  declare -Fp _completion_loader &> /dev/null && _completion_loader "$@"
   # have not reload or load failed
   [ $? = 124 ] && dec=$(complete -p "$1") || return
-  # loaded to -[DEI], not -[FC]
   if [[ $dec =~ ^(.*)?( -C [^ ]+)?( -F [^ ]+)\ (.*)$ ]]; then
     local cmd fn name
     dec=${BASH_REMATCH[1]}
     cmd=${BASH_REMATCH[2]}
     fn=${BASH_REMATCH[3]}
     name=${BASH_REMATCH[4]}
+    # ensure loaded to -[FC]
     if [[ $cmd || ($fn && $fn != _minimal) ]]; then
       [ "$fn" ] && _FZF_COMP_BACKUP[$name]=${fn:4}
-      eval "$dec $cmd -F _fzf_completion $name"
+      eval "$dec $cmd -F _fzf_complete $name"
     fi
   fi
   return 124
