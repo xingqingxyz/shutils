@@ -55,10 +55,11 @@ _z() {
   if [ "$COMP_CWORD" ]; then
     # shell completion
     [ -f "$datafile" ] || return
-    local dir pat
+    local pat
+    # space for $# = 0 or finally to '*'
     pat=${COMP_WORDS[*]//-*/}' '
-    pat=${pat#* }
-    pat='*'${pat//+( )/*}
+    pat=' '${pat#* }
+    pat=${pat//+( )/*}
     mapfile -t COMPREPLY < <(
       [[ $pat =~ [[:upper:]] ]] || shopt -s nocasematch
       _z_dirs | while IFS='|' read -r dir _; do

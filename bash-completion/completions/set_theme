@@ -1,16 +1,13 @@
 _set_theme() {
   case "$COMP_CWORD" in
     1)
-      mapfile -t COMPREPLY < <(compgen -W 'alacritty bat posh wezterm all' -- "$2")
+      mapfile -t COMPREPLY < <(compgen -W 'alacritty bat posh wezterm dark light' -- "$2")
       ;;
     2)
       case "$3" in
-        all)
-          mapfile -t COMPREPLY < <(compgen -W 'dark light' -- "$2")
-          ;;
         alacritty)
           mapfile -t COMPREPLY < <(compgen -W "$(
-            cd ~/github/alacritty-theme/themes && fd -g '*' -tf -d1 -I | sed 's/\.toml$//'
+            cd ~/github/alacritty-theme/themes && fd -tf -Id1 | sed 's/\.toml$//'
           )" -- "$2")
           ;;
         bat)
@@ -18,11 +15,12 @@ _set_theme() {
           ;;
         posh)
           mapfile -t COMPREPLY < <(compgen -W "$(
-            cd ~/.config/oh-my-posh && fd -g '*' -tf -d1 -I | sed 's/\.omp\.json$//'
+            cd ~/.config/oh-my-posh && fd -tf -Id1 | sed 's/\.omp\.json$//'
           )" -- "$2")
           ;;
         wezterm)
-          mapfile -t COMPREPLY < <(grep -F "$2" ~/.cache/wezterm/themes | sed "s/.*/'&'/")
+          mapfile -t COMPREPLY < <(grep -F "$2" ~/.cache/wezterm/themes)
+          COMPREPLY=("${COMP_CWORD[@]@Q}")
           ;;
       esac
       ;;

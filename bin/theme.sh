@@ -15,10 +15,10 @@ set_alacritty_theme() {
       bat --plain --color=always --no-pager ~/.bashrc"
     return
   else
-    echo "alacritty theme not found: ${theme_file@Q}"
-    ls ~/github/alacritty-theme/themes
+    echo "alacritty theme not found: ${theme_file@Q}" >&2
     return 1
-  fi >&2
+  fi
+  echo "$1"
   sed -i "1c import = [ \"~/github/alacritty-theme/themes/$1.toml\" ]" "$conf_file"
 }
 
@@ -28,14 +28,15 @@ set_bat_theme() {
     [ "$line" = "$1" ] && break
   done || if [ -t 1 ]; then
     # fzf error exits empty
-    BAT_THEME=$(bat --list-themes | fzf --preview='
-      bat --theme {} --plain --color=always --no-pager ~/.bashrc')
+    BAT_THEME=$(bat --list-themes \
+      | fzf --preview='bat --theme {} --plain --color=always --no-pager ~/.bashrc')
   else
     echo "bat theme not found: ${1@Q}" >&2
     BAT_THEME=''
   fi
   [ -f ~/.bashrc ] || return
-  sed -i "/^export BAT_THEME=/c export BAT_THEME='$BAT_THEME'" ~/.bashrc
+  echo "$BAT_THEME"
+  sed -i "/^export BAT_THEME=/c export BAT_THEME=${BAT_THEME@Q}" ~/.bashrc
 }
 
 set_posh_theme() {
@@ -47,13 +48,14 @@ set_posh_theme() {
         bat --plain --color=always --no-pager ~/.config/oh-my-posh/{}.omp.json'
     ) || return
   else
-    echo "posh theme not found: ${theme_file@Q}"
-    ls ~/.config/oh-my-posh
+    echo "posh theme not found: ${theme_file@Q}" >&2
     return 1
-  fi >&2
+  fi
   export POSH_THEME=~/.config/oh-my-posh/$theme.omp.json
   [ -f ~/.bashrc ] || return
-  sed -i "/^\s*export POSH_THEME=/c\  export POSH_THEME=~/.config/oh-my-posh/$theme.omp.json" ~/.bashrc
+  echo "$theme"
+  sed -i "/^\s*export POSH_THEME=/c\
+    export POSH_THEME=\"$HOME/.config/oh-my-posh/$theme.omp.json\"" ~/.bashrc
 }
 
 set_wezterm_theme() {
@@ -84,7 +86,8 @@ set_wezterm_theme() {
     echo "wezterm theme not valid: ${theme@Q}" >&2
     return 1
   fi
-  sed -i "/^config\.color_scheme\s*=/c config.color_scheme = '$theme'" "$conf_file"
+  echo "$theme"
+  sed -i "/^config\.color_scheme\s*=/c config.color_scheme = [[$theme]]" "$conf_file"
 }
 
 # $1 ? 'alacritty' | 'bat' | 'posh' | 'wezterm' | 'dark' | 'light'
@@ -93,11 +96,11 @@ set_theme() {
   local theme out theme_file=${THEME_FILE:-$HOME/.config/$USER/theme.json}
   case "$1" in
     alacritty | bat | posh | wezterm)
-      out=$(
-        jq '.themes[$name][.theme]=$theme' \
-          --arg name "$1" --arg theme "$2" < "$theme_file"
-      ) && cat <<< "$out" > "$theme_file"
-      "set_${1}_theme" "$2"
+      out=$("set_${1}_theme" "$2") \
+        && out=$(
+          jq '.themes[$name][.theme]=$theme' \
+            --arg name "$1" --arg theme "$out" < "$theme_file"
+        ) && cat <<< "$out" > "$theme_file"
       return
       ;;
     dark | light) theme=$1 ;;
@@ -125,22 +128,23 @@ set_theme() {
   esac
 
   if out=$(
-    jq --arg theme "$theme" 'if .theme == $theme then
+    jq 'if .theme == $theme then
       "all themes already set to \($theme)\n" | stderr | empty | halt_error
     else
-      .theme = $theme
-    end' < "$theme_file"
+      .themes as $themes | reduce $ARGS.positional[] as $name
+      (""; . + "set_\($name)_theme \(@sh "\($themes[$name][$theme])") || echo\n")
+    end' -r --arg theme "$theme" --args bat posh alacritty wezterm < "$theme_file"
   ); then
-    # must save first here, bash pipe fails and io fails
-    cat <<< "$out" > "$theme_file"
-    # change and set each theme
+    # change and set each theme, ignore non active process errors
+    out=$(eval "$out")
     out=$(
-      jq -r '.theme as $theme | .themes as $themes | reduce $ARGS.positional[] as $i
-        (""; . + "set_\($i)_theme \(@sh "\($themes[$i][$theme])")\n")' \
-        --args bat posh alacritty wezterm <<< "$out"
-    ) && eval "$out"
-    # to ignore non active process errors
-    return 0
+      jq '.theme = $theme |
+         ($values | split("\n")) as $values |
+         $ARGS.positional as $args |
+         .themes |= reduce ($args | keys[]) as $i
+         (.; if $values[$i] != "" then .[$args[$i]][$theme] = $values[$i] end)' \
+        --arg theme "$theme" --arg values "$out" --args bat posh alacritty wezterm < "$theme_file"
+    ) && cat <<< "$out" > "$theme_file"
   fi
 }
 

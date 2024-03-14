@@ -67,7 +67,7 @@ else
   bind -m vi-command -x '"\C-r": _fzf_history'
   bind -m vi-insert -x '"\C-r": _fzf_history'
 
-  # CTRL-K Select any shell ident
+  # CTRL-O Select any shell ident
   bind -m emacs-standard -x '"\C-o": _fzf_ident'
   bind -m vi-command -x '"\C-o": _fzf_ident'
   bind -m vi-insert -x '"\C-o": _fzf_ident'

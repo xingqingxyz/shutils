@@ -108,10 +108,9 @@ _fzf_complete() {
 
 _fzf_setup_completion() {
   local -A types=(
-    [path]='awk bat cat code diff diff3 file ftp g++ gcc head hg hx java javac ld ldd less more nvim patch perl python py neovide zeovide ruby sed sftp sort source . tail tee uniq vi vim nano wc tee xdg-open readlink realpath basename bunzip2 bzip2 chmod chown curl cp dirname du find git grep gunzip gzip hg jar ln ls mv open rm rsync scp svn tar unzip zip'
     [dir]='cd pushd rmdir mkdir tree z'
     [alias]='alias unalias'
-    [variable]='export unset let declare readonly'
+    [variable]='export unset let declare readonly local'
     [host]='telnet'
     [ssh]='ssh'
     [proc]='kill'
@@ -119,11 +118,11 @@ _fzf_setup_completion() {
   declare -gA _FZF_COMP_TYPEMAP _FZF_COMP_BACKUP FZF_COMP_OPTS=(
     [dir]='-m --scheme=path --preview="tree -C {} | head -200"'
     [path]='-m --scheme=path --preview="bat --plain --color=always {}"'
+    [alias]='-m'
+    [variable]='-m'
     [ssh]='+m --preview="dig {}"'
     [host]='+m'
     [proc]='-m --header-lines=1 --preview "echo {}" --preview-window down:3:wrap --min-height 15'
-    [variable]='-m'
-    [alias]='-m'
   )
   eval "_FZF_COMP_TYPEMAP=($(for k in "${!types[@]}"; do
     # shellcheck disable=SC2086
@@ -142,11 +141,11 @@ _fzf_completion_loader() {
     local cmd fn name
     dec=${BASH_REMATCH[1]}
     cmd=${BASH_REMATCH[2]}
-    fn=${BASH_REMATCH[3]}
+    fn=${BASH_REMATCH[3]:4}
     name=${BASH_REMATCH[4]}
     # ensure loaded to -[FC]
     if [[ $cmd || ($fn && $fn != _minimal) ]]; then
-      [ "$fn" ] && _FZF_COMP_BACKUP[$name]=${fn:4}
+      [ "$fn" ] && _FZF_COMP_BACKUP[$name]=$fn
       eval "$dec $cmd -F _fzf_complete $name"
     fi
   fi
