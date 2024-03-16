@@ -12,8 +12,13 @@ case "$1" in
       echo 'no package specicfied to upgrade' >&2
       exit 1
     fi
+    dir=$(realpath "${BASH_SOURCE[0]}")
+    dir=${dir%/*}/../pkgs
     while [ -n "$2" ]; do
-      bash "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../pkgs/$2.sh"
+      (
+        set -e
+        . "$dir/$2.sh"
+      ) &
       shift
     done
     ;;

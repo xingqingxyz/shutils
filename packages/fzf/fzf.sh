@@ -154,3 +154,5 @@ _fzf_completion_loader() {
 
 _fzf_setup_completion
 complete -F _fzf_completion_loader -D
+
+unset -f _fzf_setup_completion

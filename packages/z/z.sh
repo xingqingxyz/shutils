@@ -160,8 +160,8 @@ complete -o nosort -o nospace -o default -F _z "${_Z_CMD:-z}"
 if [[ $PROMPT_COMMAND != *'(_z --add'* ]]; then
   # use sub shells to silent shell job msg
   if [ "$_Z_RESOLVE_SYMLINKS" ]; then
-    PROMPT_COMMAND+='; (_z --add "$(pwd -P)" &)'
+    PROMPT_COMMAND+=$'\n''(_z --add "$(pwd -P)" &)'
   else
-    PROMPT_COMMAND+='; (_z --add "$PWD" &)'
+    PROMPT_COMMAND+=$'\n''(_z --add "$PWD" &)'
   fi
 fi
