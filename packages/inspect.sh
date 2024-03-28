@@ -14,13 +14,11 @@ _mn_preview_ident() {
         declare -fp "$1" | bat -nl bash
         ;;
       *)
-        local vars
-        if [[ $1 == *'*' ]]; then
-          eval "vars=(\${!$1})"
+        if [[ "$1" =~ \* ]]; then
+          eval "declare -p \${!$1}"
         else
-          vars=("$1")
-        fi
-        declare -p "${vars[@]}" | bat --plain -l bash
+          declare -p "$1"
+        fi | bat --plain -l bash
         ;;
     esac
     shift

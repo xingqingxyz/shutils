@@ -1,6 +1,5 @@
 if [[ $- != *i* ]]; then
-  echo "Usage: source ${BASH_SOURCE[0]} ...<set_theme args>" >&2
-  exit 1
+  echo "Warning: recommand to source ${BASH_SOURCE[0]} ...<set_theme args>" >&2
 fi
 
 set_alacritty_theme() {
@@ -12,9 +11,11 @@ set_alacritty_theme() {
   if [ -f "$theme_file" ]; then
     sed -i "1c import = [ \"~/github/alacritty-theme/themes/$theme.toml\" ]" "$conf_file"
   elif [ -t 1 ]; then
-    theme=$(cd ~/github/alacritty-theme/themes && fd -Id1 -tf | sed 's/\.toml$//' \
-      | fzf --preview="sed -i '1c import = [ \"~/github/alacritty-theme/themes/'{}'.toml\" ]' ${conf_file@Q}
-        bat --plain --color=always --no-pager ~/.bashrc") || return
+    theme=$(
+      fd -tf -Id1 --base-directory ~/github/alacritty-theme/themes | sed -n 's|\.toml$||p' \
+        | fzf --preview="sed -i '1c import = [ \"~/github/alacritty-theme/themes/'{}'.toml\" ]' ${conf_file@Q}
+          bat --plain --color=always --no-pager ~/.bashrc"
+    ) || return
   else
     echo "alacritty theme not found: ${theme_file@Q}" >&2
     return 1
@@ -43,21 +44,24 @@ set_bat_theme() {
 
 set_posh_theme() {
   [ -v POSH_PID ] || return
-  local theme=$1 theme_file=~/.config/oh-my-posh/$1.omp.json
-  [[ $theme == '' || -f $theme_file ]] || if [ -t 1 ]; then
+  local theme=$1 dir theme_file
+  dir=$(fd -I1d1 -td system-path$ /nix/store/)share/oh-my-posh/themes || return
+  theme_file=$dir/$theme.omp.json
+  [[ -f $theme_file ]] || if [ -t 1 ]; then
     theme=$(
-      cd ~/.config/oh-my-posh && fd -Id1 -tf | sed 's/\.omp\.json$//' | fzf --preview='
-        bat --plain --color=always --no-pager ~/.config/oh-my-posh/{}.omp.json'
+      fd -tf -Id1 --base-directory "$dir" | sed -n 's|\.omp\.json$||p' \
+        | fzf --preview="jq -C . < $dir/{}.omp.json"
     ) || return
+    theme_file=$dir/$theme.omp.json
   else
-    echo "posh theme not found: ${theme_file@Q}" >&2
+    echo "posh theme not found: ${theme@Q}" >&2
     return 1
   fi
-  export POSH_THEME=~/.config/oh-my-posh/$theme.omp.json
+  export POSH_THEME=$theme_file
   set_theme posh "$theme"
   [ -f ~/.bashrc ] \
     && sed -i "/^\s*export POSH_THEME=/c\
-    export POSH_THEME=\"\$HOME/.config/oh-my-posh/$theme.omp.json\"" ~/.bashrc
+    export POSH_THEME=${theme_file@Q}" ~/.bashrc
 }
 
 set_wezterm_theme() {
@@ -138,7 +142,7 @@ set_theme() {
 
   if out=$(
     jq 'if .theme == $theme then
-      "all themes already set to \($theme)\n" | stderr | empty | halt_error
+      "All themes are already set to \($theme)\n" | stderr | empty | halt_error
     else
       .theme = $theme
     end' --arg theme "$theme" < "$theme_file"
