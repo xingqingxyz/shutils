@@ -142,7 +142,7 @@ set_theme() {
 
   if out=$(
     jq 'if .theme == $theme then
-      "All themes are already set to \($theme)\n" | stderr | empty | halt_error
+      "All themes are already set to \($theme)\n" | halt_error
     else
       .theme = $theme
     end' --arg theme "$theme" < "$theme_file"
@@ -154,6 +154,8 @@ set_theme() {
     # set themes and ignore non active program errors
     eval "$out"
     return 0
+  else
+    echo "$out" >&2
   fi
 }
 

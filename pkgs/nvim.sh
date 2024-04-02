@@ -4,4 +4,4 @@ curl -fL https://kkgithub.com/neovim/neovim/releases/download/nightly/nvim-linux
 
 rm -rf ~/nvim-linux64
 tar xf "$tmp" -C ~
-ln -sfr ~/nvim-linux64/bin/nvim ~/.local/bin
+ln -sfr ~/{nvim-linux64,.local}/bin/nvim

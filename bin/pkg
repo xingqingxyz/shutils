@@ -17,6 +17,7 @@ case "$1" in
     while [ -n "$2" ]; do
       (
         set -e
+        # shellcheck disable=SC1090
         . "$dir/$2.sh"
       ) &
       shift

@@ -66,11 +66,11 @@ _fzf_compgen_ssh() {
 }
 
 _fzf_compgen_variable() {
-  declare -p | awk -F '[ =]' '{print $3}'
+  compgen -v
 }
 
 _fzf_compgen_alias() {
-  alias | awk -F '[ =]' '{print $2}'
+  compgen -a
 }
 
 _fzf_compgen_proc() {
