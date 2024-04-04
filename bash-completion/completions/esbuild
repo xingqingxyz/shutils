@@ -88,4 +88,4 @@ _esbuild() {
   esac
 }
 
-complete -o nosort -o default -F _esbuild esbuild
+complete -o default -F _esbuild esbuild

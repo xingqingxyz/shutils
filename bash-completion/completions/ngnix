@@ -11,4 +11,4 @@ _ngnix() {
   })
 }
 
-complete -o nosort -o default -F _ngnix ngnix
+complete -o default -F _ngnix ngnix

@@ -9,4 +9,4 @@ _jqp() {
   })
 }
 
-complete -o nosort -o default -F _jqp jqp
+complete -o default -F _jqp jqp

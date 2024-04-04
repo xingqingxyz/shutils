@@ -12,4 +12,4 @@ _yq() {
   })
 }
 
-complete -o nosort -o default -F _yq yq
+complete -o default -F _yq yq

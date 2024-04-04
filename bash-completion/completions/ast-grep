@@ -7,5 +7,5 @@ if alias sg 2> /dev/null | grep -qF ast-grep; then
       mapfile -t COMPREPLY < <(compgen -W '-v --version -h --help' -- "$2")
     fi
   }
-  complete -o nosort -o default -F _sg sg
+  complete -o default -F _sg sg
 fi

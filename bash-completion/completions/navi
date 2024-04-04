@@ -10,4 +10,4 @@ _navi() {
   fi
 }
 
-complete -o nosort -o default -F _navi navi
+complete -o default -F _navi navi

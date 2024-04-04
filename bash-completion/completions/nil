@@ -11,4 +11,4 @@ _nil() {
   })
 }
 
-complete -o nosort -o default -F _nil nil
+complete -o default -F _nil nil

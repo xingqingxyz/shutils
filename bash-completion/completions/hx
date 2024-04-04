@@ -20,4 +20,4 @@ _hx() {
   esac
 }
 
-complete -o default -o nosort -F _hx hx
+complete -o default -F _hx hx

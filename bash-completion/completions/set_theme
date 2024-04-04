@@ -27,4 +27,4 @@ _set_theme() {
   esac
 }
 
-complete -o nosort -F _set_theme set_theme
+complete -F _set_theme set_theme

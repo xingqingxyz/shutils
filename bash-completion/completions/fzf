@@ -37,4 +37,4 @@ _fzf_opts_completion() {
   )
 }
 
-complete -o nosort -o default -F _fzf_opts_completion fzf
+complete -o default -F _fzf_opts_completion fzf

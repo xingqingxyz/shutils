@@ -23,4 +23,4 @@ _hexyl() {
   })
 }
 
-complete -o nosort -o default -F _hexyl hexyl
+complete -o default -F _hexyl hexyl

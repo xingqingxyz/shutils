@@ -13,4 +13,4 @@ _pkg() {
   })
 }
 
-complete -o nosort -F _pkg pkg
+complete -F _pkg pkg

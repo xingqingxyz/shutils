@@ -47,4 +47,4 @@ _tree-sitter() {
   })
 }
 
-complete -o nosort -o default -F _tree-sitter tree-sitter
+complete -o default -F _tree-sitter tree-sitter

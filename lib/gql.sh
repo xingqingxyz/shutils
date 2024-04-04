@@ -4,7 +4,7 @@ gql_get_release() {
   if [ "$typ" = stable ]; then
     q=.latestRelease
   else
-    q=.releases.nodes[0]
+    q='.releases.nodes[0]'
   fi
   gh api graphql -F owner="$owner" -F repo="$repo" \
     -F query="@${BASH_SOURCE[0]%/*}/../gql/$typ.gql" \

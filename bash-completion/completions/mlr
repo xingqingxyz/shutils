@@ -10,4 +10,4 @@ _mlr() {
   fi
 }
 
-complete -o nosort -o default -F _mlr mlr
+complete -o default -F _mlr mlr

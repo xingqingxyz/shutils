@@ -10,4 +10,4 @@ _pp() {
   fi
 }
 
-complete -o nosort -o bashdefault -F _pp pp
+complete -o bashdefault -F _pp pp

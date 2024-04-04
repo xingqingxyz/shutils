@@ -14,4 +14,4 @@ _npx() {
   fi
 }
 
-complete -o nosort -o default -F _npx npx
+complete -o default -F _npx npx

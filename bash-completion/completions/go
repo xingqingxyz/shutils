@@ -17,4 +17,4 @@ _go() {
   })
 }
 
-complete -o nosort -o default -F _go go
+complete -o default -F _go go

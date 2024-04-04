@@ -31,4 +31,4 @@ _rust-analyzer() {
   })
 }
 
-complete -o nosort -o default -F _rust-analyzer rust-analyzer
+complete -o default -F _rust-analyzer rust-analyzer

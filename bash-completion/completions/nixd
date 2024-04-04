@@ -18,7 +18,7 @@ _nixd() {
 }
 
 if [ -x "$(type -P nixd-next)" ]; then
-  complete -o nosort -o default -F _nixd nixd-next
+  complete -o default -F _nixd nixd-next
 fi
 
-complete -o nosort -o default -F _nixd nixd
+complete -o default -F _nixd nixd

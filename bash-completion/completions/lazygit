@@ -4,4 +4,4 @@ _lazygit() {
   fi
 }
 
-complete -o nosort -o default -F _lazygit lazygit
+complete -o default -F _lazygit lazygit

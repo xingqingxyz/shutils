@@ -8,4 +8,4 @@ _ed() {
   })
 }
 
-complete -o nosort -o default -F _ed ed
+complete -o default -F _ed ed

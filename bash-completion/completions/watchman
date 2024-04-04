@@ -4,4 +4,4 @@ _watchman() {
     && compgen -W 'clock debug-ageout debug-contenthash debug-drop-privs debug-get-asserted-states debug-get-subscriptions debug-poison debug-recrawl debug-root-status debug-set-parallel-crawl debug-set-subscriptions-paused debug-show-cursors debug-status debug-symlink-target-cache debug-watcher-info debug-watcher-info-clear find flush-subscriptions get-config get-log get-pid get-sockname global-log-level list-capabilities log log-level query shutdown-server since state-enter state-leave subscribe trigger trigger-del trigger-list unsubscribe version watch watch-del watch-del-all watch-list watch-project' -- "$2")
 }
 
-complete -o nosort -o default -F _watchman watchman
+complete -o default -F _watchman watchman

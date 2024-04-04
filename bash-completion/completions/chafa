@@ -38,4 +38,4 @@ _chafa() {
   })
 }
 
-complete -o nosort -o default -F _chafa chafa
+complete -o default -F _chafa chafa

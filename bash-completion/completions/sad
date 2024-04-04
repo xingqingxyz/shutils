@@ -14,4 +14,4 @@ _sad() {
   })
 }
 
-complete -o nosort -o default -F _sad sad
+complete -o default -F _sad sad

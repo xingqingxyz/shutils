@@ -15,4 +15,4 @@ _eslint_d() {
   })
 }
 
-complete -o nosort -o default -F _eslint_d eslint_d
+complete -o default -F _eslint_d eslint_d

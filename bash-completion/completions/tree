@@ -12,4 +12,4 @@ _tree() {
   esac
 }
 
-complete -o nosort -o default -F _tree tree
+complete -o default -F _tree tree

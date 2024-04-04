@@ -92,8 +92,8 @@ _nvim() {
   esac
 }
 
-complete -o nosort -o default -F _nvim nvim
+complete -o default -F _nvim nvim
 
 if alias vi 2> /dev/null | grep -qF nvim; then
-  complete -o nosort -o default -F _nvim vi
+  complete -o default -F _nvim vi
 fi
