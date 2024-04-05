@@ -1,4 +1,4 @@
-tmp=${TMPDIR:-/tmp}/nvim-linux64.tar.gz
+tmp=/tmp/nvim-linux64.tar.gz
 
 curl -fL https://kkgithub.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz -o "$tmp"
 
