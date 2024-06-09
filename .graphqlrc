@@ -1,4 +1,3 @@
 {
-  "schema": "/home/mn/Documents/schema.docs.graphql",
-  "documents": "gql/**/*.gql"
+  "documents": "lib/gql/**/*.gql"
 }

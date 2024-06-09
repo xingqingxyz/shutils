@@ -1,0 +1,41 @@
+#@angular/language-service
+#@astrojs/language-server
+#@mdx-js/language-server
+#@microsoft/compose-language-service
+#@prisma/language-server
+#@salesforce/lwc-language-server
+#@volar/language-server
+#custom-elements-languageserver
+#graphql-language-service
+#liquid-cli # bundled with theme-check-language-server
+#purescript-language-server
+#relay-compiler # local lsp
+#remark-language-server
+#sql-language-server
+#stylelint-lsp
+#svelte-language-server
+#unocss-language-server
+
+# extra
+quicktype
+neovim
+markdownlint-cli
+pnpm
+#vim-language-server
+yarn
+prettier
+
+# lsp
+@vue/language-server
+@fsouza/prettierd
+@tailwindcss/language-server
+awk-language-server
+bash-language-server
+cssmodules-language-server
+dockerfile-language-server-nodejs
+@olrtg/emmet-language-server
+eslint_d
+pyright
+typescript-language-server
+vscode-langservers-extracted
+yaml-language-server

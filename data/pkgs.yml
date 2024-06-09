@@ -1,56 +1,10 @@
-unknown:
 multi:
   - thunderbird
 
-rust:
-  - alacritty
-  - ast-grep
-  - bat
-  - delta
-  - deno
-  - fd-find
-  - firefox
-  - hexyl
-  - hyperfine
-  - mezterm
-  - nil
-  - nixpkgs-fmt
-  - postgres_lsp
-  - pylyzer
-  - ripgrep
-  - ruff
-  - statix # nix linter
-  - stylua
-  - taplo
-  - typst
-  - typst-lsp
-  - typstfmt
-  - uv # pip replacer
-  - vale # web framework
-  - warp # a library
-  - wasm-pack
-  - yazi
-  - zed
-  - grex
-
-go:
-  - dasel
-  - docker
-  - esbuild
-  - fzf
-  - gh
-  - glow
-  - jq-lsp
-  - jqp
-  - lazygit
-  - oh-my-posh
-  - shfmt
-  - sqls
-  - yq
-  - zk # note taking
-
 c:
+  - graphviz
   - bash
+  - curl
   - chafa
   - clang
   - cmake
@@ -67,6 +21,7 @@ c:
   - jq
   - llvm
   - mysql
+  - miktex
   - neovim
   - nginx
   - redis
@@ -74,6 +29,7 @@ c:
   - tmux
   - tree-sitter
   - valgrind
+  - scrcpy
   - vim
   - vlc
   - wget
@@ -86,6 +42,64 @@ cpp:
   - nix
   - nixd
   - node
+  - Everything
+  - AutoHotKey
+
+rust:
+  - alacritty
+  - ast-grep
+  - bat
+  - delta
+  - deno
+  - fd-find
+  - firefox
+  - hexyl
+  - hyperfine
+  - mezterm
+  - nil
+  - nixpkgs-fmt
+  - postgres_lsp
+  - pylyzer
+  - rustdesk
+  - tokei
+  - dust
+  - volta
+  - eza
+  - swc
+  - turbopack
+  - meilisearch
+  - ripgrep
+  - ruff
+  - statix
+  - stylua
+  - taplo
+  - typst
+  - typst-lsp
+  - typstfmt
+  - uv # pip replacer
+  - vale # web framework
+  - warp # a library
+  - wasm-pack
+  - zed
+  - grex
+  - numbat
+
+go:
+  - sourcegraph
+  - direnv
+  - cobra
+  - miller
+  - docker
+  - esbuild
+  - fzf
+  - gh
+  - glow
+  - jq-lsp
+  - lazygit
+  - oh-my-posh
+  - shfmt
+  - sqls
+  - vhs
 
 zig:
   - bun
@@ -135,12 +149,16 @@ typescript:
   - svelte-toolkit
   - tailwindcss
   - typescript-eslint
+  - markdownlint
+  - quicktype
+  - webpack
   - vite
   - vitepress
   - volar
   - vue
   - vue-router
   - vueuse
+  - pyright
   - yaml-language-server
 
 electron:
@@ -157,15 +175,10 @@ javascript:
   - react-dom
 
 shellscript:
-  - asdf
-  - bat-extras
-  - lsix
   - nvm
   - yadm
   - z.sh
 
 java:
   - watchman
-
-fsharp:
-  - marksman
+  - plantuml
