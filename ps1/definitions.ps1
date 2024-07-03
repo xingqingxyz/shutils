@@ -8,13 +8,13 @@ function vv {
           Write-Error "fzf exited with code $LASTEXITCODE"
           return
         }
-        return vv $Path
-      }
+        vv $Path
+      } else { $_.GetDirectories() }
     }
     ([System.IO.FileInfo]) {
       bat $Path
     }
-    default { $item }
+    default { $_ }
   }
 }
 
@@ -68,12 +68,8 @@ function less {
   }
 }
 
-function ll {
-  eza -lah $args
-}
-
 function tree {
-  eza --tree $args
+  fd --color=always | less
 }
 
 function v {
@@ -94,7 +90,7 @@ function winget {
 }
 
 function _runResolved {
-  $cmd = (Get-Item (Get-Command -Type Application $MyInvocation.InvocationName)[0].Source).ResolvedTarget
+  $cmd = (Get-Item (Get-Command $MyInvocation.InvocationName -Type Application -TotalCount 1).Source).ResolvedTarget
   Start-Process -WorkingDirectory $cmd/.. -ArgumentList $args -FilePath $cmd -Wait -NoNewWindow
 }
 

@@ -1,106 +1,101 @@
 $_zConfig = @{
   cmd            = 'z'
-  dataFile       = "$HOME/.z.json"
+  dataFile       = "$HOME/.z.tsv"
   resoveSymlinks = $true
-  excludeDirs    = @()
-  maxHistory     = 1000
+  maxHistory     = 100
+  excludeDirs    = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root)
 }
+$_zRankCnt = 0
+$_zItemsMap = @{}
 
 function _zAdd {
-  if ($PWD.Provider.Name -ne 'FileSystem' -or !(Test-Path $_zConfig.dataFile)) {
+  if ($PWD.Provider.Name -ne 'FileSystem') {
     return
   }
-  $target = $_zConfig.resoveSymlinks ? (Get-Item $PWD).ResolvedTarget : $PWD.Path
-  if ($target -like '?:\' -or $target -eq $HOME -or $_zConfig.excludeDirs.Contains($target)) {
+  $path = $_zConfig.resoveSymlinks ? (Get-Item .).ResolvedTarget : $PWD.Path
+  if ($_zConfig.excludeDirs.Contains($path)) {
     return
   }
-  $data = Get-Content $_zConfig.dataFile | ConvertFrom-Json -AsHashtable
-  $itemsMap = $data.itemsMap
-  if (++$data.historyCnt -gt $_zConfig.maxHistory) {
-    foreach ($key in $itemsMap) {
-      if (($itemsMap.$key.Rank -lt 1)) {
-        $itemsMap.Remove($key)
+  if (++$_zRankCnt -gt $_zConfig.maxHistory) {
+    $_zRankCnt = 0
+    foreach ($i in $_zItemsMap) {
+      if ($_zItemsMap.$i.Rank -lt 1) {
+        $_zItemsMap.Remove($i)
         continue
       }
-      $itemsMap.$key.Rank *= .99
+      $_zRankCnt += ($_zItemsMap.$i.Rank *= .99)
     }
-    $data.historyCnt *= .99
   }
-  $targetItem = ($itemsMap.$target ??= @{})
-  $targetItem.Rank++
-  $targetItem.Time = Get-Date -UFormat '%s'
-  $data.historyCnt++
-  ConvertTo-Json $data > $_zConfig.dataFile
+  $item = ($_zItemsMap.$path ??= ([PSCustomObject]@{
+        Rank = 0
+        Time = 0
+      }))
+  $item.Rank++
+  $item.Time = [int](Get-Date -UFormat '%s')
+  $_zRankCnt++
 }
 
 function _z {
   param (
-    [Parameter(ParameterSetName = 'Main')][switch]$echo,
-    [Parameter(ParameterSetName = 'Main')][switch]$list,
-    [Parameter(ParameterSetName = 'Main')][switch]$rank,
-    [Parameter(ParameterSetName = 'Main')][switch]$time,
-    [Parameter(ParameterSetName = 'Main')][switch]$cwd,
-    [Parameter(ValueFromRemainingArguments)][string[]]$rest,
-    [Parameter(ParameterSetName = 'Remove', Mandatory)][string[]]$remove
+    [Parameter(ParameterSetName = 'Main')][switch]$Echo,
+    [Parameter(ParameterSetName = 'Main')][switch]$List,
+    [Parameter(ParameterSetName = 'Main')][switch]$Rank,
+    [Parameter(ParameterSetName = 'Main')][switch]$Time,
+    [Parameter(ParameterSetName = 'Main')][switch]$Cwd,
+    [Parameter(ValueFromRemainingArguments)][string[]]$Rest,
+    [Parameter(ParameterSetName = 'Remove', Mandatory)][string[]]$Remove
   )
 
-  if ($remove) {
-    $data = Get-Content $_zConfig.dataFile | ConvertFrom-Json -AsHashtable
-    $remove | ForEach-Object {
-      $data.historyCnt -= $data.itemsMap.$_.Rank
-      $data.itemsMap.Remove($_)
+  if ($Remove) {
+    $Remove | ForEach-Object {
+      $_zRankCnt -= $_zItemsMap.$_.Rank
+      $_zItemsMap.Remove($_)
     }
-    $data | ConvertTo-Json > $_zConfig.dataFile
-    return
-  }
-  elseif ($rest -and $rest[-1].Contains([System.IO.Path]::DirectorySeparatorChar)) {
-    Set-Location $rest[-1]
-    return
-  }
-  elseif (!(Test-Path $_zConfig.dataFile)) {
     return
   }
 
-  $itemsMap = (Get-Content $_zConfig.dataFile | ConvertFrom-Json -AsHashtable).itemsMap
-  $items = $itemsMap.Keys | Where-Object {
-    $_ -clike "*$($rest -join '*')*"
-  }
-  if ($cwd -and $PWD.Provider.Name -eq 'FileSystem') {
-    $items = $items | Where-Object { $_.StartsWith($PWD.Path) }
+  $re = [regex]::new("^.*$($Rest -join '.*').*$")
+  $paths = $_zItemsMap.Keys | Where-Object { $re.IsMatch($_) }
+  if ($Cwd -and $PWD.Provider.Name -eq 'FileSystem') {
+    $paths = $paths | Where-Object { $_.StartsWith($PWD.Path) }
   }
 
-  if (!$items) {
+  if (!$paths) {
     return
   }
 
-  $items = @(switch ($true) {
-      $rank { $items | Sort-Object { $itemsMap.$_.Rank } }
-      $time { $items | Sort-Object { $itemsMap.$_.Time } }
+  $paths = @(switch ($true) {
+      $Rank { $paths | Sort-Object { $_zItemsMap.$_.Rank } }
+      $Time { $paths | Sort-Object { $_zItemsMap.$_.Time } }
       Default {
         [double]$now = Get-Date -UFormat '%s'
         filter frecent {
           10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25))
         }
-        $items | Sort-Object { $itemsMap.$_ | frecent }
+        $paths | Sort-Object { $_zItemsMap.$_ | frecent }
       }
     })
 
-  if ($echo) {
-    $items[-1]
+  if ($Echo) {
+    $paths[-1]
   }
-  elseif ($list -or $items.Length -gt 1) {
-    $items | ForEach-Object { "$($itemsMap.$_.Rank)`t$_" }
+  elseif ($List -or $paths.Length -gt 1) {
+    $paths | ForEach-Object { "$($_zItemsMap.$_.Rank)`t$_" }
   }
   else {
-    Set-Location $items[0]
+    Set-Location $paths[-1]
   }
 }
 
-if (!((Test-Path $_zConfig.dataFile) -and (Test-Json -Path $_zConfig.dataFile))) {
-  @{
-    historyCnt = 0
-    itemsMap   = @{}
-  } | ConvertTo-Json > $_zConfig.dataFile
+if (!(Test-Path $_zConfig.dataFile)) {
+  $null = New-Item $_zConfig.dataFile
+}
+Get-Content $_zConfig.dataFile | ForEach-Object {
+  $path, [double]$rank, [int]$time = $_.Split("`t")
+  $_zItemsMap.Add($path, [PSCustomObject]@{
+      Rank = $rank
+      Time = $time
+    })
 }
 & {
   $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$function:_zAdd
@@ -111,5 +106,10 @@ if (!((Test-Path $_zConfig.dataFile) -and (Test-Json -Path $_zConfig.dataFile)))
   else {
     $hook
   }
+}
+Register-EngineEvent -SourceIdentifier PowerShell.Exiting -SupportEvent -Action {
+  $_zItemsMap.GetEnumerator() | ForEach-Object {
+    "$($_.Key)`t$($_.Value.Rank)`t$($_.Value.Time)"
+  } > $_zConfig.dataFile
 }
 Set-Alias $_zConfig.cmd _z

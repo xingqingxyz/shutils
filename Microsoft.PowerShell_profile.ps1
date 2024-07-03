@@ -1,22 +1,8 @@
 # utf-8 process
 [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # shutils
-Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { & $_.FullName }
-
-& {
-  # direnv hook
-  $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]] {
-    & ${env:LOCALAPPDATA}/Microsoft/WinGet/Links/direnv.exe export pwsh 2>$null | Invoke-Expression
-  }
-  $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
-  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
-    [Delegate]::Combine($action, $hook)
-  }
-  else {
-    $hook
-  }
-}
-
+Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.FullName }
+# alias
 Set-Alias vi nvim
 # editing
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar

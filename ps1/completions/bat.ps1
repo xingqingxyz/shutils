@@ -25,10 +25,13 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
       [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
     }
     elseif ($prev.ToString() -eq '--theme') {
-      bat --list-themes
+      bat --list-themes | ForEach-Object { [CompletionResult]::new($_) }
     }
     elseif (@('-l', '--language').Contains($prev.ToString())) {
-      @('bash', 'zsh', 'fish', 'elvish', 'pwsh', 'ps1', 'sh', 'py', 'python', 'js', 'ts', 'rs', 'go', 'man', 'help', 'awk', 'md', 'ini', 'json', 'jsonc', 'yml', 'xml', 'html', 'cs', 'vb', 'cpp', 'c', 'lua', 'codeql', 'sql', 'rb', 'makefile', 'cmake', 'gql', 'tsx', 'mdx', 'svelte', 'vue', 'angular', 'astro', 'css', 'scss', 'sass', 'stylus', 'htmx', 'rst', 'ipynb')
+      @('bash', 'zsh', 'fish', 'elvish', 'pwsh', 'ps1', 'sh', 'py', 'python', 'js', 'ts', 'rs', 'go', 'man', 'help', 'awk', 'md', 'ini', 'json', 'jsonc', 'yml', 'xml', 'html', 'cs', 'vb', 'cpp', 'c', 'lua', 'codeql', 'sql', 'rb', 'makefile', 'cmake', 'gql', 'tsx', 'mdx', 'svelte', 'vue', 'angular', 'astro', 'css', 'scss', 'sass', 'stylus', 'htmx', 'rst', 'ipynb') | ForEach-Object { [CompletionResult]::new($_) }
+    }
+    elseif ($wordToComplete[0] -ne '-' -and @('bat', 'bat.exe').Contains($prev.ToString())) {
+      [CompletionResult]::new('cache')
     }
     else {
       [CompletionResult]::new('-l', 'l', [CompletionResultType]::ParameterName, 'Set the language for syntax highlighting.')
@@ -79,5 +82,5 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
       [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print this help message.')
       [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Show version information.')
       [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Show version information.')
-    }) | Where-Object { $_.ListItemText -like "$wordToComplete*" }
+    }) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
 }

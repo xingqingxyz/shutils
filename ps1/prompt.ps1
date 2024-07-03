@@ -26,5 +26,4 @@ function prompt {
   else {
     "`e[31m$LASTEXITCODE`e[0m ($(Format-Duration $lastHist.Duration)) $PWD$('>' * ($nestedPromptLevel + 1)) "
   }
-  return $lastStatus
 }

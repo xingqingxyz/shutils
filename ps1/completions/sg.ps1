@@ -251,5 +251,5 @@ Register-ArgumentCompleter -Native -CommandName sg -ScriptBlock {
       'sg;help;help' {
         break
       }
-    }) | Where-Object ListItemText -Like "$wordToComplete*"
+    }) | Where-Object CompletionText -Like "$wordToComplete*"
 }
