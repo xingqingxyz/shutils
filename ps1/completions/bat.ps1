@@ -27,6 +27,9 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
     elseif ($prev.ToString() -eq '--theme') {
       bat --list-themes | ForEach-Object { [CompletionResult]::new($_) }
     }
+    elseif ($prev.ToString() -eq '--color') {
+      @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+    }
     elseif (@('-l', '--language').Contains($prev.ToString())) {
       @('bash', 'zsh', 'fish', 'elvish', 'pwsh', 'ps1', 'sh', 'py', 'python', 'js', 'ts', 'rs', 'go', 'man', 'help', 'awk', 'md', 'ini', 'json', 'jsonc', 'yml', 'xml', 'html', 'cs', 'vb', 'cpp', 'c', 'lua', 'codeql', 'sql', 'rb', 'makefile', 'cmake', 'gql', 'tsx', 'mdx', 'svelte', 'vue', 'angular', 'astro', 'css', 'scss', 'sass', 'stylus', 'htmx', 'rst', 'ipynb') | ForEach-Object { [CompletionResult]::new($_) }
     }

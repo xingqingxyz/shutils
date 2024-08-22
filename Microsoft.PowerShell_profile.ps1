@@ -5,6 +5,7 @@ Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.Ful
 # alias
 Set-Alias vi nvim
 # editing
+Set-PSReadLineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
 Set-PSReadLineKeyHandler -Chord Ctrl+k -Function ForwardDeleteLine
 Set-PSReadLineKeyHandler -Chord Ctrl+K -Function DeleteLine

@@ -5,7 +5,7 @@ $_zConfig = @{
   maxHistory     = 100
   excludeDirs    = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root)
 }
-$_zRankCnt = 0
+$_zRankCnt = 0.0
 $_zItemsMap = @{}
 
 function _zAdd {
@@ -16,23 +16,25 @@ function _zAdd {
   if ($_zConfig.excludeDirs.Contains($path)) {
     return
   }
-  if (++$_zRankCnt -gt $_zConfig.maxHistory) {
-    $_zRankCnt = 0
+  $cnt = $_zRankCnt
+  if (++$cnt -gt $_zConfig.maxHistory) {
+    $cnt = 0.0
     foreach ($i in $_zItemsMap) {
-      if ($_zItemsMap.$i.Rank -lt 1) {
+      if ($_zItemsMap.$i.Rank -lt 1.0) {
         $_zItemsMap.Remove($i)
         continue
       }
-      $_zRankCnt += ($_zItemsMap.$i.Rank *= .99)
+      $cnt += ($_zItemsMap.$i.Rank *= 0.99)
     }
   }
+  # add the new one
+  $Global:_zRankCnt = $cnt + 1
   $item = ($_zItemsMap.$path ??= ([PSCustomObject]@{
         Rank = 0
         Time = 0
       }))
   $item.Rank++
-  $item.Time = [int](Get-Date -UFormat '%s')
-  $_zRankCnt++
+  [int]$item.Time = Get-Date -UFormat '%s'
 }
 
 function _z {
