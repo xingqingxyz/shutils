@@ -56,8 +56,8 @@ function _z {
     return
   }
 
-  $re = [regex]::new("^.*$($Rest -join '.*').*$")
-  $paths = $_zItemsMap.Keys | Where-Object { $re.IsMatch($_) }
+  $re = [regex]::new("^.*$($Rest -join '.*').*$".ToLower())
+  $paths = $_zItemsMap.Keys | Where-Object { $re.IsMatch($_.ToLower()) }
   if ($Cwd -and $PWD.Provider.Name -eq 'FileSystem') {
     $paths = $paths | Where-Object { $_.StartsWith($PWD.Path) }
   }
@@ -82,7 +82,7 @@ function _z {
     $paths[-1]
   }
   elseif ($List -or $paths.Length -gt 1) {
-    $paths | ForEach-Object { "$($_zItemsMap.$_.Rank)`t$_" }
+    $paths
   }
   else {
     Set-Location $paths[-1]
@@ -115,3 +115,10 @@ Register-EngineEvent -SourceIdentifier PowerShell.Exiting -SupportEvent -Action 
   } > $_zConfig.dataFile
 }
 Set-Alias $_zConfig.cmd _z
+Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
+  $path = $_zItemsMap.Keys | fzf --scheme=path
+  if ($LASTEXITCODE -eq 0) {
+    Set-Location $path
+    [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+  }
+}
