@@ -1,33 +1,35 @@
-function vv {
-  param([string]$Path = $PWD, [switch]$Select)
+function vw {
+  param([string]$Path = $PWD)
+  if (!(Test-Path $Path)) {
+    throw "path not found: $Path"
+  }
   switch ((Get-Item $Path).GetType()) {
     ([System.IO.DirectoryInfo]) {
-      if ($Select) {
-        $Path = fzf --scheme=path --walker-root=$Path
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "fzf exited with code $LASTEXITCODE"
-          return
-        }
+      $Path = fzf --scheme=path --walker-root=$Path
+      if ($LASTEXITCODE -ne 0) {
+        Get-ChildItem $Path
+      }
+      else {
         vv $Path
-      } else { $_.GetDirectories() }
+      }
     }
     ([System.IO.FileInfo]) {
       bat $Path
     }
-    default { $_ }
   }
 }
 
-function pp {
-  param([switch]$PSDoc)
+function vh {
+  param([Parameter(Mandatory)][string]$cmd, [switch]$NoViewSource)
   if ($MyInvocation.ExpectingInput) {
-    bat -l help
+    bat -lhelp
     return
   }
-  $cmd = (Get-Alias $args[0] -ErrorAction Ignore).Definition ?? $args[0]
-  switch ((Get-Command $cmd -TotalCount 1).CommandType) {
+  $cmd = (Get-Alias $cmd -ErrorAction Ignore).Definition ?? $cmd
+  $info = Get-Command $cmd -TotalCount 1
+  switch ([string]$info.CommandType) {
     Application {
-      Invoke-Expression "$args --help" | bat -l help
+      & $cmd --help | bat -lhelp
     }
     Cmdlet {
       help $cmd
@@ -35,22 +37,23 @@ function pp {
     Configuration {
       $cmd
     }
-    { $_ -eq 'Filter' -or $_ -eq 'Function' } {
-      if ($PSDoc) {
+    { @('Filter', 'Function', 'Script', 'ExternalScript').Contains($_) } {
+      if ($NoViewSource) {
         help $cmd
       }
       else {
-        (Get-Item Function:$cmd).ScriptBlock.ToString() | bat -l ps1
+        $info.Definition | bat -lps1
       }
     }
-    { $_ -eq 'Script' -or $_ -eq 'ExternalScript' } {
-      if ($PSDoc) {
-        help $cmd
-      }
-      else {
-        bat (Get-Command $cmd -TotalCount 1).Source -l ps1
-      }
-    }
+  }
+}
+
+function vi {
+  if ($MyInvocation.ExpectingInput) {
+    $input | nvim -u NORC $args
+  }
+  else {
+    nvim -u NORC $args
   }
 }
 
@@ -68,15 +71,7 @@ function less {
   }
 }
 
-function tree {
-  fd --color=always | less
-}
-
-function v {
-  nvim -u NORC $args
-}
-
-if (!$isWindows10) {
+if (!$isWindows) {
   return
 }
 

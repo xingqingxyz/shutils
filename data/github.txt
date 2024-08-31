@@ -1,4 +1,4 @@
-https://kkgithub.com/akiyosi/goneovim/releases/download/goneovim-$tag-linux.tar.bz2
-https://kkgithub.com/ryanoasis/nerd-fonts/releases/download/$tag/$font.zip
-https://kkgithub.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz
-https://kkgithub.com/neovim/neovim/releases/download/nightly/nvim-win64.tar.gz
+https://github.com/akiyosi/goneovim/releases/download/goneovim-$tag-linux.tar.bz2
+https://github.com/ryanoasis/nerd-fonts/releases/download/$tag/$font.zip
+https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz
+https://github.com/neovim/neovim/releases/download/nightly/nvim-win64.tar.gz

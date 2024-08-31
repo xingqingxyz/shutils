@@ -4,9 +4,17 @@ $_zConfig = @{
   resoveSymlinks = $true
   maxHistory     = 100
   excludeDirs    = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root)
+  dumpCnt        = 6
+  _addCnt        = 0
+  _rankSum       = 0.0
 }
-$_zRankCnt = 0.0
 $_zItemsMap = @{}
+
+function _zDumpData {
+  $_zItemsMap.GetEnumerator() | ForEach-Object {
+    "$($_.Key)`t$($_.Value.Rank)`t$($_.Value.Time)"
+  } > $_zConfig.dataFile
+}
 
 function _zAdd {
   if ($PWD.Provider.Name -ne 'FileSystem') {
@@ -16,25 +24,30 @@ function _zAdd {
   if ($_zConfig.excludeDirs.Contains($path)) {
     return
   }
-  $cnt = $_zRankCnt
-  if (++$cnt -gt $_zConfig.maxHistory) {
-    $cnt = 0.0
+  $sum = $_zConfig._rankSum
+  if (++$sum -gt $_zConfig.maxHistory) {
+    $sum = 1.0
     foreach ($i in $_zItemsMap) {
       if ($_zItemsMap.$i.Rank -lt 1.0) {
         $_zItemsMap.Remove($i)
         continue
       }
-      $cnt += ($_zItemsMap.$i.Rank *= 0.99)
+      $sum += ($_zItemsMap.$i.Rank *= 0.99)
     }
   }
+  $_zConfig._rankSum = $sum
   # add the new one
-  $Global:_zRankCnt = $cnt + 1
   $item = ($_zItemsMap.$path ??= ([PSCustomObject]@{
         Rank = 0
         Time = 0
       }))
   $item.Rank++
   [int]$item.Time = Get-Date -UFormat '%s'
+  # dump data before return
+  if (++$_zConfig._addCnt -eq $_zConfig.dumpCnt) {
+    $_zConfig._addCnt = 0
+    _zDumpData
+  }
 }
 
 function _z {
@@ -49,8 +62,8 @@ function _z {
   )
 
   if ($Remove) {
+    $_zConfig._rankSum -= $_zItemsMap.$_.Rank
     $Remove | ForEach-Object {
-      $_zRankCnt -= $_zItemsMap.$_.Rank
       $_zItemsMap.Remove($_)
     }
     return
@@ -109,11 +122,7 @@ Get-Content $_zConfig.dataFile | ForEach-Object {
     $hook
   }
 }
-Register-EngineEvent -SourceIdentifier PowerShell.Exiting -SupportEvent -Action {
-  $_zItemsMap.GetEnumerator() | ForEach-Object {
-    "$($_.Key)`t$($_.Value.Rank)`t$($_.Value.Time)"
-  } > $_zConfig.dataFile
-}
+Register-EngineEvent -SourceIdentifier PowerShell.Exiting -SupportEvent -Action $Function:_zDumpData
 Set-Alias $_zConfig.cmd _z
 Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
   $path = $_zItemsMap.Keys | fzf --scheme=path
