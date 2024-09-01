@@ -5,12 +5,12 @@ function vw {
   }
   switch ((Get-Item $Path).GetType()) {
     ([System.IO.DirectoryInfo]) {
-      $Path = fzf --scheme=path --walker-root=$Path
+      $Path = fzf --scheme=path
       if ($LASTEXITCODE -ne 0) {
         Get-ChildItem $Path
       }
       else {
-        vv $Path
+        vw $Path
       }
     }
     ([System.IO.FileInfo]) {
@@ -62,7 +62,8 @@ function less {
     $input | bat -lman
     return
   }
-  $cmd = (Get-Command less -CommandType Application -TotalCount 1).Source
+  # $cmd = (Get-Command less -CommandType Application -TotalCount 1).Source
+  $cmd = 'C:\Program Files\Git\usr\bin\less.exe'
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $args
   }
@@ -73,6 +74,15 @@ function less {
 
 if (!$isWindows) {
   return
+}
+
+function bat {
+  if ($MyInvocation.ExpectingInput) {
+    $input | bat.exe --color=always $args | & $env:PAGER
+  }
+  else {
+    bat.exe --color=always $args | & $env:PAGER
+  }
 }
 
 function winget {
