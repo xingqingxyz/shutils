@@ -95,12 +95,20 @@ properties:
       id: GoLang_Go
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: Volta.Volta
+        id: OpenJS.NodeJS
         source: winget
       directives:
-        description: Volta_Volta
+        description: OpenJS_NodeJS
         allowPrerelease: true
-      id: Volta_Volta
+      id: OpenJS_NodeJS
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: VideoLAN.VLC
+        source: winget
+      directives:
+        description: VideoLAN_VLC
+        allowPrerelease: true
+      id: VideoLAN_VLC
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: MiKTeX.MiKTeX

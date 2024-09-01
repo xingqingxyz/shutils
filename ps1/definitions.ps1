@@ -19,7 +19,7 @@ function vw {
   }
 }
 
-function vh {
+function h {
   param([Parameter(Mandatory)][string]$cmd, [switch]$NoViewSource)
   if ($MyInvocation.ExpectingInput) {
     bat -lhelp
@@ -48,7 +48,7 @@ function vh {
   }
 }
 
-function vi {
+function v {
   if ($MyInvocation.ExpectingInput) {
     $input | nvim -u NORC $args
   }
@@ -78,7 +78,7 @@ if (!$isWindows) {
 function winget {
   if ($args.Length -gt 1 -and
     @('install', 'upgrade', 'update', 'import', 'uninstall', 'pin').Contains($args[0]) -and
-    ![WindowsPrincipal]::new([WindowsIdentity]::GetCurrent()).IsInRole([WindowsBuiltInRole]::Administrator)) {
+    ![System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
     throw 'user is not administrator'
   }
   winget.exe $args
