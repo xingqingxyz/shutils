@@ -89,7 +89,7 @@ function winget {
   if ($args.Length -gt 1 -and
     @('install', 'upgrade', 'update', 'import', 'uninstall', 'pin').Contains($args[0]) -and
     ![System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    throw 'user is not administrator'
+    throw 'needs to be run as administrator'
   }
   winget.exe $args
 }

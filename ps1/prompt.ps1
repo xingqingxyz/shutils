@@ -20,7 +20,7 @@ function prompt {
   elseif ($lastStatus) {
     "`e[32mPS`e[0m ($(Format-Duration $lastHist.Duration)) $PWD$('>' * ($nestedPromptLevel + 1)) "
   }
-  elseif ($Error -and $lastHist.Id -eq ($Error[0].InvocationInfo ?? $Error[0].ErrorRecord.InvocationInfo).HistoryId) {
+  elseif ($Error -and $lastHist.Id -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
     "`e[31mPS`e[0m ($(Format-Duration $lastHist.Duration)) $PWD$('>' * ($nestedPromptLevel + 1)) "
   }
   else {
