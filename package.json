@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/tampermonkey": "^5.0.4"
+  },
+  "dependencies": {
+    "help": "^3.0.2",
+    "strip-ansi": "^7.1.0"
+  }
+}
