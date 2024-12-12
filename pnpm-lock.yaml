@@ -11,10 +11,16 @@ importers:
       help:
         specifier: ^3.0.2
         version: 3.0.2
+      jquery:
+        specifier: ^3.7.1
+        version: 3.7.1
       strip-ansi:
         specifier: ^7.1.0
         version: 7.1.0
     devDependencies:
+      '@types/jquery':
+        specifier: ^3.5.32
+        version: 3.5.32
       '@types/node':
         specifier: ^22.10.1
         version: 22.10.1
@@ -24,8 +30,14 @@ importers:
 
 packages:
 
+  '@types/jquery@3.5.32':
+    resolution: {integrity: sha512-b9Xbf4CkMqS02YH8zACqN1xzdxc3cO735Qe5AbSUFmyOiaWAbcpqh9Wna+Uk0vgACvoQHpWDg2rGdHkYPLmCiQ==}
+
   '@types/node@22.10.1':
     resolution: {integrity: sha512-qKgsUwfHZV2WCWLAnVP1JqnpE6Im6h3Y0+fYgMTasNQ7V++CBX5OT1as0g0f+OyubbFqhf6XVNIsmN4IIhEgGQ==}
+
+  '@types/sizzle@2.3.9':
+    resolution: {integrity: sha512-xzLEyKB50yqCUPUJkIsrVvoWNfFUbIZI+RspLWt8u+tIW/BetMBZtgV2LY/2o+tYH8dRvQ+eoPf3NdhQCcLE2w==}
 
   '@types/tampermonkey@5.0.4':
     resolution: {integrity: sha512-HEJ0O5CkDZSwIgd9Zip4xM8o7gZC8zBmJuH1YEXNINIC+aCWEXD10pnpo3NQG5IWHx+Xr4fMSGq1jqeKXH2lpA==}
@@ -37,6 +49,9 @@ packages:
   help@3.0.2:
     resolution: {integrity: sha512-jDd0MU+9xzvOQRC6CIzdjvb+agCvpzQY/Fp11quDnugDO4QQzh134EsLkRQMvFIJBleFkvnXagHFm4MTefkkpA==}
 
+  jquery@3.7.1:
+    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
+
   strip-ansi@7.1.0:
     resolution: {integrity: sha512-iq6eVVI64nQQTRYq2KtEg2d2uU7LElhTJwsH4YzIHZshxlgZms/wIc4VoDQTlG/IvVIrBKG06CrZnp0qv7hkcQ==}
     engines: {node: '>=12'}
@@ -46,15 +61,23 @@ packages:
 
 snapshots:
 
+  '@types/jquery@3.5.32':
+    dependencies:
+      '@types/sizzle': 2.3.9
+
   '@types/node@22.10.1':
     dependencies:
       undici-types: 6.20.0
+
+  '@types/sizzle@2.3.9': {}
 
   '@types/tampermonkey@5.0.4': {}
 
   ansi-regex@6.1.0: {}
 
   help@3.0.2: {}
+
+  jquery@3.7.1: {}
 
   strip-ansi@7.1.0:
     dependencies:

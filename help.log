@@ -1,42 +1,115 @@
-tokei 12.1.2 compiled with serialization support: json, cbor, yaml
-Erin P. <xampprocky@gmail.com> + Contributors
-Count your code, quickly.
-Support this project on GitHub Sponsors: https://github.com/sponsors/XAMPPRocky
 
-USAGE:
-    tokei.exe [FLAGS] [OPTIONS] [--] [input]...
+PowerShell[.exe] [-PSConsoleFile <file> | -Version <version>]
+    [-NoLogo] [-NoExit] [-Sta] [-Mta] [-NoProfile] [-NonInteractive]
+    [-InputFormat {Text | XML}] [-OutputFormat {Text | XML}]
+    [-WindowStyle <style>] [-EncodedCommand <Base64EncodedCommand>]
+    [-ConfigurationName <string>]
+    [-File <filePath> <args>] [-ExecutionPolicy <ExecutionPolicy>]
+    [-Command { - | <script-block> [-args <arg-array>]
+                  | <string> [<CommandParameters>] } ]
 
-FLAGS:
-    -C, --compact             Do not print statistics about embedded languages.
-    -f, --files               Will print out statistics on individual files.
-    -h, --help                Prints help information
-        --hidden              Count hidden files.
-    -l, --languages           Prints out supported languages and their extensions.
-        --no-ignore           Don't respect ignore files (.gitignore, .ignore, etc.). This implies --no-ignore-parent,
-                              --no-ignore-dot, and --no-ignore-vcs.
-        --no-ignore-dot       Don't respect .ignore and .tokeignore files, including those in parent directories.
-        --no-ignore-parent    Don't respect ignore files (.gitignore, .ignore, etc.) in parent directories.
-        --no-ignore-vcs       Don't respect VCS ignore files (.gitignore, .hgignore, etc.), including those in parent
-                              directories.
-    -V, --version             Prints version information
-    -v, --verbose             Set log output level:
-                                          1: to show unknown file extensions,
-                                          2: reserved for future debugging,
-                                          3: enable file level trace. Not recommended on multiple files
+PowerShell[.exe] -Help | -? | /?
 
-OPTIONS:
-    -c, --columns <columns>                Sets a strict column width of the output, only available for terminal output.
-    -e, --exclude <exclude>...             Ignore all files & directories matching the pattern.
-    -i, --input <file_input>               Gives statistics from a previous tokei run. Can be given a file path, or
-                                           "stdin" to read from stdin.
-    -n, --num-format <num_format_style>    Format of printed numbers, i.e. plain (1234, default), commas (1,234), dots
-                                           (1.234), or underscores (1_234). Cannot be used with --output. [possible
-                                           values: commas, dots, plain, underscores]
-    -o, --output <output>                  Outputs Tokei in a specific format. Compile with additional features for more
-                                           format support. [possible values: cbor, json, yaml]
-    -s, --sort <sort>                      Sort languages based on column [possible values: files, lines, blanks, code,
-                                           comments]
-    -t, --type <types>                     Filters output by language type, seperated by a comma. i.e. -t=Rust,Markdown
+-PSConsoleFile
+    Loads the specified Windows PowerShell console file. To create a console
+    file, use Export-Console in Windows PowerShell.
 
-ARGS:
-    <input>...    The path(s) to the file or directory to be counted.
+-Version
+    Starts the specified version of Windows PowerShell. 
+    Enter a version number with the parameter, such as "-version 2.0".
+
+-NoLogo
+    Hides the copyright banner at startup.
+
+-NoExit
+    Does not exit after running startup commands.
+
+-Sta
+    Starts the shell using a single-threaded apartment.
+    Single-threaded apartment (STA) is the default.
+
+-Mta
+    Start the shell using a multithreaded apartment.
+
+-NoProfile
+    Does not load the Windows PowerShell profile.
+
+-NonInteractive
+    Does not present an interactive prompt to the user.
+
+-InputFormat
+    Describes the format of data sent to Windows PowerShell. Valid values are
+    "Text" (text strings) or "XML" (serialized CLIXML format).
+
+-OutputFormat
+    Determines how output from Windows PowerShell is formatted. Valid values
+    are "Text" (text strings) or "XML" (serialized CLIXML format).
+
+-WindowStyle
+    Sets the window style to Normal, Minimized, Maximized or Hidden.
+
+-EncodedCommand
+    Accepts a base-64-encoded string version of a command. Use this parameter 
+    to submit commands to Windows PowerShell that require complex quotation 
+    marks or curly braces.
+
+-ConfigurationName
+    Specifies a configuration endpoint in which Windows PowerShell is run.
+    This can be any endpoint registered on the local machine including the
+    default Windows PowerShell remoting endpoints or a custom endpoint having
+    specific user role capabilities.
+    
+-File
+    Runs the specified script in the local scope ("dot-sourced"), so that the 
+    functions and variables that the script creates are available in the 
+    current session. Enter the script file path and any parameters. 
+    File must be the last parameter in the command, because all characters 
+    typed after the File parameter name are interpreted 
+    as the script file path followed by the script parameters.
+
+-ExecutionPolicy
+    Sets the default execution policy for the current session and saves it 
+    in the $env:PSExecutionPolicyPreference environment variable. 
+    This parameter does not change the Windows PowerShell execution policy 
+    that is set in the registry.
+
+-Command
+    Executes the specified commands (and any parameters) as though they were
+    typed at the Windows PowerShell command prompt, and then exits, unless 
+    NoExit is specified. The value of Command can be "-", a string. or a
+    script block.
+
+    If the value of Command is "-", the command text is read from standard
+    input.
+
+    If the value of Command is a script block, the script block must be enclosed
+    in braces ({}). You can specify a script block only when running PowerShell.exe
+    in Windows PowerShell. The results of the script block are returned to the
+    parent shell as deserialized XML objects, not live objects.
+
+    If the value of Command is a string, Command must be the last parameter
+    in the command , because any characters typed after the command are 
+    interpreted as the command arguments.
+
+    To write a string that runs a Windows PowerShell command, use the format:
+	"& {<command>}"
+    where the quotation marks indicate a string and the invoke operator (&)
+    causes the command to be executed.
+
+-Help, -?, /?
+    Shows this message. If you are typing a PowerShell.exe command in Windows
+    PowerShell, prepend the command parameters with a hyphen (-), not a forward
+    slash (/). You can use either a hyphen or forward slash in Cmd.exe.
+
+EXAMPLES
+    PowerShell -PSConsoleFile SqlSnapIn.Psc1
+    PowerShell -version 2.0 -NoLogo -InputFormat text -OutputFormat XML
+    PowerShell -ConfigurationName AdminRoles
+    PowerShell -Command {Get-EventLog -LogName security}
+    PowerShell -Command "& {Get-EventLog -LogName security}"
+
+    # To use the -EncodedCommand parameter:
+    $command = 'dir "c:\program files" '
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($command)
+    $encodedCommand = [Convert]::ToBase64String($bytes)
+    powershell.exe -encodedCommand $encodedCommand

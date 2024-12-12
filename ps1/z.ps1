@@ -1,18 +1,16 @@
 $_zConfig = @{
   cmd            = 'z'
-  dataFile       = "$HOME/.z.tsv"
+  dataFile       = "$HOME/.z"
   resoveSymlinks = $true
   maxHistory     = 100
   excludeDirs    = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root)
-  dumpCnt        = 6
-  _addCnt        = 0
   _rankSum       = 0.0
 }
 $_zItemsMap = @{}
 
 function _zDumpData {
-  $_zItemsMap.GetEnumerator() | ForEach-Object {
-    "$($_.Key)`t$($_.Value.Rank)`t$($_.Value.Time)"
+  $_zItemsMap.Values | ForEach-Object {
+    "$($_.Path)`t$($_.Rank)`t$($_.Time)"
   } > $_zConfig.dataFile
 }
 
@@ -27,27 +25,25 @@ function _zAdd {
   $sum = $_zConfig._rankSum
   if (++$sum -gt $_zConfig.maxHistory) {
     $sum = 1.0
-    foreach ($i in $_zItemsMap) {
-      if ($_zItemsMap.$i.Rank -lt 1.0) {
-        $_zItemsMap.Remove($i)
+    foreach ($item in $_zItemsMap.Values) {
+      if ($item.Rank -lt 1.0) {
+        $_zItemsMap.Remove($item.Path)
         continue
       }
-      $sum += ($_zItemsMap.$i.Rank *= 0.99)
+      $sum += ($item.Rank *= 0.99)
     }
   }
   $_zConfig._rankSum = $sum
   # add the new one
   $item = ($_zItemsMap.$path ??= ([PSCustomObject]@{
+        Path = $path
         Rank = 0
         Time = 0
       }))
   $item.Rank++
   [int]$item.Time = Get-Date -UFormat '%s'
   # dump data before return
-  if (++$_zConfig._addCnt -eq $_zConfig.dumpCnt) {
-    $_zConfig._addCnt = 0
-    _zDumpData
-  }
+  _zDumpData
 }
 
 function _z {
@@ -57,48 +53,63 @@ function _z {
     [Parameter(ParameterSetName = 'Main')][switch]$Rank,
     [Parameter(ParameterSetName = 'Main')][switch]$Time,
     [Parameter(ParameterSetName = 'Main')][switch]$Cwd,
-    [Parameter(ValueFromRemainingArguments)][string[]]$Rest,
-    [Parameter(ParameterSetName = 'Remove', Mandatory)][string[]]$Remove
+    [Parameter(ParameterSetName = 'Delete', Mandatory)][switch]$Delete,
+    [Parameter(ValueFromRemainingArguments)][string[]]$Queries
   )
 
-  if ($Remove) {
-    $_zConfig._rankSum -= $_zItemsMap.$_.Rank
-    $Remove | ForEach-Object {
-      $_zItemsMap.Remove($_)
+  if ($Delete) {
+    if (!$Queries.Length) {
+      $Queries = @($_zConfig.resoveSymlinks ? (Get-Item .).ResolvedTarget : $PWD.Path)
+    }
+    $prop = $_zConfig.resoveSymlinks ? 'ResolvedTarget' : 'FullName' 
+    $Queries | ForEach-Object {
+      $_zItemsMap.Remove((Get-Item $_).$prop)
+      $_zConfig._rankSum -= $_zItemsMap.$_.Rank
     }
     return
   }
 
-  $re = [regex]::new("^.*$($Rest -join '.*').*$".ToLower())
-  $paths = $_zItemsMap.Keys | Where-Object { $re.IsMatch($_.ToLower()) }
+  $re = [regex]::new("^.*$($Queries -join '.*').*$".ToLower())
+  $items = $_zItemsMap.Values | Where-Object { $re.IsMatch($_.Path.ToLower()) }
   if ($Cwd -and $PWD.Provider.Name -eq 'FileSystem') {
-    $paths = $paths | Where-Object { $_.StartsWith($PWD.Path) }
+    $items = $items | Where-Object { $_.Path.StartsWith($PWD.Path) }
   }
 
-  if (!$paths) {
+  if (!$items) {
+    if ($Queries.Length -and (Test-Path $Queries[-1])) {
+      Set-Location $Queries[-1]
+    }
     return
   }
 
-  $paths = @(switch ($true) {
-      $Rank { $paths | Sort-Object { $_zItemsMap.$_.Rank } }
-      $Time { $paths | Sort-Object { $_zItemsMap.$_.Time } }
+  $items = @(switch ($true) {
+      $Rank { $items | Sort-Object Rank; break }
+      $Time { $items | Sort-Object Time; break }
       Default {
         [double]$now = Get-Date -UFormat '%s'
         filter frecent {
           10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25))
         }
-        $paths | Sort-Object { $_zItemsMap.$_ | frecent }
+        $items | Sort-Object { frecent }
+        break
       }
     })
 
-  if ($Echo) {
-    $paths[-1]
-  }
-  elseif ($List -or $paths.Length -gt 1) {
-    $paths
+  if ($items.Length -eq 1) {
+    if ($Echo -or $List) {
+      $items
+    }
+    else {
+      Set-Location $items[0].Path
+    }
   }
   else {
-    Set-Location $paths[-1]
+    if ($Rank -or $Time -and !$List) {
+      Set-Location $items[-1].Path
+    }
+    else {
+      $items
+    }
   }
 }
 
@@ -108,6 +119,7 @@ if (!(Test-Path $_zConfig.dataFile)) {
 Get-Content $_zConfig.dataFile | ForEach-Object {
   $path, [double]$rank, [int]$time = $_.Split("`t")
   $_zItemsMap.Add($path, [PSCustomObject]@{
+      Path = $path
       Rank = $rank
       Time = $time
     })
@@ -122,12 +134,4 @@ Get-Content $_zConfig.dataFile | ForEach-Object {
     $hook
   }
 }
-Register-EngineEvent -SourceIdentifier PowerShell.Exiting -SupportEvent -Action $Function:_zDumpData
 Set-Alias $_zConfig.cmd _z
-Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
-  $path = $_zItemsMap.Keys | fzf --scheme=path
-  if ($LASTEXITCODE -eq 0) {
-    Set-Location $path
-    [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
-  }
-}

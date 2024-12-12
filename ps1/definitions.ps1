@@ -48,7 +48,7 @@ function h {
   }
 }
 
-function v {
+function vi {
   if ($MyInvocation.ExpectingInput) {
     $input | nvim -u NORC $args
   }
@@ -69,6 +69,38 @@ function less {
   }
   else {
     & $cmd $args
+  }
+}
+
+function npm {
+  if ($MyInvocation.ExpectingInput) {
+    $input | npm $args
+  }
+  else {
+    $cmd = switch ($true) {
+      (Test-Path package-lock.json) { 'npm'; break } 
+      (Test-Path pnpm-lock.yaml) { 'pnpm'; break } 
+      (Test-Path bun.lockb) { 'bun' ; break }
+      (Test-Path yarn.lock) { 'yarn'; break } 
+      (Test-Path deno.json) { 'deno'; break }
+      Default { 'npm' }
+    }
+    if (@('i', 'install', 'a', 'add').Contains($args[0])) {
+      if (!$args.Contains('-D')) {
+        $argStr = "$($args | Select-Object -Skip 1)"
+        $types = [regex]::Replace($argStr, '\b(?<!@types/).*?\b', '')
+        if ($types.Length) {
+          Write-Information "$cmd $types -D"
+          Invoke-Expression "$cmd $types -D"
+          $noTypes = [regex]::Replace($argStr, '\b@types/.*?\b', '')
+          Write-Information "$cmd $noTypes"
+          Invoke-Expression "$cmd $noTypes"
+        }
+      }
+    }
+    else {
+      & $cmd $args[1..($args.Length - 1)]
+    }
   }
 }
 
