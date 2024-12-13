@@ -19,10 +19,14 @@ function vw {
   }
 }
 
-function h {
-  param([Parameter(Mandatory)][string]$cmd, [switch]$NoViewSource)
+function vh {
+  param([string]$cmd, [switch]$NoViewSource)
   if ($MyInvocation.ExpectingInput) {
-    bat -lhelp
+    $input | bat -lhelp
+    return
+  }
+  if ($cmd -eq '') {
+    help h
     return
   }
   $cmd = (Get-Alias $cmd -ErrorAction Ignore).Definition ?? $cmd
@@ -72,12 +76,9 @@ function less {
   }
 }
 
-function npm {
-  if ($MyInvocation.ExpectingInput) {
-    $input | npm $args
-  }
-  else {
-    $cmd = switch ($true) {
+& {
+  $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]] {
+    $npm = switch ($true) {
       (Test-Path package-lock.json) { 'npm'; break } 
       (Test-Path pnpm-lock.yaml) { 'pnpm'; break } 
       (Test-Path bun.lockb) { 'bun' ; break }
@@ -85,22 +86,41 @@ function npm {
       (Test-Path deno.json) { 'deno'; break }
       Default { 'npm' }
     }
-    if (@('i', 'install', 'a', 'add').Contains($args[0])) {
-      if (!$args.Contains('-D')) {
-        $argStr = "$($args | Select-Object -Skip 1)"
-        $types = [regex]::Replace($argStr, '\b(?<!@types/).*?\b', '')
-        if ($types.Length) {
-          Write-Information "$cmd $types -D"
-          Invoke-Expression "$cmd $types -D"
-          $noTypes = [regex]::Replace($argStr, '\b@types/.*?\b', '')
-          Write-Information "$cmd $noTypes"
-          Invoke-Expression "$cmd $noTypes"
-        }
+    Set-Alias -Scope Global _npm "$npm.ps1"
+  }
+  $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
+  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
+    [Delegate]::Combine($action, $hook)
+  }
+  else {
+    $hook
+  }
+}
+function npm {
+  if ($MyInvocation.ExpectingInput) {
+    $input | _npm @args
+    return
+  }
+  if ($args.Contains('--help')) {
+    _npm @args | vh
+  }
+  elseif (@('i', 'install', 'a', 'add').Contains($args[0])) {
+    if (!$args.Contains('-D')) {
+      $argStr = "$($args | Select-Object -Skip 1)"
+      $types = [regex]::Replace($argStr, '\b(?<!@types/).*?\b', '')
+      if ($types.Length) {
+        $noTypes = [regex]::Replace($argStr, '\b@types/.*?\b', '')
+        $argStr = "_npm $($args[0]) $types -D"
+        Write-Information $argStr
+        Invoke-Expression $argStr
+        $argStr = "_npm $($args[0]) $noTypes"
+        Write-Information $argStr
+        Invoke-Expression $argStr
       }
     }
-    else {
-      & $cmd $args[1..($args.Length - 1)]
-    }
+  }
+  else {
+    _npm @args
   }
 }
 
