@@ -37,7 +37,7 @@ function _zAdd {
   # add the new one
   $item = ($_zItemsMap.$path ??= ([PSCustomObject]@{
         Path = $path
-        Rank = 0
+        Rank = 0.0
         Time = 0
       }))
   $item.Rank++
@@ -61,7 +61,7 @@ function _z {
     if (!$Queries.Length) {
       $Queries = @($_zConfig.resoveSymlinks ? (Get-Item .).ResolvedTarget : $PWD.Path)
     }
-    $prop = $_zConfig.resoveSymlinks ? 'ResolvedTarget' : 'FullName' 
+    $prop = $_zConfig.resoveSymlinks ? 'ResolvedTarget' : 'FullName'
     $Queries | ForEach-Object {
       $_zItemsMap.Remove((Get-Item $_).$prop)
       $_zConfig._rankSum -= $_zItemsMap.$_.Rank
