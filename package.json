@@ -2,8 +2,10 @@
   "type": "module",
   "devDependencies": {
     "@types/jquery": "^3.5.32",
+    "@types/lodash": "^4.17.13",
     "@types/node": "^22.10.1",
-    "@types/tampermonkey": "^5.0.4"
+    "@types/tampermonkey": "^5.0.4",
+    "lodash": "^4.17.21"
   },
   "dependencies": {
     "help": "^3.0.2",

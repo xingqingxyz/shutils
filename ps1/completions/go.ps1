@@ -3,14 +3,17 @@ using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName go -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
-  $command = $commandAst.CommandElements | Select-Object -Skip 1 -SkipLast 1 | ForEach-Object {
-    if ($_ -isnot [StringConstantExpressionAst] -or
-      $_.StringConstantType -ne [StringConstantType]::BareWord -or
-      $_.Value.StartsWith('-')) {
-      return
-    }
-    $_.Value
-  } | Join-String -Separator ';'
+  $command = @(foreach ($i in $commandAst.CommandElements) {
+      if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
+        continue
+      }
+      if ($i -isnot [StringConstantExpressionAst] -or
+        $i.StringConstantType -ne [StringConstantType]::BareWord -or
+        $i.Value.StartsWith('-')) {
+        break
+      }
+      $i.Value
+    }) -join ';'
 
   @(switch ($command) {
       '' {

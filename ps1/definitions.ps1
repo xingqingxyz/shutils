@@ -91,7 +91,7 @@ function less {
   & $hook
   $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
   $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
-    [Delegate]::Combine($action, $hook)
+    [Delegate]::Combine($action, [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$hook)
   }
   else {
     $hook
@@ -104,25 +104,28 @@ function npm {
   }
   if ($args.Contains('--help')) {
     _npm @args | vh
+    return
   }
-  elseif (@('i', 'install', 'a', 'add').Contains($args[0])) {
+  if (@('i', 'install', 'a', 'add').Contains($args[0])) {
     if (!$args.Contains('-D')) {
       $argStr = "$($args | Select-Object -Skip 1)"
       $types = [regex]::Replace($argStr, '\b(?<!@types/).*?\b', '')
       if ($types.Length) {
         $noTypes = [regex]::Replace($argStr, '\b@types/.*?\b', '')
         $argStr = "_npm $($args[0]) $types -D"
-        Write-Information $argStr
+        Write-Host $argStr
         Invoke-Expression $argStr
+        if (!$noTypes.Length) {
+          return
+        }
         $argStr = "_npm $($args[0]) $noTypes"
-        Write-Information $argStr
+        Write-Host $argStr
         Invoke-Expression $argStr
       }
+      return
     }
   }
-  else {
-    _npm @args
-  }
+  _npm @args
 }
 
 if (!$IsWindows) {

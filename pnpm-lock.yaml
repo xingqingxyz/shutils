@@ -21,17 +21,26 @@ importers:
       '@types/jquery':
         specifier: ^3.5.32
         version: 3.5.32
+      '@types/lodash':
+        specifier: ^4.17.13
+        version: 4.17.13
       '@types/node':
         specifier: ^22.10.1
         version: 22.10.1
       '@types/tampermonkey':
         specifier: ^5.0.4
         version: 5.0.4
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
 
 packages:
 
   '@types/jquery@3.5.32':
     resolution: {integrity: sha512-b9Xbf4CkMqS02YH8zACqN1xzdxc3cO735Qe5AbSUFmyOiaWAbcpqh9Wna+Uk0vgACvoQHpWDg2rGdHkYPLmCiQ==}
+
+  '@types/lodash@4.17.13':
+    resolution: {integrity: sha512-lfx+dftrEZcdBPczf9d0Qv0x+j/rfNCMuC6OcfXmO8gkfeNAY88PgKUbvG56whcN23gc27yenwF6oJZXGFpYxg==}
 
   '@types/node@22.10.1':
     resolution: {integrity: sha512-qKgsUwfHZV2WCWLAnVP1JqnpE6Im6h3Y0+fYgMTasNQ7V++CBX5OT1as0g0f+OyubbFqhf6XVNIsmN4IIhEgGQ==}
@@ -52,6 +61,9 @@ packages:
   jquery@3.7.1:
     resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
 
+  lodash@4.17.21:
+    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+
   strip-ansi@7.1.0:
     resolution: {integrity: sha512-iq6eVVI64nQQTRYq2KtEg2d2uU7LElhTJwsH4YzIHZshxlgZms/wIc4VoDQTlG/IvVIrBKG06CrZnp0qv7hkcQ==}
     engines: {node: '>=12'}
@@ -64,6 +76,8 @@ snapshots:
   '@types/jquery@3.5.32':
     dependencies:
       '@types/sizzle': 2.3.9
+
+  '@types/lodash@4.17.13': {}
 
   '@types/node@22.10.1':
     dependencies:
@@ -78,6 +92,8 @@ snapshots:
   help@3.0.2: {}
 
   jquery@3.7.1: {}
+
+  lodash@4.17.21: {}
 
   strip-ansi@7.1.0:
     dependencies:

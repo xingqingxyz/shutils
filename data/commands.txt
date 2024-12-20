@@ -1,0 +1,2 @@
+subspend: stop
+ls: buffers, files
