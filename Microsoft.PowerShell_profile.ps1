@@ -2,8 +2,6 @@
 [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # shutils
 Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.FullName }
-# alias
-Set-Alias vi nvim
 # editing
 Set-PSReadLineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
@@ -38,7 +36,9 @@ Set-PSReadLineKeyHandler -Chord Alt+c -ScriptBlock {
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+r -ScriptBlock {
-  $history = Get-Content ${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt | Select-Object -Unique | fzf --scheme=history
+  $history = Get-Content ${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt |
+    Select-Object -Unique |
+    fzf --scheme=history
   if (!$history) {
     return
   }
@@ -46,3 +46,11 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -ScriptBlock {
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $history)
 }
+Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
+  $path = $_zItemsMap.Keys | fzf --scheme=path
+  if ($LASTEXITCODE -eq 0) {
+    Set-Location $path
+    [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+  }
+}
+

@@ -1,0 +1,18 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@types/jquery": "^3.5.32",
+    "@types/lodash": "^4.17.13",
+    "@types/node": "^22.10.1",
+    "@types/tampermonkey": "^5.0.4",
+    "lodash": "^4.17.21"
+  },
+  "dependencies": {
+    "help": "^3.0.2",
+    "jquery": "^3.7.1",
+    "strip-ansi": "^7.1.0"
+  },
+  "scripts": {
+    "test": "echo no tests"
+  }
+}

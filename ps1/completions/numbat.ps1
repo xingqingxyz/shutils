@@ -1,4 +1,6 @@
 Register-ArgumentCompleter -Native -CommandName numbat -ScriptBlock {
   param([string]$wordToComplete)
-  @('-e', '--expression', '-i', '--inspect-interactively', '--no-config', '--no-prelude', '--no-init', '--pretty-print', '--intro-banner', '--generate-config', '-h', '--help', '-V', '--version') | Where-Object { $_ -like "$wordToComplete*" }
+  if ($wordToComplete.StartsWith('-')) {
+    @('-e', '--expression', '-i', '--inspect-interactively', '--no-config', '--no-prelude', '--no-init', '--pretty-print', '--intro-banner', '--generate-config', '-h', '--help', '-V', '--version') | Where-Object { $_ -like "$wordToComplete*" }
+  }
 }

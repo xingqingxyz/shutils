@@ -3,14 +3,41 @@ using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName go -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
-  $subcmd = @(foreach ($key in $commandAst.CommandElements) {
-      $key = $key.ToString()
-      if ($key -ne 'cargo' -and $key[0] -ne '-') {
-        $key
+  $command = @(foreach ($i in $commandAst.CommandElements) {
+      if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
+        continue
       }
-    }) -join '_'
+      if ($i -isnot [StringConstantExpressionAst] -or
+        $i.StringConstantType -ne [StringConstantType]::BareWord -or
+        $i.Value.StartsWith('-')) {
+        break
+      }
+      $i.Value
+    }) -join ';'
 
-  @(switch ($subcmd) {
+  @(switch ($command) {
+      '' {
+        if ($wordToComplete[0] -ne '-') {
+          [CompletionResult]::new('bug', 'bug', [CompletionResultType]::ParameterValue, 'start a bug report')
+          [CompletionResult]::new('build', 'build', [CompletionResultType]::ParameterValue, 'compile packages and dependencies')
+          [CompletionResult]::new('clean', 'clean', [CompletionResultType]::ParameterValue, 'remove object files and cached files')
+          [CompletionResult]::new('doc', 'doc', [CompletionResultType]::ParameterValue, 'show documentation for package or symbol')
+          [CompletionResult]::new('env', 'env', [CompletionResultType]::ParameterValue, 'print Go environment information')
+          [CompletionResult]::new('fix', 'fix', [CompletionResultType]::ParameterValue, 'update packages to use new APIs')
+          [CompletionResult]::new('fmt', 'fmt', [CompletionResultType]::ParameterValue, 'gofmt (reformat) package sources')
+          [CompletionResult]::new('generate', 'generate', [CompletionResultType]::ParameterValue, 'generate Go files by processing source')
+          [CompletionResult]::new('get', 'get', [CompletionResultType]::ParameterValue, 'add dependencies to current module and install them')
+          [CompletionResult]::new('install', 'install', [CompletionResultType]::ParameterValue, 'compile and install packages and dependencies')
+          [CompletionResult]::new('list', 'list', [CompletionResultType]::ParameterValue, 'list packages or modules')
+          [CompletionResult]::new('mod', 'mod', [CompletionResultType]::ParameterValue, 'module maintenance')
+          [CompletionResult]::new('work', 'work', [CompletionResultType]::ParameterValue, 'workspace maintenance')
+          [CompletionResult]::new('run', 'run', [CompletionResultType]::ParameterValue, 'compile and run Go program')
+          [CompletionResult]::new('test', 'test', [CompletionResultType]::ParameterValue, 'test packages')
+          [CompletionResult]::new('tool', 'tool', [CompletionResultType]::ParameterValue, 'run specified go tool')
+          [CompletionResult]::new('version', 'version', [CompletionResultType]::ParameterValue, 'print Go version')
+          [CompletionResult]::new('vet', 'vet', [CompletionResultType]::ParameterValue, 'report likely mistakes in packages')
+        }
+      }
       'help' {
         [CompletionResult]::new('buildconstraint', 'buildconstraint', [CompletionResultType]::ParameterValue, 'build constraints')
         [CompletionResult]::new('buildmode', 'buildmode', [CompletionResultType]::ParameterValue, 'build modes')
@@ -280,12 +307,12 @@ examples).
         [CompletionResult]::new('verify', 'verify', [CompletionResultType]::ParameterValue, 'verify dependencies have expected content')
         [CompletionResult]::new('why', 'why', [CompletionResultType]::ParameterValue, 'explain why packages or modules are needed')
       }
-      'mod_download' {
+      'mod;download' {
         [CompletionResult]::new('-json', 'json', [CompletionResultType]::ParameterName, 'The -json flag causes download to print a sequence of JSON objects to standard output, describing each downloaded module (or failure)')
         [CompletionResult]::new('-reuse', 'reuse', [CompletionResultType]::ParameterName, "The -reuse flag accepts the name of file containing the JSON output of a previous 'go mod download -json' invocation.")
         [CompletionResult]::new('-x', 'x', [CompletionResultType]::ParameterName, 'The -x flag causes download to print the commands download executes.')
       }
-      'mod_edit' {
+      'mod;edit' {
         [CompletionResult]::new('-fmt', 'fmt', [CompletionResultType]::ParameterName, 'The -fmt flag reformats the go.mod file without making other changes.')
         [CompletionResult]::new('-module', 'module', [CompletionResultType]::ParameterName, "The -module flag changes the module's path (the go.mod file's module line).")
         [CompletionResult]::new('-require', 'require', [CompletionResultType]::ParameterName, 'The -require=path@version and -droprequire=path flags add and drop a requirement on the given module path and version.')
@@ -301,23 +328,23 @@ examples).
         [CompletionResult]::new('-print', 'print', [CompletionResultType]::ParameterValue, 'The -print flag prints the final go.work in its text format instead of writing it back to go.mod.')
         [CompletionResult]::new('-json', 'json', [CompletionResultType]::ParameterValue, 'The -json flag prints the final go.work file in JSON format instead of writing it back to go.mod.')
       }
-      'mod_graph' {
+      'mod;graph' {
         [CompletionResult]::new('-go', 'go', [CompletionResultType]::ParameterValue, ”The -go flag causes graph to report the module graph as loaded by the given Go version, instead of the version indicated by the 'go' directive in the go.mod file.")
         [CompletionResult]::new('-x', 'x', [CompletionResultType]::ParameterValue, 'The -x flag causes graph to print the commands graph executes.')
       }
-      'mod_tidy' {
+      'mod;tidy' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'The -v flag causes tidy to print information about removed modules to standard error.')
         [CompletionResult]::new('-e', 'e', [CompletionResultType]::ParameterValue, 'The -e flag causes tidy to attempt to proceed despite errors encountered while loading packages.')
         [CompletionResult]::new('-go', 'go', [CompletionResultType]::ParameterValue, "The -go flag causes tidy to update the 'go' directive in the go.mod file to the given version, which may change which module dependencies are retained as explicit requirements in the go.mod file.")
         [CompletionResult]::new('-compat', 'compat', [CompletionResultType]::ParameterValue, "The -compat flag preserves any additional checksums needed for the 'go' command from the indicated major Go release to successfully load the module graph, and causes tidy to error out if that version of the 'go' command would load any imported package from a different module version.")
         [CompletionResult]::new('-x', 'x', [CompletionResultType]::ParameterValue, 'The -x flag causes tidy to print the commands download executes.')
       }
-      'mod_vendor' {
+      'mod;vendor' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'The -v flag causes vendor to print the names of vendored modules and packages to standard error.')
         [CompletionResult]::new('-e', 'e', [CompletionResultType]::ParameterValue, 'The -e flag causes vendor to attempt to proceed despite errors encountered while loading packages.')
         [CompletionResult]::new('-o', 'o', [CompletionResultType]::ParameterValue, 'The -o flag causes vendor to create the vendor directory at the given path instead of "vendor".')
       }
-      'mod_why' {
+      'mod;why' {
         @('-m', '--vendor') | ForEach-Object { [CompletionResult]::new($_) }
       }
       'run' {
@@ -341,7 +368,7 @@ examples).
         [CompletionResult]::new('use', 'use', [CompletionResultType]::ParameterValue, 'add modules to workspace file')
         [CompletionResult]::new('vendor', 'vendor', [CompletionResultType]::ParameterValue, 'make vendored copy of dependencies')
       }
-      'work_edit' {
+      'work;edit' {
         [CompletionResult]::new('-fmt', 'fmt', [CompletionResultType]::ParameterValue, "The -fmt flag reformats the go.work file without making other changes. This reformatting is also implied by any other modifications that use or rewrite the go.mod file. The only time this flag is needed is if no other flags are specified, as in 'go work edit -fmt'.")
         [CompletionResult]::new('-use', 'use', [CompletionResultType]::ParameterValue, "The -use=path and -dropuse=path flags add and drop a use directive from the go.work file's set of module directories.")
         [CompletionResult]::new('-dropuse', 'dropuse', [CompletionResultType]::ParameterValue, "The -use=path and -dropuse=path flags add and drop a use directive from the go.work file's set of module directories.")
@@ -352,35 +379,13 @@ examples).
         [CompletionResult]::new('-print', 'print', [CompletionResultType]::ParameterValue, 'The -print flag prints the final go.work in its text format instead of writing it back to go.mod.')
         [CompletionResult]::new('-json', 'json', [CompletionResultType]::ParameterValue, 'The -json flag prints the final go.work file in JSON format instead of writing it back to go.mod.')
       }
-      'work_use' {
+      'work;use' {
         [CompletionResult]::new('-r', 'r', [CompletionResultType]::ParameterValue, 'The -r flag searches recursively for modules in the argument directories, and the use command operates as if each of the directories were specified as arguments: namely, use directives will be added for directories that exist, and removed for directories that do not exist.')
       }
-      'work_vendor' {
+      'work;vendor' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'The -v flag causes vendor to print the names of vendored modules and packages to standard error.')
         [CompletionResult]::new('-e', 'e', [CompletionResultType]::ParameterValue, 'The -e flag causes vendor to attempt to proceed despite errors encountered while loading packages.')
         [CompletionResult]::new('-o', 'o', [CompletionResultType]::ParameterValue, 'The -o flag causes vendor to create the vendor directory at the given path instead of "vendor".')
-      }
-      Default {
-        if ($wordToComplete[0] -ne '-') {
-          [CompletionResult]::new('bug', 'bug', [CompletionResultType]::ParameterValue, 'start a bug report')
-          [CompletionResult]::new('build', 'build', [CompletionResultType]::ParameterValue, 'compile packages and dependencies')
-          [CompletionResult]::new('clean', 'clean', [CompletionResultType]::ParameterValue, 'remove object files and cached files')
-          [CompletionResult]::new('doc', 'doc', [CompletionResultType]::ParameterValue, 'show documentation for package or symbol')
-          [CompletionResult]::new('env', 'env', [CompletionResultType]::ParameterValue, 'print Go environment information')
-          [CompletionResult]::new('fix', 'fix', [CompletionResultType]::ParameterValue, 'update packages to use new APIs')
-          [CompletionResult]::new('fmt', 'fmt', [CompletionResultType]::ParameterValue, 'gofmt (reformat) package sources')
-          [CompletionResult]::new('generate', 'generate', [CompletionResultType]::ParameterValue, 'generate Go files by processing source')
-          [CompletionResult]::new('get', 'get', [CompletionResultType]::ParameterValue, 'add dependencies to current module and install them')
-          [CompletionResult]::new('install', 'install', [CompletionResultType]::ParameterValue, 'compile and install packages and dependencies')
-          [CompletionResult]::new('list', 'list', [CompletionResultType]::ParameterValue, 'list packages or modules')
-          [CompletionResult]::new('mod', 'mod', [CompletionResultType]::ParameterValue, 'module maintenance')
-          [CompletionResult]::new('work', 'work', [CompletionResultType]::ParameterValue, 'workspace maintenance')
-          [CompletionResult]::new('run', 'run', [CompletionResultType]::ParameterValue, 'compile and run Go program')
-          [CompletionResult]::new('test', 'test', [CompletionResultType]::ParameterValue, 'test packages')
-          [CompletionResult]::new('tool', 'tool', [CompletionResultType]::ParameterValue, 'run specified go tool')
-          [CompletionResult]::new('version', 'version', [CompletionResultType]::ParameterValue, 'print Go version')
-          [CompletionResult]::new('vet', 'vet', [CompletionResultType]::ParameterValue, 'report likely mistakes in packages')
-        }
       }
     }) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
 }

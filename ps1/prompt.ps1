@@ -15,12 +15,12 @@ function prompt {
   $lastStatus = $?
   $lastHist = Get-History -Count 1 -ErrorAction Ignore
   if (!$lastHist) {
-    "PS $PWD$('>' * ($nestedPromptLevel + 1)) "
+    "PS [`e[32m${env:USERNAME}@${env:HOSTNAME}${env:COMPUTERNAME}`e[0m] $PWD$('>' * ($nestedPromptLevel + 1)) "
   }
   elseif ($lastStatus) {
     "`e[32mPS`e[0m ($(Format-Duration $lastHist.Duration)) $PWD$('>' * ($nestedPromptLevel + 1)) "
   }
-  elseif ($Error -and $lastHist.Id -eq ($Error[0].InvocationInfo ?? $Error[0].ErrorRecord.InvocationInfo).HistoryId) {
+  elseif ($Error -and $lastHist.Id -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
     "`e[31mPS`e[0m ($(Format-Duration $lastHist.Duration)) $PWD$('>' * ($nestedPromptLevel + 1)) "
   }
   else {

@@ -19,10 +19,14 @@ function vw {
   }
 }
 
-function h {
-  param([Parameter(Mandatory)][string]$cmd, [switch]$NoViewSource)
+function vh {
+  param([string]$cmd, [switch]$NoViewSource)
   if ($MyInvocation.ExpectingInput) {
-    bat -lhelp
+    $input | bat -lhelp
+    return
+  }
+  if ($cmd -eq '') {
+    help h
     return
   }
   $cmd = (Get-Alias $cmd -ErrorAction Ignore).Definition ?? $cmd
@@ -48,7 +52,7 @@ function h {
   }
 }
 
-function v {
+function vi {
   if ($MyInvocation.ExpectingInput) {
     $input | nvim -u NORC $args
   }
@@ -62,8 +66,7 @@ function less {
     $input | bat -lman
     return
   }
-  # $cmd = (Get-Command less -CommandType Application -TotalCount 1).Source
-  $cmd = 'C:\Program Files\Git\usr\bin\less.exe'
+  $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $args
   }
@@ -72,7 +75,60 @@ function less {
   }
 }
 
-if (!$isWindows) {
+& {
+  $hook = {
+    $npm = switch ($true) {
+      (Test-Path package-lock.json) { 'npm'; break }
+      (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
+      (Test-Path bun.lockb) { 'bun' ; break }
+      (Test-Path yarn.lock) { 'yarn'; break }
+      (Test-Path deno.json) { 'deno'; break }
+      Default { 'npm' }
+    }
+    Set-Alias -Scope Global _npm (Get-Command -Type Application -TotalCount 1 $npm).Path
+  }
+  # init search
+  & $hook
+  $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
+  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
+    [Delegate]::Combine($action, [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$hook)
+  }
+  else {
+    $hook
+  }
+}
+function npm {
+  if ($MyInvocation.ExpectingInput) {
+    $input | _npm @args
+    return
+  }
+  if ($args.Contains('--help')) {
+    _npm @args | vh
+    return
+  }
+  if (@('i', 'install', 'a', 'add').Contains($args[0])) {
+    if (!$args.Contains('-D')) {
+      $argStr = "$($args | Select-Object -Skip 1)"
+      $types = [regex]::Replace($argStr, '\b(?<!@types/).*?\b', '')
+      if ($types.Length) {
+        $noTypes = [regex]::Replace($argStr, '\b@types/.*?\b', '')
+        $argStr = "_npm $($args[0]) $types -D"
+        Write-Host $argStr
+        Invoke-Expression $argStr
+        if (!$noTypes.Length) {
+          return
+        }
+        $argStr = "_npm $($args[0]) $noTypes"
+        Write-Host $argStr
+        Invoke-Expression $argStr
+      }
+      return
+    }
+  }
+  _npm @args
+}
+
+if (!$IsWindows) {
   return
 }
 
@@ -89,9 +145,13 @@ function winget {
   if ($args.Length -gt 1 -and
     @('install', 'upgrade', 'update', 'import', 'uninstall', 'pin').Contains($args[0]) -and
     ![System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    throw 'user is not administrator'
+    throw 'needs to be run as administrator'
   }
   winget.exe $args
+}
+
+function sudo {
+  Start-Process -FilePath (Get-Command $args[0] -Type Application -TotalCount 1).Path -ArgumentList $args[1..($args.Length)] -Verb RunAs
 }
 
 function _runResolved {
