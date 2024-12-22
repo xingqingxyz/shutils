@@ -32,7 +32,8 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.Value
+  $prev = $prev.ToString()
+
   $commands[0] = switch ($commands[0]) {
     'c' { 'config'; break }
     'ln' { 'link'; break }
@@ -50,7 +51,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
   }
   $command = $commands -join ';'
   @(switch ($command) {
-      '' { 
+      '' {
         if ($wordToComplete.StartsWith('-')) {
           @('-l', '-h', '--help', '--version', '--json', '--parseable', '--long', '--short', '--silent', '--global', '--depth', '--shrinkwrap', '--link', '--dry-run', '--force', '--global-style', '--legacy-bundling', '--strict-ssl', '--userconfig', '--tag', '--access', '--otp', '--scope', '--auth-type', '--always-auth', '--auth', '--registry', '--cache', '--tmp', '--shell', '--bin-links', '--global-style', '--no-global-style', '--no-bin-links', '--no-optional', '--no-shrinkwrap', '--no-package-lock')
         }

@@ -3,19 +3,36 @@ using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
-  $cursorPosition -= $wordToComplete.Length
-  $subcmd = @(foreach ($key in $commandAst.CommandElements) {
-      if ($key.Extent.StartOffset -eq $cursorPosition) {
+  $command = @(foreach ($i in $commandAst.CommandElements) {
+      if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
+        continue
+      }
+      if ($i -isnot [StringConstantExpressionAst] -or
+        $i.StringConstantType -ne [StringConstantType]::BareWord -or
+        $i.Value.StartsWith('-')) {
         break
       }
-      $key = $key.ToString()
-      if ($key -ne 'cargo' -and $key[0] -ne '-') {
-        $key
-      }
-      $prev = $key
-    }) -join '_'
+      $i.Value
+    }) -join ';'
+  $command = switch ($command) {
+    'b' { 'build'; break }
+    'c' { 'check'; break }
+    'd' { 'doc'; break }
+    'r' { 'run'; break }
+    't' { 'test'; break }
+    Default { $command }
+  }
 
-  @(switch ($subcmd) {
+  $cursorPosition -= $wordToComplete.Length
+  foreach ($i in $commandAst.CommandElements) {
+    if ($i.Extent.StartOffset -eq $cursorPosition) {
+      break
+    }
+    $prev = $i
+  }
+  $prev = $prev.ToString()
+
+  @(switch ($command) {
       'clean' {
         [CompletionResult]::new('--doc', 'doc', [CompletionResultType]::ParameterValue, 'Whether or not to clean just the documentation directory')
         [CompletionResult]::new('-n', 'n', [CompletionResultType]::ParameterValue, 'Display what would be deleted without deleting anything')
@@ -124,7 +141,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
       }
-      { $_ -eq 'b' -or $_ -eq 'build' } {
+      'build' {
         [CompletionResult]::new('--ignore-rust-version', 'ignore-rust-version', [CompletionResultType]::ParameterValue, "Ignore `rust-version` specification in packages")
         [CompletionResult]::new('--future-incompat-report', 'future-incompat-report', [CompletionResultType]::ParameterValue, 'Outputs a future incompatibility report at the end of the build')
         [CompletionResult]::new('--message-format', 'message-format', [CompletionResultType]::ParameterValue, 'Error format')
@@ -173,7 +190,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
       }
-      { $_ -eq 'c' -or $_ -eq 'check' } {
+      'check' {
         [CompletionResult]::new('--ignore-rust-version', 'ignore-rust-version', [CompletionResultType]::ParameterValue, "Ignore `rust-version` specification in packages")
         [CompletionResult]::new('--future-incompat-report', 'future-incompat-report', [CompletionResultType]::ParameterValue, 'Outputs a future incompatibility report at the end of the build')
         [CompletionResult]::new('--message-format', 'message-format', [CompletionResultType]::ParameterValue, 'Error format')
@@ -255,7 +272,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
       }
-      { $_ -eq 'd' -or $_ -eq 'doc' } {
+      'doc' {
         [CompletionResult]::new('--open', 'open', [CompletionResultType]::ParameterValue, 'Opens the docs in a browser after the operation')
         [CompletionResult]::new('--no-deps', 'no-deps', [CompletionResultType]::ParameterValue, "Don't build documentation for dependencies")
         [CompletionResult]::new('--document-private-items', 'document-private-items', [CompletionResultType]::ParameterValue, 'Document private items')
@@ -805,7 +822,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
       }
-      { $_ -eq 'r' -or $_ -eq 'run' } {
+      'run' {
         [CompletionResult]::new('--ignore-rust-version', 'ignore-rust-version', [CompletionResultType]::ParameterValue, "Ignore `rust-version` specification in packages")
         [CompletionResult]::new('--message-format', 'message-format', [CompletionResultType]::ParameterValue, 'Error format')
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -948,7 +965,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
       }
-      { $_ -eq 't' -or $_ -eq 'test' } {
+      'test' {
         [CompletionResult]::new('--doc', 'doc', [CompletionResultType]::ParameterValue, "Test only this library's documentation")
         [CompletionResult]::new('--no-run', 'no-run', [CompletionResultType]::ParameterValue, "Compile, but don't run tests")
         [CompletionResult]::new('--no-fail-fast', 'no-fail-fast', [CompletionResultType]::ParameterValue, 'Run all tests regardless of failure')

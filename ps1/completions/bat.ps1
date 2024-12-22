@@ -4,12 +4,13 @@ using namespace System.Management.Automation.Language
 Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $cursorPosition -= $wordToComplete.Length
-  foreach ($key in $commandAst.CommandElements) {
-    if ($key.Extent.StartOffset -eq $cursorPosition) {
+  foreach ($i in $commandAst.CommandElements) {
+    if ($i.Extent.StartOffset -eq $cursorPosition) {
       break
     }
-    $prev = $key
+    $prev = $i
   }
+  $prev = $prev.ToString()
 
   @(if ($commandAst.CommandElements[1].ToString() -eq 'cache') {
       [CompletionResult]::new('--source', 'source', [CompletionResultType]::ParameterName, 'Use a different directory to load syntaxes and themes from.')
@@ -24,16 +25,16 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
       [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Prints version information')
       [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
     }
-    elseif ($prev.ToString() -eq '--theme') {
+    elseif ($prev -eq '--theme') {
       bat --list-themes | ForEach-Object { [CompletionResult]::new($_) }
     }
-    elseif ($prev.ToString() -eq '--color') {
+    elseif ($prev -eq '--color') {
       @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
     }
-    elseif (@('-l', '--language').Contains($prev.ToString())) {
+    elseif (@('-l', '--language').Contains($prev)) {
       @('bash', 'zsh', 'fish', 'elvish', 'pwsh', 'ps1', 'sh', 'py', 'python', 'js', 'ts', 'rs', 'go', 'man', 'help', 'awk', 'md', 'ini', 'json', 'jsonc', 'yml', 'xml', 'html', 'cs', 'vb', 'cpp', 'c', 'lua', 'codeql', 'sql', 'rb', 'makefile', 'cmake', 'gql', 'tsx', 'mdx', 'svelte', 'vue', 'angular', 'astro', 'css', 'scss', 'sass', 'stylus', 'htmx', 'rst', 'ipynb') | ForEach-Object { [CompletionResult]::new($_) }
     }
-    elseif ($wordToComplete[0] -ne '-' -and @('bat', 'bat.exe').Contains($prev.ToString())) {
+    elseif ($wordToComplete[0] -ne '-' -and @('bat', 'bat.exe').Contains($prev)) {
       [CompletionResult]::new('cache')
     }
     else {

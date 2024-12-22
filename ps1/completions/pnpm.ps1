@@ -20,7 +20,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
   #   }
   #   $prev = $i
   # }
-  # $prev = $prev.Value
+  # $prev = $prev.ToString()
   $command = switch ($command) {
     'c' { 'config'; break }
     'i' { 'install'; break }
@@ -43,7 +43,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
           @('add', 'audit', 'cat-file', 'cat-index', 'exec', 'find-hash', 'help', 'i', 'import', 'install-test', 'install', 'it', 'licenses', 'link', 'list', 'ln', 'ls', 'outdated', 'pack', 'prune', 'publish', 'rb', 'rebuild', 'remove', 'rm', 'root', 'run', 'start', 'store', 't', 'test', 'unlink', 'up', 'update')
         }
       }
-      'add' { 
+      'add' {
         if ($wordToComplete.StartsWith('-')) {
           @('-E', '--save-exact', '--save-workspace-protocol', '--no-save-exact', '--no-save-workspace-protocol', '--aggregate-output', '--workspace-concurrency', '--reporter', '-C', '--dir', '-g', '--global', '--global-dir', '-h', '--help', '--ignore-scripts', '--loglevel', '--offline', '--prefer-offline', '-r', '--recursive', '-D', '--save-dev', '-O', '--save-optional', '--save-peer', '-P', '--save-prod', '--store-dir', '--stream', '--use-stderr', '--virtual-store-dir', '--workspace', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--filter', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern', '--test-pattern')
         }
@@ -135,7 +135,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         }
         else {
           $json = npm ls --json | ConvertFrom-Json -AsHashtable
-          $json.Keys | ForEach-Object { 
+          $json.Keys | ForEach-Object {
             if ($_ -like '*dependencies') {
               $json.$_.Keys
             }
@@ -149,7 +149,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         }
         else {
           $json = npm ls --json | ConvertFrom-Json -AsHashtable
-          $json.Keys | ForEach-Object { 
+          $json.Keys | ForEach-Object {
             if ($_ -like '*dependencies') {
               $json.$_.Keys
             }

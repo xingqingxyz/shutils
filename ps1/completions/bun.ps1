@@ -14,12 +14,13 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
     $i.Value
   }) -join ';'
   # $cursorPosition -= $wordToComplete.Length
-  # foreach ($key in $commandAst.CommandElements) {
-  #   if ($key.Extent.StartOffset -eq $cursorPosition) {
+  # foreach ($i in $commandAst.CommandElements) {
+  #   if ($i.Extent.StartOffset -eq $cursorPosition) {
   #     break
   #   }
-  #   $prev = $key
+  #   $prev = $i
   # }
+  # $prev = $prev.ToString()
   @(switch ($command) {
       'exec' {
         if ($wordToComplete.StartsWith('-')) {
@@ -33,7 +34,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         }
         else {
           $json = npm ls --json | ConvertFrom-Json -AsHashtable
-          $json.Keys | ForEach-Object { 
+          $json.Keys | ForEach-Object {
             if ($_ -like '*dependencies') {
               $json.$_.Keys
             }
@@ -177,7 +178,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         }
         else {
           $json = npm ls --json | ConvertFrom-Json -AsHashtable
-          $json.Keys | ForEach-Object { 
+          $json.Keys | ForEach-Object {
             if ($_ -like '*dependencies') {
               $json.$_.Keys
             }

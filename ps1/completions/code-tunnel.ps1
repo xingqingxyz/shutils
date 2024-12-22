@@ -1,6 +1,6 @@
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName code -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
@@ -26,47 +26,85 @@ Register-ArgumentCompleter -Native -CommandName code -ScriptBlock {
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          @('-d', '--diff', '-m', '--merge', '-a', '--add', '-g', '--goto', '-n', '--new-window', '-r', '--reuse-window', '-w', '--wait', '--locale', '--user-data-dir', '--profile', '--extensions-dir', '--list-extensions', '--show-versions', '--category', '--install-extension', '--force', '--pre-release', '--install-extension', '--uninstall-extension', '--update-extensions', '--enable-proposed-api', '-v', '--version', '--verbose', '--log', '-s', '--status', '--prof-startup', '--disable-extensions', '--disable-extension', '--sync', '--inspect-extensions', '--inspect-brk-extensions', '--disable-lcd-text', '--disable-gpu', '--disable-chromium-sandbox', '--telemetry', '-h', '--help')
+          @('-d', '--diff', '-a', '--add', '-g', '--goto', '-n', '--new-window', '-r', '--reuse-window', '-w', '--wait', '--locale', '--user-data-dir', '--extensions-dir', '--use-version', '--prof-startup', '--disable-extensions', '--disable-extension', '--sync', '--inspect-extensions', '--inspect-brk-extensions', '--disable-gpu', '--telemetry')
         }
         else {
           switch ($prev) {
-            '--sync' { @('on', 'off'); break }
             '--locale' { @('en-US', 'zh-CN', 'zh-TW'); break }
-            '--log' { @('critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'); break }
-            'code' { @('tunnel', 'serve-web'); break }
+            '--sync' { @('on', 'off'); break }
+            '--use-version' { @('stable', 'insiders'); break }
+            'code-tunnel' { @('ext', 'status', 'version', 'help', 'tunnel', 'serve-web'); break }
+          }
+        }
+        break
+      }
+      'ext' {
+        if ($wordToComplete.StartsWith('-')) {
+          @('--extensions-dir', '--user-data-dir', '--use-version')
+        }
+        else {
+          switch ($prev) {
+            '--use-version' { @('stable', 'insiders'); break }
+            'ext' { @('list', 'install', 'uninstall', 'update', 'help'); break }
+          }
+        }
+        break
+      }
+      'ext;list' {
+        if ($wordToComplete.StartsWith('-')) {
+          @('--category', '--show-versions')
+        }
+        else {
+          switch ($prev) {
             '--category' {
               @('builtin', 'deprecated', 'disabled', 'enabled', 'featured', 'installed', 'popular', 'recentlyPublished', 'recommended', 'updates', 'workspaceUnsupported', 'ext:', 'id:', 'tag:', 'sort:installs', 'sort:name', 'sort:publishedDate', 'sort:rating', 'sort:updateDate') +
               @(@('ai', 'azure', 'chat', 'data science', 'debuggers', 'education', 'extension packs', 'formatters', 'keymaps', 'language packs', 'linters', 'notebooks', 'machine learning', 'others', 'programming languages', 'scm providers', 'snippets', 'testing', 'themes', 'visualization') | ForEach-Object { "category:`"$_`"" })
-              break
-            }
-            { @('--disable-extension', '--install-extension', '--uninstall-extension', '--enable-proposed-api').Contains($_) } {
-              code --list-extensions
               break
             }
           }
         }
         break
       }
+      'ext;install' {
+        if ($wordToComplete.StartsWith('-')) {
+          @('--pre-release', '--force')
+        }
+        else {
+          code-tunnel ext list
+        }
+        break
+      }
+      'ext;uninstall' {
+        if (!$wordToComplete.StartsWith('-')) {
+          code-tunnel ext list
+        }
+        break
+      }
+      'version' {
+        if ($prev -eq 'version') {
+          @('use', 'show', 'help')
+        }
+        break
+      }
+      'version:use' {
+        if ($wordToComplete.StartsWith('-')) {
+          @('--install-dir')
+        }
+        elseif ($prev -eq 'use') {
+          @('stable', 'insiders')
+        }
+        break
+      }
       'serve-web' {
         if ($wordToComplete.StartsWith('-')) {
-          @('--host', '--socket-path', '--port', '--connection-token', '--connection-token-file', '--without-connection-token', '--accept-server-license-terms', '--server-base-path', '--server-data-dir', '--user-data-dir', '--extensions-dir', '--cli-data-dir', '--verbose', '--log', '-h', '--help')
+          @('--host', '--socket-path', '--port', '--connection-token', '--connection-token-file', '--without-connection-token', '--accept-server-license-terms', '--server-base-path', '--server-data-dir', '--user-data-dir', '--extensions-dir')
           break
         }
         switch ($prev) {
-          '--log' { @('trace', 'debug', 'info', 'warn', 'error', 'critical', 'off'); break }
           '--host' { @('localhost', '0.0.0.0'); break }
           '--port' { @('8000'); break }
         }
         break
-      }
-      { $_.Split(';')[0] -eq 'tunnel' } {
-        if ($wordToComplete.StartsWith('-')) {
-          @('--cli-data-dir', '--verbose', '--log', '-h', '--help')
-        }
-        elseif ($prev -eq '--log') {
-          @('trace', 'debug', 'info', 'warn', 'error', 'critical', 'off')
-          break
-        }
       }
       'tunnel' {
         if ($wordToComplete.StartsWith('-')) {
@@ -110,6 +148,12 @@ Register-ArgumentCompleter -Native -CommandName code -ScriptBlock {
         }
         break
       }
+    }
+    if ($wordToComplete.StartsWith('-')) {
+      @('--cli-data-dir', '--verbose', '--log', '-h', '--help')
+    }
+    elseif ($prev -eq '--log') {
+      @('trace', 'debug', 'info', 'warn', 'error', 'critical', 'off')
     }
   ) | Where-Object { $_ -like "$wordToComplete*" }
 }

@@ -1,20 +1,22 @@
 Register-ArgumentCompleter -Native -CommandName aria2c -ScriptBlock {
   param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $cursorPosition -= $wordToComplete.Length
-  foreach ($key in $commandAst.CommandElements) {
-    if ($key.Extent.StartOffset -eq $cursorPosition) {
+  foreach ($i in $commandAst.CommandElements) {
+    if ($i.Extent.StartOffset -eq $cursorPosition) {
       break
     }
-    $prev = $key
+    $prev = $i
   }
-  @(switch ($prev.ToString()) {
-      '--help' { 
+  $prev = $prev.ToString()
+
+  @(switch ($prev) {
+      '--help' {
         @('#basic', '#advanced', '#http', '#https', '#ftp', '#metalink', '#bittorrent', '#cookie', '#hook', '#file', '#rpc', '#checksum', '#experimental', '#deprecated', '#help', '#all')
       }
-      '--file-allocation' { 
+      '--file-allocation' {
         @('prealloc', 'falloc', 'none', 'trunc')
       }
-      { @('--check-integrity', '--continue', '--force-sequential', '--show-files', '--enable-dht', '--enable-dht6').Contains($_) } { 
+      { @('--check-integrity', '--continue', '--force-sequential', '--show-files', '--enable-dht', '--enable-dht6').Contains($_) } {
         @('true', 'false')
       }
       Default {
