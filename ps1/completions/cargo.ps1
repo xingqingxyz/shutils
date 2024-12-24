@@ -33,6 +33,59 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
   $prev = $prev.ToString()
 
   @(switch ($command) {
+      '' {
+        if ($wordToComplete.StartsWith('-')) {
+          @('-V', '--version', '--list', '--explain', '-v', '--verbose', '-q', '--quiet', '--color', '--locked', '--offline', '--frozen', '--config', '-h', '--help')
+          break
+        }
+        [CompletionResult]::new('add', 'add', [CompletionResultType]::ParameterValue, 'Add dependencies to a Cargo.toml manifest file')
+        [CompletionResult]::new('b', 'b', [CompletionResultType]::ParameterValue, 'alias: build')
+        [CompletionResult]::new('bench', 'bench', [CompletionResultType]::ParameterValue, 'Execute all benchmarks of a local package')
+        [CompletionResult]::new('build', 'build', [CompletionResultType]::ParameterValue, 'Compile a local package and all of its dependencies')
+        [CompletionResult]::new('c', 'c', [CompletionResultType]::ParameterValue, 'alias: check')
+        [CompletionResult]::new('check', 'check', [CompletionResultType]::ParameterValue, 'Check a local package and all of its dependencies for errors')
+        [CompletionResult]::new('clean', 'clean', [CompletionResultType]::ParameterValue, 'Remove artifacts that cargo has generated in the past')
+        [CompletionResult]::new('clippy', 'clippy', [CompletionResultType]::ParameterValue, 'Checks a package to catch common mistakes and improve your Rust code.')
+        [CompletionResult]::new('config', 'config', [CompletionResultType]::ParameterValue, 'Inspect configuration values')
+        [CompletionResult]::new('d', 'd', [CompletionResultType]::ParameterValue, 'alias: doc')
+        [CompletionResult]::new('doc', 'doc', [CompletionResultType]::ParameterValue, "Build a package's documentation")
+        [CompletionResult]::new('fetch', 'fetch', [CompletionResultType]::ParameterValue, 'Fetch dependencies of a package from the network')
+        [CompletionResult]::new('fix', 'fix', [CompletionResultType]::ParameterValue, 'Automatically fix lint warnings reported by rustc')
+        [CompletionResult]::new('fmt', 'fmt', [CompletionResultType]::ParameterValue, 'Formats all bin and lib files of the current crate using rustfmt.')
+        [CompletionResult]::new('generate-lockfile', 'generate-lockfile', [CompletionResultType]::ParameterValue, 'Generate the lockfile for a package')
+        [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Displays help for a cargo subcommand')
+        [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Create a new cargo package in an existing directory')
+        [CompletionResult]::new('install', 'install', [CompletionResultType]::ParameterValue, 'Install a Rust binary')
+        [CompletionResult]::new('locate-project', 'locate-project', [CompletionResultType]::ParameterValue, "Print a JSON representation of a Cargo.toml file's location")
+        [CompletionResult]::new('login', 'login', [CompletionResultType]::ParameterValue, 'Log in to a registry.')
+        [CompletionResult]::new('logout', 'logout', [CompletionResultType]::ParameterValue, 'Remove an API token from the registry locally')
+        [CompletionResult]::new('metadata', 'metadata', [CompletionResultType]::ParameterValue, 'Output the resolved dependencies of a package, the concrete used versions including overrides, in machine-readable format')
+        [CompletionResult]::new('miri', 'miri', [CompletionResultType]::ParameterValue, 'Run Miri to check that a package is memory safe')
+        [CompletionResult]::new('new', 'new', [CompletionResultType]::ParameterValue, 'Create a new cargo package at <path>')
+        [CompletionResult]::new('owner', 'owner', [CompletionResultType]::ParameterValue, 'Manage the owners of a crate on the registry')
+        [CompletionResult]::new('package', 'package', [CompletionResultType]::ParameterValue, 'Assemble the local package into a distributable tarball')
+        [CompletionResult]::new('pkgid', 'pkgid', [CompletionResultType]::ParameterValue, 'Print a fully qualified package specification')
+        [CompletionResult]::new('publish', 'publish', [CompletionResultType]::ParameterValue, 'Upload a package to the registry')
+        [CompletionResult]::new('r', 'r', [CompletionResultType]::ParameterValue, 'alias: run')
+        [CompletionResult]::new('read-manifest', 'read-manifest', [CompletionResultType]::ParameterValue, 'Print a JSON representation of a Cargo.toml manifest.')
+        [CompletionResult]::new('remove', 'remove', [CompletionResultType]::ParameterValue, 'Remove dependencies from a Cargo.toml manifest file')
+        [CompletionResult]::new('report', 'report', [CompletionResultType]::ParameterValue, 'Generate and display various kinds of reports')
+        [CompletionResult]::new('rm', 'rm', [CompletionResultType]::ParameterValue, 'alias: remove')
+        [CompletionResult]::new('run', 'run', [CompletionResultType]::ParameterValue, 'Run a binary or example of the local package')
+        [CompletionResult]::new('rustc', 'rustc', [CompletionResultType]::ParameterValue, 'Compile a package, and pass extra options to the compiler')
+        [CompletionResult]::new('rustdoc', 'rustdoc', [CompletionResultType]::ParameterValue, "Build a package's documentation, using specified custom flags.")
+        [CompletionResult]::new('search', 'search', [CompletionResultType]::ParameterValue, 'Search packages in the registry. Default registry is crates.io')
+        [CompletionResult]::new('t', 't', [CompletionResultType]::ParameterValue, 'alias: test')
+        [CompletionResult]::new('test', 'test', [CompletionResultType]::ParameterValue, 'Execute all unit and integration tests and build examples of a local package')
+        [CompletionResult]::new('tree', 'tree', [CompletionResultType]::ParameterValue, 'Display a tree visualization of a dependency graph')
+        [CompletionResult]::new('uninstall', 'uninstall', [CompletionResultType]::ParameterValue, 'Remove a Rust binary')
+        [CompletionResult]::new('update', 'update', [CompletionResultType]::ParameterValue, 'Update dependencies as recorded in the local lock file')
+        [CompletionResult]::new('vendor', 'vendor', [CompletionResultType]::ParameterValue, 'Vendor all dependencies for a project locally')
+        [CompletionResult]::new('verify-project', 'verify-project', [CompletionResultType]::ParameterValue, 'Check correctness of crate manifest')
+        [CompletionResult]::new('version', 'version', [CompletionResultType]::ParameterValue, 'Show version information')
+        [CompletionResult]::new('yank', 'yank', [CompletionResultType]::ParameterValue, 'Remove a pushed crate from the index')
+        break
+      }
       'clean' {
         [CompletionResult]::new('--doc', 'doc', [CompletionResultType]::ParameterValue, 'Whether or not to clean just the documentation directory')
         [CompletionResult]::new('-n', 'n', [CompletionResultType]::ParameterValue, 'Display what would be deleted without deleting anything')
@@ -57,6 +110,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'add' {
         [CompletionResult]::new('--no-default-features', 'no-default-features', [CompletionResultType]::ParameterValue, 'Disable the default features')
@@ -95,6 +149,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--dev', 'dev', [CompletionResultType]::ParameterValue, 'Add as development dependency')
         [CompletionResult]::new('--build', 'build', [CompletionResultType]::ParameterValue, 'Add as build dependency')
         [CompletionResult]::new('--target', 'target', [CompletionResultType]::ParameterValue, 'Add as dependency to the given target platform')
+        break
       }
       'bench' {
         [CompletionResult]::new('--no-run', 'no-run', [CompletionResultType]::ParameterValue, "Compile, but don't run benchmarks")
@@ -140,6 +195,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'build' {
         [CompletionResult]::new('--ignore-rust-version', 'ignore-rust-version', [CompletionResultType]::ParameterValue, "Ignore `rust-version` specification in packages")
@@ -189,6 +245,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'check' {
         [CompletionResult]::new('--ignore-rust-version', 'ignore-rust-version', [CompletionResultType]::ParameterValue, "Ignore `rust-version` specification in packages")
@@ -236,6 +293,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'clippy' {
         [CompletionResult]::new('--no-deps', 'no-deps', [CompletionResultType]::ParameterValue, 'Run Clippy only on the given crate, without linting the dependencies')
@@ -257,6 +315,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'config' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -271,6 +330,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'doc' {
         [CompletionResult]::new('--open', 'open', [CompletionResultType]::ParameterValue, 'Opens the docs in a browser after the operation')
@@ -315,6 +375,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'fetch' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -331,6 +392,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'fix' {
         [CompletionResult]::new('--edition', 'edition', [CompletionResultType]::ParameterValue, 'Fix in preparation for the next edition')
@@ -382,6 +444,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'fmt' {
         [CompletionResult]::new('-q', 'q', [CompletionResultType]::ParameterValue, 'No output printed to stdout')
@@ -397,6 +460,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--check', 'check', [CompletionResultType]::ParameterValue, 'Run rustfmt in check mode')
         [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterValue, 'Print help')
         [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterValue, 'Print help')
+        break
       }
       'generate-lockfile' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -412,6 +476,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'help' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -426,6 +491,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'init' {
         [CompletionResult]::new('--vcs', 'vcs', [CompletionResultType]::ParameterValue, 'Initialize a new repository for the given version control system,')
@@ -446,6 +512,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'install' {
         [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterValue, 'Specify a version to install')
@@ -491,6 +558,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'locate-project' {
         [CompletionResult]::new('--workspace', 'workspace', [CompletionResultType]::ParameterValue, 'Locate Cargo.toml of the workspace root')
@@ -508,6 +576,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'login' {
         [CompletionResult]::new('--registry', 'registry', [CompletionResultType]::ParameterValue, 'Registry to use')
@@ -523,6 +592,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'logout' {
         [CompletionResult]::new('--registry', 'registry', [CompletionResultType]::ParameterValue, 'Registry to use')
@@ -538,6 +608,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'metadata' {
         [CompletionResult]::new('--filter-platform', 'filter-platform', [CompletionResultType]::ParameterValue, 'Only include resolve dependencies matching the given target-triple')
@@ -560,6 +631,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'new' {
         [CompletionResult]::new('--vcs', 'vcs', [CompletionResultType]::ParameterValue, 'Initialize a new repository for the given version control system,')
@@ -580,6 +652,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'owner' {
         [CompletionResult]::new('-a', 'a', [CompletionResultType]::ParameterValue, 'Name of a user or team to invite as an owner')
@@ -603,6 +676,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'package' {
         [CompletionResult]::new('-l', 'l', [CompletionResultType]::ParameterValue, 'Print files included in a package without making one')
@@ -636,6 +710,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'pkgid' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -653,6 +728,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'publish' {
         [CompletionResult]::new('-n', 'n', [CompletionResultType]::ParameterValue, 'Perform all checks without uploading')
@@ -686,6 +762,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'read-manifest.txt' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -701,6 +778,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'remove' {
         [CompletionResult]::new('-n', 'n', [CompletionResultType]::ParameterValue, "Don't actually write the manifest")
@@ -723,10 +801,12 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'report' {
-        if ($commandAst.CommandElements.Count -le 3) {
+        if ($prev -eq 'report') {
           [CompletionResult]::new('future-incompatibilities', 'future-incompatibilities', [CompletionResultType]::ParameterValue, 'Reports any crates which will eventually stop compiling')
+          break
         }
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
         [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -740,11 +820,13 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'report_future-incompatibilities' {
         switch ($prev) {
           '--color' {
             @('auto', 'always', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            break
           }
           '-Z' {
             [CompletionResult]::new('allow-features', 'allow-features', [CompletionResultType]::ParameterValue, 'Allow *only* the listed unstable features')
@@ -780,6 +862,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
             [CompletionResult]::new('target-applies-to-host', 'target-applies-to-host', [CompletionResultType]::ParameterValue, 'Enable the `target-applies-to-host` key in the .cargo/config.toml file')
             [CompletionResult]::new('trim-paths', 'trim-paths', [CompletionResultType]::ParameterValue, 'Enable the `trim-paths` option in profiles')
             [CompletionResult]::new('unstable-options', 'unstable-options', [CompletionResultType]::ParameterValue, 'Allow the usage of unstable options')
+            break
           }
           default {
             [CompletionResult]::new('--id', 'id', [CompletionResultType]::ParameterValue, 'identifier of the report generated by a')
@@ -797,6 +880,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
             [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
             [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
             [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+            break
           }
         }
       }
@@ -821,6 +905,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'run' {
         [CompletionResult]::new('--ignore-rust-version', 'ignore-rust-version', [CompletionResultType]::ParameterValue, "Ignore `rust-version` specification in packages")
@@ -856,6 +941,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'rustc' {
         [CompletionResult]::new('--print', 'print', [CompletionResultType]::ParameterValue, 'Output compiler information without compiling')
@@ -902,6 +988,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'rustdoc' {
         [CompletionResult]::new('--open', 'open', [CompletionResultType]::ParameterValue, 'Opens the docs in a browser after the operation')
@@ -947,6 +1034,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'search' {
         [CompletionResult]::new('--limit', 'limit', [CompletionResultType]::ParameterValue, 'Limit the number of results (default: 10, max: 100)')
@@ -964,6 +1052,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'test' {
         [CompletionResult]::new('--doc', 'doc', [CompletionResultType]::ParameterValue, "Test only this library's documentation")
@@ -1013,6 +1102,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'tree' {
         [CompletionResult]::new('-e', 'e', [CompletionResultType]::ParameterValue, 'The kinds of dependencies to display (features, normal, build, dev, all,')
@@ -1050,6 +1140,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'uninstall' {
         [CompletionResult]::new('--root', 'root', [CompletionResultType]::ParameterValue, 'Directory to uninstall packages from')
@@ -1068,6 +1159,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'update' {
         [CompletionResult]::new('-n', 'n', [CompletionResultType]::ParameterValue, "Don't actually write the lockfile")
@@ -1089,6 +1181,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'vendor' {
         [CompletionResult]::new('--no-delete', 'no-delete', [CompletionResultType]::ParameterValue, "Don't delete older crates in the vendor directory")
@@ -1109,6 +1202,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'verify-project.txt' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -1124,6 +1218,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'version' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
@@ -1138,6 +1233,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
       }
       'yank' {
         [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterValue, 'The version to yank or un-yank')
@@ -1157,56 +1253,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
-      }
-      Default {
-        if ($wordToComplete[0] -ne '-') {
-          [CompletionResult]::new('add', 'add', [CompletionResultType]::ParameterValue, 'Add dependencies to a Cargo.toml manifest file')
-          [CompletionResult]::new('b', 'b', [CompletionResultType]::ParameterValue, 'alias: build')
-          [CompletionResult]::new('bench', 'bench', [CompletionResultType]::ParameterValue, 'Execute all benchmarks of a local package')
-          [CompletionResult]::new('build', 'build', [CompletionResultType]::ParameterValue, 'Compile a local package and all of its dependencies')
-          [CompletionResult]::new('c', 'c', [CompletionResultType]::ParameterValue, 'alias: check')
-          [CompletionResult]::new('check', 'check', [CompletionResultType]::ParameterValue, 'Check a local package and all of its dependencies for errors')
-          [CompletionResult]::new('clean', 'clean', [CompletionResultType]::ParameterValue, 'Remove artifacts that cargo has generated in the past')
-          [CompletionResult]::new('clippy', 'clippy', [CompletionResultType]::ParameterValue, 'Checks a package to catch common mistakes and improve your Rust code.')
-          [CompletionResult]::new('config', 'config', [CompletionResultType]::ParameterValue, 'Inspect configuration values')
-          [CompletionResult]::new('d', 'd', [CompletionResultType]::ParameterValue, 'alias: doc')
-          [CompletionResult]::new('doc', 'doc', [CompletionResultType]::ParameterValue, "Build a package's documentation")
-          [CompletionResult]::new('fetch', 'fetch', [CompletionResultType]::ParameterValue, 'Fetch dependencies of a package from the network')
-          [CompletionResult]::new('fix', 'fix', [CompletionResultType]::ParameterValue, 'Automatically fix lint warnings reported by rustc')
-          [CompletionResult]::new('fmt', 'fmt', [CompletionResultType]::ParameterValue, 'Formats all bin and lib files of the current crate using rustfmt.')
-          [CompletionResult]::new('generate-lockfile', 'generate-lockfile', [CompletionResultType]::ParameterValue, 'Generate the lockfile for a package')
-          [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Displays help for a cargo subcommand')
-          [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Create a new cargo package in an existing directory')
-          [CompletionResult]::new('install', 'install', [CompletionResultType]::ParameterValue, 'Install a Rust binary')
-          [CompletionResult]::new('locate-project', 'locate-project', [CompletionResultType]::ParameterValue, "Print a JSON representation of a Cargo.toml file's location")
-          [CompletionResult]::new('login', 'login', [CompletionResultType]::ParameterValue, 'Log in to a registry.')
-          [CompletionResult]::new('logout', 'logout', [CompletionResultType]::ParameterValue, 'Remove an API token from the registry locally')
-          [CompletionResult]::new('metadata', 'metadata', [CompletionResultType]::ParameterValue, 'Output the resolved dependencies of a package, the concrete used versions including overrides, in machine-readable format')
-          [CompletionResult]::new('miri', 'miri', [CompletionResultType]::ParameterValue, 'Run Miri to check that a package is memory safe')
-          [CompletionResult]::new('new', 'new', [CompletionResultType]::ParameterValue, 'Create a new cargo package at <path>')
-          [CompletionResult]::new('owner', 'owner', [CompletionResultType]::ParameterValue, 'Manage the owners of a crate on the registry')
-          [CompletionResult]::new('package', 'package', [CompletionResultType]::ParameterValue, 'Assemble the local package into a distributable tarball')
-          [CompletionResult]::new('pkgid', 'pkgid', [CompletionResultType]::ParameterValue, 'Print a fully qualified package specification')
-          [CompletionResult]::new('publish', 'publish', [CompletionResultType]::ParameterValue, 'Upload a package to the registry')
-          [CompletionResult]::new('r', 'r', [CompletionResultType]::ParameterValue, 'alias: run')
-          [CompletionResult]::new('read-manifest', 'read-manifest', [CompletionResultType]::ParameterValue, 'Print a JSON representation of a Cargo.toml manifest.')
-          [CompletionResult]::new('remove', 'remove', [CompletionResultType]::ParameterValue, 'Remove dependencies from a Cargo.toml manifest file')
-          [CompletionResult]::new('report', 'report', [CompletionResultType]::ParameterValue, 'Generate and display various kinds of reports')
-          [CompletionResult]::new('rm', 'rm', [CompletionResultType]::ParameterValue, 'alias: remove')
-          [CompletionResult]::new('run', 'run', [CompletionResultType]::ParameterValue, 'Run a binary or example of the local package')
-          [CompletionResult]::new('rustc', 'rustc', [CompletionResultType]::ParameterValue, 'Compile a package, and pass extra options to the compiler')
-          [CompletionResult]::new('rustdoc', 'rustdoc', [CompletionResultType]::ParameterValue, "Build a package's documentation, using specified custom flags.")
-          [CompletionResult]::new('search', 'search', [CompletionResultType]::ParameterValue, 'Search packages in the registry. Default registry is crates.io')
-          [CompletionResult]::new('t', 't', [CompletionResultType]::ParameterValue, 'alias: test')
-          [CompletionResult]::new('test', 'test', [CompletionResultType]::ParameterValue, 'Execute all unit and integration tests and build examples of a local package')
-          [CompletionResult]::new('tree', 'tree', [CompletionResultType]::ParameterValue, 'Display a tree visualization of a dependency graph')
-          [CompletionResult]::new('uninstall', 'uninstall', [CompletionResultType]::ParameterValue, 'Remove a Rust binary')
-          [CompletionResult]::new('update', 'update', [CompletionResultType]::ParameterValue, 'Update dependencies as recorded in the local lock file')
-          [CompletionResult]::new('vendor', 'vendor', [CompletionResultType]::ParameterValue, 'Vendor all dependencies for a project locally')
-          [CompletionResult]::new('verify-project', 'verify-project', [CompletionResultType]::ParameterValue, 'Check correctness of crate manifest')
-          [CompletionResult]::new('version', 'version', [CompletionResultType]::ParameterValue, 'Show version information')
-          [CompletionResult]::new('yank', 'yank', [CompletionResultType]::ParameterValue, 'Remove a pushed crate from the index')
-        }
+        break
       }
     }) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
 }

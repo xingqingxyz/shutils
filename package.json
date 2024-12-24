@@ -3,7 +3,7 @@
   "devDependencies": {
     "@types/jquery": "^3.5.32",
     "@types/lodash": "^4.17.13",
-    "@types/node": "^22.10.1",
+    "@types/node": "^22.10.2",
     "@types/tampermonkey": "^5.0.4",
     "lodash": "^4.17.21"
   },
@@ -14,5 +14,10 @@
   },
   "scripts": {
     "test": "echo no tests"
+  },
+  "name": "shutils",
+  "module": "index.ts",
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   }
 }

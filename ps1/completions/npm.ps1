@@ -99,10 +99,11 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
       'config' {
         if ($wordToComplete.StartsWith('-')) {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
-          break
         }
-        @('get', 'set', 'delete', 'ls', 'list', 'edit', 'fix')
-        if ($prev.StartsWith('-')) {
+        elseif ($prev -eq 'config') {
+          @('get', 'set', 'delete', 'ls', 'list', 'edit', 'fix')
+        }
+        elseif ($prev.StartsWith('-')) {
           $prev = switch ($prev) {
             '-a' { '--all'; break }
             '--enjoy-by' { '--before'; break }
@@ -151,6 +152,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
             '--location' { @('global', 'user', 'project') }
           }
         }
+        break
       }
       'config;get' {
         if ($wordToComplete.StartsWith('-')) {

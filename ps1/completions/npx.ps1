@@ -4,6 +4,6 @@ Register-ArgumentCompleter -Native -CommandName npx -ScriptBlock {
       @('--package', '-c', '--call', '-w', '--workspace', '-ws', '--workspaces', '--include-workspace-root')
     }
     else {
-      (Get-ChildItem node_modules/.bin -Exclude *.* -ErrorAction Ignore).BaseName
+      (Get-ChildItem node_modules/.bin -ErrorAction Ignore).BaseName | Select-Object -Unique
     }) | Where-Object { $_ -like "$wordToComplete*" }
 }

@@ -75,6 +75,18 @@ function less {
   }
 }
 
+function packageJSON {
+  $dir = Get-Item .
+  $rootName = $dir.Root.Name
+  while (!(Test-Path "$dir/package.json")) {
+    $dir = $dir.Parent
+    if ($dir.Name -eq $rootName) {
+      return
+    }
+  }
+  Get-Content -Raw "$dir/package.json" | ConvertFrom-Json -AsHashtable
+}
+
 & {
   $hook = {
     $npm = switch ($true) {
@@ -98,6 +110,10 @@ function less {
   }
 }
 function npm {
+  if ($MyInvocation.PipelineLength -ne 1) {
+    Start-Process -FilePath npm -ArgumentList $args -Wait -NoNewWindow
+    return
+  }
   if ($MyInvocation.ExpectingInput) {
     $input | _npm @args
     return
@@ -106,24 +122,28 @@ function npm {
     _npm @args | vh
     return
   }
-  if (@('i', 'install', 'a', 'add').Contains($args[0])) {
-    if (!$args.Contains('-D')) {
-      $argStr = "$($args | Select-Object -Skip 1)"
-      $types = [regex]::Replace($argStr, '\b(?<!@types/).*?\b', '')
-      if ($types.Length) {
-        $noTypes = [regex]::Replace($argStr, '\b@types/.*?\b', '')
-        $argStr = "_npm $($args[0]) $types -D"
-        Write-Host $argStr
-        Invoke-Expression $argStr
-        if (!$noTypes.Length) {
-          return
-        }
-        $argStr = "_npm $($args[0]) $noTypes"
-        Write-Host $argStr
-        Invoke-Expression $argStr
+  $command, $rest = $args
+  if (@('i', 'install', 'a', 'add').Contains($command) -and !$rest.Contains('-D')) {
+    $types = @()
+    $noTypes = @()
+    foreach ($arg in $rest) {
+      if ($arg.StartwWith('-')) {
+        continue
       }
-      return
+      if ($arg.StartsWith('@types/')) {
+        $types += $arg
+      }
+      else {
+        $noTypes += $arg
+      }
     }
+    if ($types.Length) {
+      _npm $command @types
+    }
+    if ($noTypes.Length) {
+      _npm $command @noTypes
+    }
+    return
   }
   _npm @args
 }
