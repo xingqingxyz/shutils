@@ -1,3 +1,5 @@
+using namespace System.Management.Automation
+
 function vw {
   param([string]$Path = $PWD)
   if (!(Test-Path $Path)) {
@@ -20,33 +22,67 @@ function vw {
 }
 
 function vh {
-  param([string]$cmd, [switch]$NoViewSource)
+  param([string]$Command, [switch]$Source)
   if ($MyInvocation.ExpectingInput) {
     $input | bat -lhelp
     return
   }
-  if ($cmd -eq '') {
-    help h
+  if ($Command -eq '') {
+    help vh
     return
   }
-  $cmd = (Get-Alias $cmd -ErrorAction Ignore).Definition ?? $cmd
-  $info = Get-Command $cmd -TotalCount 1
-  switch ([string]$info.CommandType) {
-    Application {
-      & $cmd --help | bat -lhelp
+  $info = Get-Command $Command -TotalCount 1
+  switch ($info.CommandType) {
+    ([CommandTypes]::Alias) {
+      return vh $info.Definition -Source $Source
     }
-    Cmdlet {
-      help $cmd
-    }
-    Configuration {
-      $cmd
-    }
-    { @('Filter', 'Function', 'Script', 'ExternalScript').Contains($_) } {
-      if ($NoViewSource) {
-        help $cmd
+    ([CommandTypes]::Application) {
+      if ($Source) {
+        bat $info.Path
       }
       else {
+        & $Command --help | bat -lhelp
+      }
+      break
+    }
+    ([CommandTypes]::Cmdlet) {
+      help $Command -Category Cmdlet
+      break
+    }
+    ([CommandTypes]::Configuration) {
+      $Command
+      break
+    }
+    ([CommandTypes]::Filter) {
+      if ($Source) {
         $info.Definition | bat -lps1
+      }
+      else {
+        help $Command -Category Filter
+      }
+    }
+    ([CommandTypes]::Function) {
+      if ($Source) {
+        $info.Definition | bat -lps1
+      }
+      else {
+        help $Command -Category Function
+      }
+    }
+    ([CommandTypes]::Script) {
+      if ($Source) {
+        bat $info.Path
+      }
+      else {
+        help $Command -Category ScriptCommand
+      }
+    }
+    ([CommandTypes]::ExternalScript) {
+      if ($Source) {
+        bat $info.Path
+      }
+      else {
+        help $Command -Category ExternalScript
       }
     }
   }
@@ -54,10 +90,10 @@ function vh {
 
 function vi {
   if ($MyInvocation.ExpectingInput) {
-    $input | nvim -u NORC $args
+    $input | nvim -u NORC @args
   }
   else {
-    nvim -u NORC $args
+    nvim -u NORC @args
   }
 }
 
@@ -68,10 +104,10 @@ function less {
   }
   $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
   if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd $args
+    $input | & $cmd @args
   }
   else {
-    & $cmd $args
+    & $cmd @args
   }
 }
 
@@ -79,10 +115,10 @@ function packageJSON {
   $dir = Get-Item .
   $rootName = $dir.Root.Name
   while (!(Test-Path "$dir/package.json")) {
-    $dir = $dir.Parent
     if ($dir.Name -eq $rootName) {
       return
     }
+    $dir = $dir.Parent
   }
   Get-Content -Raw "$dir/package.json" | ConvertFrom-Json -AsHashtable
 }
@@ -95,9 +131,9 @@ function packageJSON {
       (Test-Path bun.lockb) { 'bun' ; break }
       (Test-Path yarn.lock) { 'yarn'; break }
       (Test-Path deno.json) { 'deno'; break }
-      Default { 'npm' }
+      Default { (Get-Command npm -Type Application -TotalCount 1).Path }
     }
-    Set-Alias -Scope Global _npm (Get-Command -Type Application -TotalCount 1 $npm).Path
+    Set-Alias -Scope Global _npm $npm
   }
   # init search
   & $hook
@@ -111,11 +147,13 @@ function packageJSON {
 }
 function npm {
   if ($MyInvocation.PipelineLength -ne 1) {
-    Start-Process -FilePath npm -ArgumentList $args -Wait -NoNewWindow
-    return
-  }
-  if ($MyInvocation.ExpectingInput) {
-    $input | _npm @args
+    Set-Alias _npm (Get-Command npm -Type Application -TotalCount 1).Path
+    if ($MyInvocation.ExpectingInput) {
+      $input | _npm @args
+    }
+    else {
+      _npm @args
+    }
     return
   }
   if ($args.Contains('--help')) {
@@ -154,10 +192,10 @@ if (!$IsWindows) {
 
 function bat {
   if ($MyInvocation.ExpectingInput) {
-    $input | bat.exe --color=always $args | & $env:PAGER
+    $input | bat.exe --color=always @args | & $env:PAGER
   }
   else {
-    bat.exe --color=always $args | & $env:PAGER
+    bat.exe --color=always @args | & $env:PAGER
   }
 }
 
@@ -167,7 +205,7 @@ function winget {
     ![System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
     throw 'needs to be run as administrator'
   }
-  winget.exe $args
+  winget.exe @args
 }
 
 function sudo {
@@ -175,8 +213,8 @@ function sudo {
 }
 
 function _runResolved {
-  $cmd = (Get-Item (Get-Command $MyInvocation.InvocationName -Type Application -TotalCount 1).Source).ResolvedTarget
-  Start-Process -WorkingDirectory $cmd/.. -ArgumentList $args -FilePath $cmd -Wait -NoNewWindow
+  $cmd = (Get-Item (Get-Command $MyInvocation.InvocationName -Type Application -TotalCount 1).Path).ResolvedTarget
+  Start-Process -FilePath $cmd -ArgumentList $args -WorkingDirectory $cmd/.. -Wait -NoNewWindow
 }
 
 @('adb', 'fastboot', 'lua-language-server') | ForEach-Object { Set-Alias $_ _runResolved }
