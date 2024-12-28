@@ -15,7 +15,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
     }) -join ';'
   # $cursorPosition -= $wordToComplete.Length
   # foreach ($i in $commandAst.CommandElements) {
-  #   if ($i.Extent.StartOffset -eq $cursorPosition) {
+  #   if ($i.Extent.StartOffset -ge $cursorPosition) {
   #     break
   #   }
   #   $prev = $i

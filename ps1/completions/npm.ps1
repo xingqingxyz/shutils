@@ -27,7 +27,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
 
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
-    if ($i.Extent.StartOffset -eq $cursorPosition) {
+    if ($i.Extent.StartOffset -ge $cursorPosition) {
       break
     }
     $prev = $i

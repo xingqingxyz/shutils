@@ -1,7 +1,7 @@
 using namespace System.Management.Automation
 
 function vw {
-  param([string]$Path = $PWD)
+  param([Parameter(ValueFromPipeline)][string]$Path = $PWD)
   if (!(Test-Path $Path)) {
     throw "path not found: $Path"
   }
@@ -14,9 +14,11 @@ function vw {
       else {
         vw $Path
       }
+      break
     }
     ([System.IO.FileInfo]) {
       bat $Path
+      break
     }
   }
 }
@@ -165,7 +167,7 @@ function npm {
     $types = @()
     $noTypes = @()
     foreach ($arg in $rest) {
-      if ($arg.StartwWith('-')) {
+      if ($arg.StartsWith('-')) {
         continue
       }
       if ($arg.StartsWith('@types/')) {

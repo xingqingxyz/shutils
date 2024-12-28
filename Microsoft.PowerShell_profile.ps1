@@ -53,4 +53,6 @@ Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
   }
 }
-
+if (!$IsWindows) {
+  Set-Alias ls Get-ChildItem
+}

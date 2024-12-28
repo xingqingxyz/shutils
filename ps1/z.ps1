@@ -9,13 +9,13 @@ $_zConfig = @{
 $_zItemsMap = @{}
 
 function _zGetPath([string]$Path) {
+  $item = Get-Item $Path
   if ($_zConfig.resolveSymlinks) {
-    $item = Get-Item $Path
     if ($item.Mode[0] -eq 'l') {
       return $item.LinkTarget
     }
   }
-  $Path
+  $item.FullName
 }
 
 function _zDumpData {
