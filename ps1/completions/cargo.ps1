@@ -1208,5 +1208,5 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
           [CompletionResult]::new('yank', 'yank', [CompletionResultType]::ParameterValue, 'Remove a pushed crate from the index')
         }
       }
-    }) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
+    }) | Where-Object CompletionText -Like "$wordToComplete*"
 }
