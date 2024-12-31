@@ -2,7 +2,7 @@ Register-ArgumentCompleter -Native -CommandName conjure -ScriptBlock {
   param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
-    if ($i.Extent.StartOffset -eq $cursorPosition) {
+    if ($i.Extent.StartOffset -ge $cursorPosition) {
       break
     }
     $prev = $i
@@ -10,7 +10,12 @@ Register-ArgumentCompleter -Native -CommandName conjure -ScriptBlock {
   $prev = $prev.ToString()
 
   @(switch ($prev) {
-      '-debug' { '' }
-      Default { @('-monitor', '-quiet', '-regard-warnings', '-seed', '-verbose', '-debug', '-help', '-list', '-log', '-version') }
+      '-debug' { @(''); break }
+      Default { 
+        if ($wordToComplete.StartsWith('-')) {
+          @('-monitor', '-quiet', '-regard-warnings', '-seed', '-verbose', '-debug', '-help', '-list', '-log', '-version') 
+        }
+        break
+      }
     }) | Where-Object { $_ -like "$wordToComplete*" }
 }

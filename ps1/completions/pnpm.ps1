@@ -3,19 +3,19 @@ using namespace System.Management.Automation.Language
 Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
-    if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
-      continue
-    }
-    if ($i -isnot [StringConstantExpressionAst] -or
-      $i.StringConstantType -ne [StringConstantType]::BareWord -or
-      $i.Value.StartsWith('-')) {
-      break
-    }
-    $i.Value
-  }) -join ';'
+      if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
+        continue
+      }
+      if ($i -isnot [StringConstantExpressionAst] -or
+        $i.StringConstantType -ne [StringConstantType]::BareWord -or
+        $i.Value.StartsWith('-')) {
+        break
+      }
+      $i.Value
+    }) -join ';'
   # $cursorPosition -= $wordToComplete.Length
   # foreach ($i in $commandAst.CommandElements) {
-  #   if ($i.Extent.StartOffset -eq $cursorPosition) {
+  #   if ($i.Extent.StartOffset -ge $cursorPosition) {
   #     break
   #   }
   #   $prev = $i
@@ -56,7 +56,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
           @('--color', '--no-color', '--aggregate-output', '--parallel', '--reporter', '-C', '--dir', '-h', '--help', '--loglevel', '--no-reporter-hide-prefix', '--parallel', '-r', '--recursive', '--report-summary', '--resume-from', '-c', '--shell-mode', '--stream', '--use-stderr', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--filter', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern', '--test-pattern')
         }
         else {
-          (Get-ChildItem node_modules/.bin -Exclude *.* -ErrorAction Ignore).BaseName
+          (Get-ChildItem node_modules/.bin -ErrorAction Ignore).BaseName | Select-Object -Unique
         }
       }
       'licenses' {

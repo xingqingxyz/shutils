@@ -16,7 +16,7 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
 
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
-    if ($i.Extent.StartOffset -eq $cursorPosition) {
+    if ($i.Extent.StartOffset -ge $cursorPosition) {
       break
     }
     $prev = $i
@@ -27,13 +27,17 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
       '' {
         if ($wordToComplete.StartsWith('-')) {
           @('-d', '--diff', '-a', '--add', '-g', '--goto', '-n', '--new-window', '-r', '--reuse-window', '-w', '--wait', '--locale', '--user-data-dir', '--extensions-dir', '--use-version', '--prof-startup', '--disable-extensions', '--disable-extension', '--sync', '--inspect-extensions', '--inspect-brk-extensions', '--disable-gpu', '--telemetry')
+          break
         }
-        else {
-          switch ($prev) {
-            '--locale' { @('en-US', 'zh-CN', 'zh-TW'); break }
-            '--sync' { @('on', 'off'); break }
-            '--use-version' { @('stable', 'insiders'); break }
-            'code-tunnel' { @('ext', 'status', 'version', 'help', 'tunnel', 'serve-web'); break }
+        switch ($prev) {
+          '--locale' { @('en-US', 'zh-CN', 'zh-TW'); break }
+          '--sync' { @('on', 'off'); break }
+          '--use-version' { @('stable', 'insiders'); break }
+          Default {
+            if ($commandAst.CommandElements.Count -le 2) {
+              @('ext', 'status', 'version', 'help', 'tunnel', 'serve-web')
+            }
+            break 
           }
         }
         break
@@ -41,11 +45,15 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
       'ext' {
         if ($wordToComplete.StartsWith('-')) {
           @('--extensions-dir', '--user-data-dir', '--use-version')
+          break
         }
-        else {
-          switch ($prev) {
-            '--use-version' { @('stable', 'insiders'); break }
-            'ext' { @('list', 'install', 'uninstall', 'update', 'help'); break }
+        switch ($prev) {
+          '--use-version' { @('stable', 'insiders'); break }
+          Default {
+            if ($commandAst.CommandElements.Count -le 3) {
+              @('list', 'install', 'uninstall', 'update', 'help')
+            }
+            break 
           }
         }
         break
@@ -53,14 +61,13 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
       'ext;list' {
         if ($wordToComplete.StartsWith('-')) {
           @('--category', '--show-versions')
+          break
         }
-        else {
-          switch ($prev) {
-            '--category' {
-              @('builtin', 'deprecated', 'disabled', 'enabled', 'featured', 'installed', 'popular', 'recentlyPublished', 'recommended', 'updates', 'workspaceUnsupported', 'ext:', 'id:', 'tag:', 'sort:installs', 'sort:name', 'sort:publishedDate', 'sort:rating', 'sort:updateDate') +
-              @(@('ai', 'azure', 'chat', 'data science', 'debuggers', 'education', 'extension packs', 'formatters', 'keymaps', 'language packs', 'linters', 'notebooks', 'machine learning', 'others', 'programming languages', 'scm providers', 'snippets', 'testing', 'themes', 'visualization') | ForEach-Object { "category:`"$_`"" })
-              break
-            }
+        switch ($prev) {
+          '--category' {
+            @('builtin', 'deprecated', 'disabled', 'enabled', 'featured', 'installed', 'popular', 'recentlyPublished', 'recommended', 'updates', 'workspaceUnsupported', 'ext:', 'id:', 'tag:', 'sort:installs', 'sort:name', 'sort:publishedDate', 'sort:rating', 'sort:updateDate') +
+            @(@('ai', 'azure', 'chat', 'data science', 'debuggers', 'education', 'extension packs', 'formatters', 'keymaps', 'language packs', 'linters', 'notebooks', 'machine learning', 'others', 'programming languages', 'scm providers', 'snippets', 'testing', 'themes', 'visualization') | ForEach-Object { "category:`"$_`"" })
+            break
           }
         }
         break
@@ -110,19 +117,19 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
         if ($wordToComplete.StartsWith('-')) {
           @('--install-extension', '--server-data-dir', '--extensions-dir', '--random-name', '--no-sleep', '--name', '--accept-server-license-terms')
         }
-        elseif ($prev -eq 'tunnel') {
+        elseif ($commandAst.CommandElements.Count -le 3) {
           @('prune', 'kill', 'restart', 'status', 'rename', 'unregister', 'user', 'service', 'help')
         }
         break
       }
       'tunnel;user' {
-        if ($prev -eq 'user') {
+        if ($commandAst.CommandElements.Count -le 4) {
           @('login', 'logout', 'show', 'help')
         }
         break
       }
       'tunnel;service' {
-        if ($prev -eq 'service') {
+        if ($commandAst.CommandElements.Count -le 4) {
           @('install', 'uninstall', 'log', 'help')
         }
         break
@@ -143,7 +150,7 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
         break
       }
       'tunnel;help' {
-        if ($prev -eq 'help') {
+        if ($commandAst.CommandElements.Count -le 4) {
           @('prune', 'kill', 'restart', 'status', 'rename', 'unregister', 'user', 'service', 'help')
         }
         break

@@ -1,12 +1,22 @@
 $_zConfig = @{
-  cmd            = 'z'
-  dataFile       = "$HOME/.z"
-  resoveSymlinks = $true
-  maxHistory     = 100
-  excludeDirs    = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root)
-  _rankSum       = 0.0
+  cmd             = 'z'
+  dataFile        = "$HOME/.z"
+  resolveSymlinks = $true
+  maxHistory      = 100
+  excludeDirs     = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root)
+  _rankSum        = 0.0
 }
 $_zItemsMap = @{}
+
+function _zGetPath([string]$Path) {
+  $item = Get-Item $Path
+  if ($_zConfig.resolveSymlinks) {
+    if ($item.Mode[0] -eq 'l') {
+      return $item.LinkTarget
+    }
+  }
+  $item.FullName
+}
 
 function _zDumpData {
   $_zItemsMap.Values | ForEach-Object {
@@ -18,7 +28,7 @@ function _zAdd {
   if ($PWD.Provider.Name -ne 'FileSystem') {
     return
   }
-  $path = $_zConfig.resoveSymlinks ? (Get-Item .).ResolvedTarget : $PWD.Path
+  $path = _zGetPath .
   if ($_zConfig.excludeDirs.Contains($path)) {
     return
   }
@@ -59,26 +69,24 @@ function _z {
 
   if ($Delete) {
     if (!$Queries.Length) {
-      $Queries = @($_zConfig.resoveSymlinks ? (Get-Item .).ResolvedTarget : $PWD.Path)
+      $Queries = @('.')
     }
-    $prop = $_zConfig.resoveSymlinks ? 'ResolvedTarget' : 'FullName'
     $Queries | ForEach-Object {
-      $_zItemsMap.Remove((Get-Item $_).$prop)
-      $_zConfig._rankSum -= $_zItemsMap.$_.Rank
+      $path = _zGetPath $_
+      $_zConfig._rankSum -= $_zItemsMap.$path.Rank
+      $_zItemsMap.Remove($path)
     }
     return
   }
 
-  $re = [regex]::new("^.*$($Queries -join '.*').*$".ToLower())
-  $items = $_zItemsMap.Values | Where-Object { $re.IsMatch($_.Path.ToLower()) }
-  if ($Cwd -and $PWD.Provider.Name -eq 'FileSystem') {
-    $items = $items | Where-Object { $_.Path.StartsWith($PWD.Path) }
+  $re = [regex]::new("^.*$($Queries -join '.*').*$")
+  $items = $_zItemsMap.Values | Where-Object { $re.IsMatch($_.Path) }
+  if ($Cwd) {
+    $items = $items | Where-Object Path -Like "$(_zGetPath .)*"
   }
 
   if (!$items) {
-    if ($Queries.Length -and (Test-Path $Queries[-1])) {
-      Set-Location $Queries[-1]
-    }
+    Write-Warning "no matches found for regexp $re"
     return
   }
 
@@ -87,34 +95,24 @@ function _z {
       $Time { $items | Sort-Object Time; break }
       Default {
         [double]$now = Get-Date -UFormat '%s'
-        filter frecent {
-          10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25))
-        }
-        $items | Sort-Object { frecent }
+        $items | Sort-Object { 10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25)) }
         break
       }
     })
 
-  if ($items.Length -eq 1) {
-    if ($Echo -or $List) {
-      $items
-    }
-    else {
-      Set-Location $items[0].Path
-    }
+  if ($List) {
+    $items
+  }
+  elseif ($Echo) {
+    $items[-1]
   }
   else {
-    if ($Rank -or $Time -and !$List) {
-      Set-Location $items[-1].Path
-    }
-    else {
-      $items
-    }
+    Set-Location $items[-1].Path
   }
 }
 
 if (!(Test-Path $_zConfig.dataFile)) {
-  $null = New-Item $_zConfig.dataFile
+  $null = New-Item -Force $_zConfig.dataFile
 }
 Get-Content $_zConfig.dataFile | ForEach-Object {
   $path, [double]$rank, [int]$time = $_.Split("`t")
