@@ -29,14 +29,15 @@ function vh {
     $input | bat -lhelp
     return
   }
-  if ($Command -eq '') {
-    help vh
+  elseif ($Command -eq '') {
+    vh vh -Source:$Source
     return
   }
   $info = Get-Command $Command -TotalCount 1
   switch ($info.CommandType) {
     ([CommandTypes]::Alias) {
-      return vh $info.Definition -Source $Source
+      vh $info.Definition -Source:$Source
+      break
     }
     ([CommandTypes]::Application) {
       if ($Source) {
@@ -62,6 +63,7 @@ function vh {
       else {
         help $Command -Category Filter
       }
+      break
     }
     ([CommandTypes]::Function) {
       if ($Source) {
@@ -70,6 +72,7 @@ function vh {
       else {
         help $Command -Category Function
       }
+      break
     }
     ([CommandTypes]::Script) {
       if ($Source) {
@@ -78,6 +81,7 @@ function vh {
       else {
         help $Command -Category ScriptCommand
       }
+      break
     }
     ([CommandTypes]::ExternalScript) {
       if ($Source) {
@@ -86,6 +90,7 @@ function vh {
       else {
         help $Command -Category ExternalScript
       }
+      break
     }
   }
 }
