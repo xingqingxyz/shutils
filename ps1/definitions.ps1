@@ -206,6 +206,15 @@ function bat {
   }
 }
 
+function copyq {
+  if ($MyInvocation.ExpectingInput) {
+    $input | copyq.exe @args | Write-Output
+  }
+  else {
+    copyq.exe @args | Write-Output
+  }
+}
+
 function winget {
   if ($args.Length -gt 1 -and
     @('install', 'upgrade', 'update', 'import', 'uninstall', 'pin').Contains($args[0]) -and

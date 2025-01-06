@@ -16,7 +16,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+n -Function NextSuggestion
 Set-PSReadLineKeyHandler -Chord Ctrl+p -Function PreviousSuggestion
 Set-PSReadLineKeyHandler -Chord Ctrl+F1 -ScriptBlock {
   [int]$cursor = 0
-  [Token[]]$tokens = $null
+  [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
   $name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
   Get-Help -Online $name
@@ -36,9 +36,9 @@ Set-PSReadLineKeyHandler -Chord Alt+c -ScriptBlock {
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+r -ScriptBlock {
-  $history = Get-Content ${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt |
-    Select-Object -Unique |
-    fzf --scheme=history
+  $history = if ($IsWindows) { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt" } elseif ($IsLinux) { "${env:HOME}/.local/share/pwsh/PSReadLine/$($Host.Name)_history.txt" }
+  elseif ($IsMacOS) { throw 'not implemented' }
+  $history = $history | Select-Object -Unique | fzf --scheme=history
   if (!$history) {
     return
   }
