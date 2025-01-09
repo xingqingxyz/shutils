@@ -169,5 +169,5 @@ Register-ArgumentCompleter -Native -CommandName tree-sitter -ScriptBlock {
           [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterValue, 'Print version')
         }
       }
-    }) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
+    }) | Where-Object CompletionText -Like "$wordToComplete*"
 }
