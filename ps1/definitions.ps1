@@ -1,9 +1,15 @@
 using namespace System.Management.Automation
 
 function vw {
-  param([Parameter(ValueFromPipeline)][string]$Path = $PWD)
+  param([Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)][string]$Path = $PWD)
   if (!(Test-Path $Path)) {
-    throw "path not found: $Path"
+    try {
+      vh $Path -Source
+      return
+    }
+    catch {
+      throw "path not found: $Path"
+    }
   }
   switch ((Get-Item $Path).GetType()) {
     ([System.IO.DirectoryInfo]) {
@@ -20,6 +26,13 @@ function vw {
       bat $Path
       break
     }
+  }
+}
+
+Register-ArgumentCompleter -CommandName vw -ParameterName Path -ScriptBlock {
+  param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+  if (!(Test-Path "$wordToComplete*")) {
+    Get-Command "$wordToComplete*"
   }
 }
 
@@ -94,6 +107,10 @@ function vh {
     }
   }
 }
+Register-ArgumentCompleter -CommandName vh -ParameterName Command -ScriptBlock {
+  param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+  Get-Command "$wordToComplete*"
+}
 
 function vi {
   if ($MyInvocation.ExpectingInput) {
@@ -116,6 +133,16 @@ function less {
   else {
     & $cmd @args
   }
+}
+
+function yq {
+  #Requires -Modules Yayaml
+  $input | ConvertFrom-Yaml | ConvertTo-Json -Depth 100 | jq @args
+}
+
+function tq {
+  #Requires -Modules PSToml
+  $input | ConvertFrom-Toml | ConvertTo-Json -Depth 100 | jq @args
 }
 
 function packageJSON {
@@ -198,11 +225,12 @@ if (!$IsWindows) {
 }
 
 function bat {
+  $color = $MyInvocation.PipelinePosition -eq $MyInvocation.PipelineLength ? 'always' : 'never'
   if ($MyInvocation.ExpectingInput) {
-    $input | bat.exe --color=always @args | & $env:PAGER
+    $input | bat.exe "--color=$color" @args | & $env:PAGER
   }
   else {
-    bat.exe --color=always @args | & $env:PAGER
+    bat.exe "--color=$color" @args | & $env:PAGER
   }
 }
 

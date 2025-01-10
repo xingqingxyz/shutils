@@ -18,36 +18,12 @@ properties:
       id: 7zip_7zip
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: Microsoft.Edge
+        id: AutoHotkey.AutoHotkey
         source: winget
       directives:
-        description: Microsoft_Edge
+        description: AutoHotkey_AutoHotkey
         allowPrerelease: true
-      id: Microsoft_Edge
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Microsoft.EdgeWebView2Runtime
-        source: winget
-      directives:
-        description: Microsoft_EdgeWebView2Runtime
-        allowPrerelease: true
-      id: Microsoft_EdgeWebView2Runtime
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Tencent.WeChat
-        source: winget
-      directives:
-        description: Tencent_WeChat
-        allowPrerelease: true
-      id: Tencent_WeChat
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Intel.IntelDriverAndSupportAssistant
-        source: winget
-      directives:
-        description: Intel_IntelDriverAndSupportAssistant
-        allowPrerelease: true
-      id: Intel_IntelDriverAndSupportAssistant
+      id: AutoHotkey_AutoHotkey
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: Baidu.BaiduNetdisk
@@ -58,117 +34,12 @@ properties:
       id: Baidu_BaiduNetdisk
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: Nutstore.Nutstore
+        id: BurntSushi.ripgrep.MSVC
         source: winget
       directives:
-        description: Nutstore_Nutstore
+        description: BurntSushi_ripgrep_MSVC
         allowPrerelease: true
-      id: Nutstore_Nutstore
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: voidtools.Everything
-        source: winget
-      directives:
-        description: voidtools_Everything
-        allowPrerelease: true
-      id: voidtools_Everything
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: voidtools.Everything.Cli
-        source: winget
-      directives:
-        description: voidtools_Everything_Cli
-        allowPrerelease: true
-      id: voidtools_Everything_Cli
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Microsoft.VisualStudioCode
-        source: winget
-      directives:
-        description: Microsoft_VisualStudioCode
-        allowPrerelease: true
-      id: Microsoft_VisualStudioCode
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: vsPackage
-      directives:
-        description: Install Visual Studio 2022 Community
-        allowPrerelease: true
-      settings:
-        id: Microsoft.VisualStudio.2022.Community
-        source: winget
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Nvidia.GeForceExperience
-        source: winget
-      directives:
-        description: Nvidia_GeForceExperience
-        allowPrerelease: true
-      id: Nvidia_GeForceExperience
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: AutoHotkey.AutoHotkey
-        source: winget
-      directives:
-        description: AutoHotkey_AutoHotkey
-        allowPrerelease: true
-      id: AutoHotkey_AutoHotkey
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Python.Python.3.12
-        source: winget
-      directives:
-        description: Python_Python_3_12
-        allowPrerelease: true
-      id: Python_Python_3_12
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Google.AndroidStudio
-        source: winget
-      directives:
-        description: Google_AndroidStudio
-        allowPrerelease: true
-      id: Google_AndroidStudio
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Kingsoft.WPSOffice.CN
-        source: winget
-      directives:
-        description: Kingsoft_WPSOffice_CN
-        allowPrerelease: true
-      id: Kingsoft_WPSOffice_CN
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Rustlang.Rustup
-        source: winget
-      directives:
-        description: Rustlang_Rustup
-        allowPrerelease: true
-      id: Rustlang_Rustup
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: GoLang.Go
-        source: winget
-      directives:
-        description: GoLang_Go
-        allowPrerelease: true
-      id: GoLang_Go
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: OpenJS.NodeJS
-        source: winget
-      directives:
-        description: OpenJS_NodeJS
-        allowPrerelease: true
-      id: OpenJS_NodeJS
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: VideoLAN.VLC
-        source: winget
-      directives:
-        description: VideoLAN_VLC
-        allowPrerelease: true
-      id: VideoLAN_VLC
-    # --------------------------------- github assets ------------------------------
+      id: BurntSushi_ripgrep_MSVC
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: Git.Git
@@ -187,6 +58,238 @@ properties:
       id: GitHub_cli
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
+        id: GoLang.Go
+        source: winget
+      directives:
+        description: GoLang_Go
+        allowPrerelease: true
+      id: GoLang_Go
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Google.AndroidStudio
+        source: winget
+      directives:
+        description: Google_AndroidStudio
+        allowPrerelease: true
+      id: Google_AndroidStudio
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: ImageMagick.Q16-HDRI
+        source: winget
+      directives:
+        description: ImageMagick_Q16_HDRI
+        allowPrerelease: true
+      id: ImageMagick_Q16_HDRI
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Intel.IntelDriverAndSupportAssistant
+        source: winget
+      directives:
+        description: Intel_IntelDriverAndSupportAssistant
+        allowPrerelease: true
+      id: Intel_IntelDriverAndSupportAssistant
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: JohnMacFarlane.Pandoc
+        source: winget
+      directives:
+        description: JohnMacFarlane_Pandoc
+        allowPrerelease: true
+      id: JohnMacFarlane_Pandoc
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Kingsoft.WPSOffice.CN
+        source: winget
+      directives:
+        description: Kingsoft_WPSOffice_CN
+        allowPrerelease: true
+      id: Kingsoft_WPSOffice_CN
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: LocalSend.LocalSend
+        source: winget
+      directives:
+        description: LocalSend_LocalSend
+        allowPrerelease: true
+      id: LocalSend_LocalSend
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: MiKTeX.MiKTeX
+        source: winget
+      directives:
+        description: MiKTeX_MiKTeX
+        allowPrerelease: true
+      id: MiKTeX_MiKTeX
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.DotNet.SDK.9
+        source: winget
+      directives:
+        description: Microsoft_DotNet_SDK_9
+        allowPrerelease: true
+      id: Microsoft_DotNet_SDK_9
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.Edge
+        source: winget
+      directives:
+        description: Microsoft_Edge
+        allowPrerelease: true
+      id: Microsoft_Edge
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.EdgeWebView2Runtime
+        source: winget
+      directives:
+        description: Microsoft_EdgeWebView2Runtime
+        allowPrerelease: true
+      id: Microsoft_EdgeWebView2Runtime
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.PowerShell
+        source: winget
+      directives:
+        description: Microsoft_PowerShell
+        allowPrerelease: true
+      id: Microsoft_PowerShell
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.PowerToys
+        source: winget
+      directives:
+        description: Microsoft_PowerToys
+        allowPrerelease: true
+      id: Microsoft_PowerToys
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: vsPackage
+      directives:
+        description: Install Visual Studio 2022 Community
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VisualStudio.2022.Community
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.VisualStudioCode
+        source: winget
+      directives:
+        description: Microsoft_VisualStudioCode
+        allowPrerelease: true
+      id: Microsoft_VisualStudioCode
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.WindowsTerminal
+        source: winget
+      directives:
+        description: Microsoft_WindowsTerminal
+        allowPrerelease: true
+      id: Microsoft_WindowsTerminal
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Nutstore.Nutstore
+        source: winget
+      directives:
+        description: Nutstore_Nutstore
+        allowPrerelease: true
+      id: Nutstore_Nutstore
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Nvidia.GeForceExperience
+        source: winget
+      directives:
+        description: Nvidia_GeForceExperience
+        allowPrerelease: true
+      id: Nvidia_GeForceExperience
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: OpenJS.NodeJS
+        source: winget
+      directives:
+        description: OpenJS_NodeJS
+        allowPrerelease: true
+      id: OpenJS_NodeJS
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Python.Python.3.13
+        source: winget
+      directives:
+        description: Python_Python_3_13
+        allowPrerelease: true
+      id: Python_Python_3_13
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Rustlang.Rustup
+        source: winget
+      directives:
+        description: Rustlang_Rustup
+        allowPrerelease: true
+      id: Rustlang_Rustup
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: SQLite.SQLite
+        source: winget
+      directives:
+        description: SQLite_SQLite
+        allowPrerelease: true
+      id: SQLite_SQLite
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Tencent.WeChat
+        source: winget
+      directives:
+        description: Tencent_WeChat
+        allowPrerelease: true
+      id: Tencent_WeChat
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: VideoLAN.VLC
+        source: winget
+      directives:
+        description: VideoLAN_VLC
+        allowPrerelease: true
+      id: VideoLAN_VLC
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: XAMPPRocky.Tokei
+        source: winget
+      directives:
+        description: XAMPPRocky_Tokei
+        allowPrerelease: true
+      id: XAMPPRocky_Tokei
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: aria2.aria2
+        source: winget
+      directives:
+        description: aria2_aria2
+        allowPrerelease: true
+      id: aria2_aria2
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: ast-grep.ast-grep
+        source: winget
+      directives:
+        description: ast-grep_ast-grep
+        allowPrerelease: true
+      id: ast-grep_ast-grep
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: astral-sh.uv
+        source: winget
+      directives:
+        description: astral-sh_uv
+        allowPrerelease: true
+      id: astral-sh_uv
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: bootandy.dust
+        source: winget
+      directives:
+        description: bootandy_dust
+        allowPrerelease: true
+      id: bootandy_dust
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
         id: dandavison.delta
         source: winget
       directives:
@@ -201,62 +304,6 @@ properties:
         description: jqlang_jq
         allowPrerelease: true
       id: jqlang_jq
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: MiKTeX.MiKTeX
-        source: winget
-      directives:
-        description: MiKTeX_MiKTeX
-        allowPrerelease: true
-      id: MiKTeX_MiKTeX
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: JohnMacFarlane.Pandoc
-        source: winget
-      directives:
-        description: JohnMacFarlane_Pandoc
-        allowPrerelease: true
-      id: JohnMacFarlane_Pandoc
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: LocalSend.LocalSend
-        source: winget
-      directives:
-        description: LocalSend_LocalSend
-        allowPrerelease: true
-      id: LocalSend_LocalSend
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Microsoft.PowerShell
-        source: winget
-      directives:
-        description: Microsoft_PowerShell
-        allowPrerelease: true
-      id: Microsoft_PowerShell
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: BurntSushi.ripgrep.MSVC
-        source: winget
-      directives:
-        description: BurntSushi_ripgrep_MSVC
-        allowPrerelease: true
-      id: BurntSushi_ripgrep_MSVC
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: aria2.aria2
-        source: winget
-      directives:
-        description: aria2_aria2
-        allowPrerelease: true
-      id: aria2_aria2
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: bootandy.dust
-        source: winget
-      directives:
-        description: bootandy_dust
-        allowPrerelease: true
-      id: bootandy_dust
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: junegunn.fzf
@@ -283,25 +330,25 @@ properties:
       id: sharkdp_fd
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: Microsoft.PowerToys
+        id: sharkdp.hyperfine
         source: winget
       directives:
-        description: Microsoft_PowerToys
+        description: sharkdp_hyperfine
         allowPrerelease: true
-      id: Microsoft_PowerToys
+      id: sharkdp_hyperfine
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: ImageMagick.Q16-HDRI
+        id: voidtools.Everything
         source: winget
       directives:
-        description: ImageMagick_Q16_HDRI
+        description: voidtools_Everything
         allowPrerelease: true
-      id: ImageMagick_Q16_HDRI
+      id: voidtools_Everything
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: Microsoft.WindowsTerminal
+        id: voidtools.Everything.Cli
         source: winget
       directives:
-        description: Microsoft_WindowsTerminal
+        description: voidtools_Everything_Cli
         allowPrerelease: true
-      id: Microsoft_WindowsTerminal
+      id: voidtools_Everything_Cli

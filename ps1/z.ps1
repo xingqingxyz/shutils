@@ -3,7 +3,7 @@ $_zConfig = @{
   dataFile        = "$HOME/.z"
   resolveSymlinks = $true
   maxHistory      = 100
-  excludeDirs     = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root)
+  excludeDirs     = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root, (Get-Item $env:TEMP).FullName)
   _rankSum        = 0.0
 }
 $_zItemsMap = @{}

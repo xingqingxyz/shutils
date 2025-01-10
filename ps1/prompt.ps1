@@ -2,12 +2,12 @@ function Format-Duration {
   param([timespan]$Duration)
   # colors: green, cyan, blue, yellow, magenta, red
   "`e[{1}m{0}`e[0m" -f $(switch ($true) {
-      { $Duration.TotalMicroseconds -lt 1000 } { "$($Duration.Microseconds)μs", 32 }
-      { $Duration.TotalMilliseconds -lt 1000 } { "$($Duration.Milliseconds).$($Duration.Microseconds)ms", 36 }
-      { $Duration.TotalSeconds -lt 60 } { "$($Duration.Seconds).$($Duration.Milliseconds)s", 34 }
-      { $Duration.TotalMinutes -lt 60 } { "$($Duration.Minutes)m$($Duration.Seconds)s" , 33 }
-      { $Duration.TotalHours -lt 24 } { "$($Duration.Hours)h$($Duration.Minutes)m", 35 }
-      { $Duration.TotalDays -lt 31 } { "$($Duration.Days)d$($Duration.Hours)h", 31 }
+      { $Duration.TotalMicroseconds -lt 1000 } { @("$($Duration.Microseconds)μs", 32); break }
+      { $Duration.TotalMilliseconds -lt 1000 } { @("$($Duration.Milliseconds).$($Duration.Microseconds)ms", 36); break }
+      { $Duration.TotalSeconds -lt 60 } { @("$($Duration.Seconds).$($Duration.Milliseconds)s", 34); break }
+      { $Duration.TotalMinutes -lt 60 } { @("$($Duration.Minutes)m$($Duration.Seconds)s" , 33); break }
+      { $Duration.TotalHours -lt 24 } { @("$($Duration.Hours)h$($Duration.Minutes)m", 35); break }
+      { $Duration.TotalDays -lt 31 } { @("$($Duration.Days)d$($Duration.Hours)h", 31); break }
     })
 }
 

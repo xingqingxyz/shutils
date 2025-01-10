@@ -1,0 +1,379 @@
+properties:
+  configurationVersion: 0.2.0
+  assertions:
+    - resource: Microsoft.Windows.Developer/OsVersion
+      settings:
+        MinVersion: 10.0.22000
+      directives:
+        description: Verify min OS version requirement
+        allowPrerelease: true
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: Microsoft.PowerToys
+        source: winget
+      directives:
+        description: Microsoft_PowerToys
+        allowPrerelease: true
+      id: Microsoft_PowerToys
+  resources:
+    - resource: PackageManagement/PackageManagementSource
+      settings:
+        ProviderName: PowerShellGet
+        SourceLocation: https://www.powershellgallery.com/api/v2/
+        Name: PSGallery
+        InstallationPolicy: Trusted
+      directives:
+        description: PackageManagement/PackageManagementSource
+        allowPrerelease: true
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: PSDesiredStateConfiguration
+        ProviderName: PowerShellGet
+      directives:
+        description: PSDesiredStateConfiguration
+        allowPrerelease: true
+      id: PSDesiredStateConfiguration
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: PSDscResources
+        ProviderName: PowerShellGet
+      directives:
+        description: PSDscResources
+        allowPrerelease: true
+      id: PSDscResources
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: ComputerManagementDsc
+        ProviderName: PowerShellGet
+      directives:
+        description: ComputerManagementDsc
+        allowPrerelease: true
+      id: ComputerManagementDsc
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: Microsoft.WinGet.CommandNotFound
+        ProviderName: PowerShellGet
+      directives:
+        description: Microsoft_WinGet_CommandNotFound
+        allowPrerelease: true
+      id: Microsoft_WinGet_CommandNotFound
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: Microsoft.WinGet.Client
+        ProviderName: PowerShellGet
+      directives:
+        description: Microsoft_WinGet_Client
+        allowPrerelease: true
+      id: Microsoft_WinGet_Client
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: Microsoft.WinGet.DSC
+        ProviderName: PowerShellGet
+      directives:
+        description: Microsoft_WinGet_DSC
+        allowPrerelease: true
+      id: Microsoft_WinGet_DSC
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: Microsoft.Windows.Developer
+        ProviderName: PowerShellGet
+      directives:
+        description: Microsoft_Windows_Developer
+        allowPrerelease: true
+      id: Microsoft_Windows_Developer
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: Refresh-EnvironmentVariables
+        ProviderName: PowerShellGet
+      directives:
+        description: Refresh_EnvironmentVariables
+        allowPrerelease: true
+      id: Refresh_EnvironmentVariables
+    - resource: PackageManagement/PackageManagement
+      settings:
+        Source: PSGallery
+        Ensure: Present
+        Name: powershell-yaml
+        ProviderName: PowerShellGet
+      directives:
+        description: powershell_yaml
+        allowPrerelease: true
+      id: powershell_yaml
+    - resource: Microsoft.Windows.Developer/DeveloperMode
+      settings:
+        Ensure: Present
+      directives:
+        description: Microsoft.Windows.Developer/DeveloperMode
+        allowPrerelease: true
+    - resource: Microsoft.Windows.Developer/Taskbar
+      settings:
+        SearchboxMode: Hide
+        WidgetsButton: Hide
+        TaskViewButton: Hide
+        HideLabelsMode: Always
+      directives:
+        description: Microsoft.Windows.Developer/Taskbar
+        allowPrerelease: true
+    - resource: Microsoft.WinGet.DSC/WinGetAdminSettings
+      settings:
+        Settings: |-
+          {
+            "$schema": "https://raw.githubusercontents.com/microsoft/winget-cli/master/schemas/JSON/settings/settings.schema.0.2.json",
+            "installBehavior": {
+              "preferences": {
+                "scope": "machine"
+              }
+            },
+            "uninstallBehavior": {
+              "purgePortablePackage": true
+            },
+            "telemetry": {
+              "disable": true
+            },
+            "experimentalFeatures": {
+              "resume": true,
+              "configureExport": true,
+              "configureSelfElevate": true,
+              "directMSI": true,
+              "experimentalARG": true,
+              "experimentalCMD": true
+            }
+          }
+      directives:
+        description: Microsoft.WinGet.DSC/WinGetAdminSettings
+        allowPrerelease: true
+    - resource: Microsoft.Windows.Developer/EnableDarkMode
+      settings:
+        Ensure: Present
+      directives:
+        description: Microsoft.Windows.Developer/EnableDarkMode
+        allowPrerelease: true
+    - resource: ComputerManagementDsc/WindowsOptionalFeature
+      settings:
+        Ensure: Present
+        Name: NetFx3
+      directives:
+        description: ComputerManagementDsc/WindowsOptionalFeature
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/PowerRename
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/PowerRename
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/AlwaysOnTop
+      settings:
+        Enabled: true
+        DoNotActivateOnGameMode: true
+        FrameThickness: 2
+      directives:
+        description: Microsoft.PowerToys.Configure/AlwaysOnTop
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/Awake
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/Awake
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/ColorPicker
+      settings:
+        Enabled: true
+        ShowColorName: true
+        CopiedColorRepresentation: HEX
+        ActivationAction: OpenColorPickerAndThenEditor
+      directives:
+        description: Microsoft.PowerToys.Configure/ColorPicker
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/CropAndLock
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/CropAndLock
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/EnvironmentVariables
+      settings:
+        Enabled: true
+        LaunchAdministrator: true
+      directives:
+        description: Microsoft.PowerToys.Configure/EnvironmentVariables
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/FancyZones
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/FancyZones
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/FileLocksmith
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/FileLocksmith
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/FindMyMouse
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/FindMyMouse
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/Hosts
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/Hosts
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/ImageResizer
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/ImageResizer
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/Peek
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/Peek
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/KeyboardManager
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/KeyboardManager
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/ShortcutGuide
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/ShortcutGuide
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/VideoConference
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/VideoConference
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/GeneralSettings
+      settings:
+        Startup: true
+        ShowNewUpdatesToastNotification: false
+        EnableExperimentation: false
+        AutoDownloadUpdates: false
+        Theme: System
+        EnableWarningsElevatedApps: true
+        ShowWhatsNewAfterUpdates: true
+      directives:
+        description: Microsoft.PowerToys.Configure/GeneralSettings
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/MeasureTool
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/MeasureTool
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/MouseHighlighter
+      settings:
+        Enabled: true
+        DefaultMeasureStyle: 1
+      directives:
+        description: Microsoft.PowerToys.Configure/MouseHighlighter
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/MouseJump
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/MouseJump
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/MousePointerCrosshairs
+      settings:
+        CrosshairsThickness: 2
+        CrosshairsBorderSize: 0
+        CrosshairsAutoHide: true
+        Enabled: false
+        CrosshairsRadius: 0
+      directives:
+        description: Microsoft.PowerToys.Configure/MousePointerCrosshairs
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/MouseWithoutBorders
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/MouseWithoutBorders
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/PastePlain
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/PastePlain
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/PowerPreview
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/PowerPreview
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/RegistryPreview
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/RegistryPreview
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/PowerAccent
+      settings:
+        Enabled: false
+      directives:
+        description: Microsoft.PowerToys.Configure/PowerAccent
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/PowerLauncher
+      settings:
+        Enabled: true
+      directives:
+        description: Microsoft.PowerToys.Configure/PowerLauncher
+        allowPrerelease: true
+    - resource: Microsoft.PowerToys.Configure/PowerOcr
+      settings:
+        Enabled: true
+      directives:
+        description: Microsoft.PowerToys.Configure/PowerOcr
+        allowPrerelease: true
+    - resource: PSDscResources/Environment
+      settings:
+        Value: --quit-if-one-screen --use-color --wordwrap --mouse --ignore-case --incsearch --search-options=W -R
+        Name: LESS
+        Ensure: Present
+      directives:
+        description: LESS
+        allowPrerelease: true
+      id: LESS
+    - resource: PSDscResources/Environment
+      settings:
+        Value: nvim
+        Name: EDITOR
+        Ensure: Present
+      directives:
+        description: EDITOR
+        allowPrerelease: true
+      id: EDITOR
+    - resource: PSDscResources/Environment
+      settings:
+        Value: less
+        Name: PAGER
+        Ensure: Present
+      directives:
+        description: PAGER
+        allowPrerelease: true
+      id: PAGER
