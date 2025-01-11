@@ -1,5 +1,5 @@
-import { readFile } from 'fs/promises'
+import { readFileSync } from 'fs'
 import stripAnsi from 'strip-ansi'
 
-const text = await readFile(process.stdin.fd, { encoding: 'utf8' })
+const text = await readFileSync(process.stdin.fd, { encoding: 'utf8' })
 console.log(stripAnsi(text))
