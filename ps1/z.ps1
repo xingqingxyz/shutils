@@ -3,19 +3,19 @@ $_zConfig = @{
   dataFile        = "$HOME/.z"
   resolveSymlinks = $true
   maxHistory      = 100
-  excludeDirs     = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root, (Get-Item $env:TEMP).FullName)
+  excludeDirs     = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root, (Get-PSDrive -Name Temp).Root.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
   _rankSum        = 0.0
 }
 $_zItemsMap = @{}
 
-function _zGetPath([string]$Path) {
-  $item = Get-Item $Path
-  if ($_zConfig.resolveSymlinks) {
-    if ($item.Mode[0] -eq 'l') {
-      return $item.LinkTarget
-    }
+function _zGetPath {
+  $item = Get-Item -LiteralPath .
+  if ($_zConfig.resolveSymlinks -and $item.Mode[0] -eq 'l') {
+    $item.LinkTarget
   }
-  $item.FullName
+  else {
+    $item.FullName
+  }
 }
 
 function _zDumpData {
@@ -28,7 +28,7 @@ function _zAdd {
   if ($PWD.Provider.Name -ne 'FileSystem') {
     return
   }
-  $path = _zGetPath .
+  $path = _zGetPath
   if ($_zConfig.excludeDirs.Contains($path)) {
     return
   }

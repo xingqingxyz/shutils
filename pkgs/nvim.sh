@@ -1,7 +1,7 @@
 tmp=/tmp/nvim-linux64.tar.gz
 
-curl -fL https://kkgithub.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz -o "$tmp"
+curl -fL "https://$github/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz" -o "$tmp"
 
-rm -rf ~/nvim-linux64
+rm -rf /opt/nvim-linux64
 tar xf "$tmp" -C ~
-ln -sfr ~/{nvim-linux64,.local}/bin/nvim
+ln -sf /tmp/nvim-linux64/bin/nvim /usr/bin/
