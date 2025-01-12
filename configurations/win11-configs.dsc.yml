@@ -152,9 +152,6 @@ properties:
           CrosshairsRadius: 0
         MouseWithoutBorders:
           Enabled: false
-        # absent key
-        # PastePlain:
-        #   Enabled: false
         Peek:
           Enabled: false
         PowerAccent:

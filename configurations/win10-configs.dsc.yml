@@ -132,7 +132,7 @@ properties:
         allowPrerelease: true
     - resource: Microsoft.WinGet.DSC/WinGetAdminSettings
       settings:
-        Settings: |-
+        Settings: >-
           {
             "$schema": "https://raw.githubusercontents.com/microsoft/winget-cli/master/schemas/JSON/settings/settings.schema.0.2.json",
             "installBehavior": {

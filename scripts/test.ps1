@@ -20,5 +20,6 @@ Register-ArgumentCompleter -Native -CommandName t -ScriptBlock {
   if ($cur.ToString() -eq $wordToComplete) {
     $commands = $commands | Select-Object -SkipLast 1
   }
+  $wordToComplete, $words, $cursorPosition, $curIndex, $prev
   $command = $commands -join ';'
 }

@@ -51,5 +51,10 @@ Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
   }
 }
+Set-PSReadLineKeyHandler -Chord Alt+s -ScriptBlock {
+  $line = ''
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo $line")
+}
 # shutils
 Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.FullName }
