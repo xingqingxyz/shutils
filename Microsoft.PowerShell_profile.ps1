@@ -1,7 +1,5 @@
 # utf-8 process
 [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-# shutils
-Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.FullName }
 # editing
 Set-PSReadLineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
@@ -53,6 +51,10 @@ Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
   }
 }
-if (!$IsWindows) {
-  Set-Alias ls Get-ChildItem
+Set-PSReadLineKeyHandler -Chord Alt+s -ScriptBlock {
+  $line = ''
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo $line")
 }
+# shutils
+Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.FullName }
