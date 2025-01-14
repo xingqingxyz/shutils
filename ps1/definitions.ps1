@@ -37,13 +37,9 @@ Register-ArgumentCompleter -CommandName vw -ParameterName Path -ScriptBlock {
 }
 
 function vh {
-  param([string]$Command, [switch]$Source)
+  param([string]$Command = 'vh', [switch]$Source)
   if ($MyInvocation.ExpectingInput) {
     $input | bat -lhelp
-    return
-  }
-  elseif ($Command -eq '') {
-    vh vh -Source:$Source
     return
   }
   $info = Get-Command $Command -TotalCount 1

@@ -1,17 +1,13 @@
-Set-Alias ls Get-ChildItem
-# aliases from ~/.bashrc
-if (Test-Path ~/.bashrc) {
-  $__alias_arguments_map = @{}
-  function _handleAlias {
-    /usr/bin/env $__alias_arguments_map[$MyInvocation.InvocationName] @args
-  }
-  function alias {
-    foreach ($arg in $args) {
-      $cmd, $rest = $arg.Split('=', 2)
-      $__alias_arguments_map[$cmd] = if ($rest.Contains(' ')) { $rest -split '\s+' } else { $rest }
-      Set-Alias $cmd _handleAlias
-    }
-  }
-  (Get-Content -Raw ~/.bashrc | Select-String '^alias ').Line | Out-String | Invoke-Expression
-  Remove-Item Function:alias
+# alias from interactive bash
+$__alias_arguments_map = @{}
+function _handleAlias {
+  /usr/bin/env $__alias_arguments_map[$MyInvocation.InvocationName] @args
 }
+bash -ic alias 2>$null | ForEach-Object {
+  $first, $second = $_.Split(' ', 2)[1].Split('=', 2)
+  $__alias_arguments_map[$first] = $second.SubString(1, $second.Length - 2).Split(' ')
+  Set-Alias $first _handleAlias
+}
+# remove can't use aliases
+Set-Alias ls Get-ChildItem
+Remove-Alias l., which -ErrorAction Ignore
