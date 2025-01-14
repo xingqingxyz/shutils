@@ -11,7 +11,7 @@ $_zItemsMap = @{}
 function _zGetPath {
   $item = Get-Item -LiteralPath .
   if ($_zConfig.resolveSymlinks -and $item.Mode[0] -eq 'l') {
-    $item.LinkTarget
+    $item.ResolvedTarget
   }
   else {
     $item.FullName

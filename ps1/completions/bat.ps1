@@ -25,22 +25,59 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
   $prev = $prev.ToString()
   $prev = switch ($prev) {
     '-l' { '--language'; break }
+    '--theme-light' { '--theme'; break }
+    '--theme-dark' { '--theme'; break }
     Default { $prev }
   }
 
   @(switch ($command) {
       '' {
         switch ($prev) {
-          '--theme' {
-            bat --list-themes --color never | ForEach-Object { [CompletionResult]::new($_) } 
+          '--binary' {
+            @('as-text', 'no-printing') | ForEach-Object { [CompletionResult]::new($_) }
             break
           }
           '--color' {
             @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
             break
           }
+          '--completion' {
+            @('bash', 'fish', 'ps1', 'zsh') | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
+          '--decorations' {
+            @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
           '--language' {
             @('bash', 'zsh', 'fish', 'elvish', 'pwsh', 'ps1', 'sh', 'py', 'python', 'js', 'ts', 'rs', 'go', 'man', 'help', 'awk', 'md', 'ini', 'json', 'jsonc', 'yml', 'xml', 'html', 'cs', 'vb', 'cpp', 'c', 'lua', 'codeql', 'sql', 'rb', 'makefile', 'cmake', 'gql', 'tsx', 'mdx', 'svelte', 'vue', 'angular', 'astro', 'css', 'scss', 'sass', 'stylus', 'htmx', 'rst', 'ipynb') | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
+          '--strip-ansi' {
+            @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
+          '--style' {
+            @('default', 'full', 'auto', 'changes', 'header', 'header-filename', 'header-filesize', 'grid', 'rule', 'ship', 'plain', 'numbers') | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
+          '--theme' {
+            @(
+              bat --list-themes --color=never
+              @('auto', 'dark', 'light')
+            ) | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
+          '--paging' {
+            @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
+          '--wrap' {
+            @('character', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            break
+          }
+          '--italic-text' {
+            @('always', 'never') | ForEach-Object { [CompletionResult]::new($_) }
             break
           }
           Default {
@@ -62,6 +99,9 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
               [CompletionResult]::new('-m', 'm', [CompletionResultType]::ParameterName, 'Use the specified syntax for files matching the glob pattern (''*.cpp:C++'').')
               [CompletionResult]::new('--map-syntax', 'map-syntax', [CompletionResultType]::ParameterName, 'Use the specified syntax for files matching the glob pattern (''*.cpp:C++'').')
               [CompletionResult]::new('--theme', 'theme', [CompletionResultType]::ParameterName, 'Set the color theme for syntax highlighting.')
+              [CompletionResult]::new('--theme-dark', 'theme', [CompletionResultType]::ParameterName, 'Set the color theme for syntax highlighting for dark backgrounds.')
+              [CompletionResult]::new('--theme-light', 'theme', [CompletionResultType]::ParameterName, 'Set the color theme for syntax highlighting for light backgrounds.')
+              [CompletionResult]::new('--strip-ansi', 'strip-ansi', [CompletionResultType]::ParameterName, 'Specify when to strip ANSI escape sequences from the input.')
               [CompletionResult]::new('--style', 'style', [CompletionResultType]::ParameterName, 'Comma-separated list of style elements to display (*default*, auto, full, plain, changes, header, header-filename, header-filesize, grid, rule, numbers, snip).')
               [CompletionResult]::new('-r', 'r', [CompletionResultType]::ParameterName, 'Only print the lines from N to M.')
               [CompletionResult]::new('--line-range', 'line-range', [CompletionResultType]::ParameterName, 'Only print the lines from N to M.')
@@ -84,6 +124,8 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
               [CompletionResult]::new('--unbuffered', 'unbuffered', [CompletionResultType]::ParameterName, 'unbuffered')
               [CompletionResult]::new('--no-config', 'no-config', [CompletionResultType]::ParameterName, 'Do not use the configuration file')
               [CompletionResult]::new('--no-custom-assets', 'no-custom-assets', [CompletionResultType]::ParameterName, 'Do not load custom assets')
+              [CompletionResult]::new('--lessopen', 'lessopen', [CompletionResultType]::ParameterName, 'Enable the $LESSOPEN preprocessor')
+              [CompletionResult]::new('--no-lessopen', 'no-lessopen', [CompletionResultType]::ParameterName, 'Disable the $LESSOPEN preprocessor if enabled (overrides --lessopen)')
               [CompletionResult]::new('--config-file', 'config-file', [CompletionResultType]::ParameterName, 'Show path to the configuration file.')
               [CompletionResult]::new('--generate-config-file', 'generate-config-file', [CompletionResultType]::ParameterName, 'Generates a default configuration file.')
               [CompletionResult]::new('--config-dir', 'config-dir', [CompletionResultType]::ParameterName, 'Show bat''s configuration directory.')
@@ -101,7 +143,7 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
           }
         }
       }
-      'cache' { 
+      'cache' {
         if ($wordToComplete.StartsWith('-')) {
           [CompletionResult]::new('--source', 'source', [CompletionResultType]::ParameterName, 'Use a different directory to load syntaxes and themes from.')
           [CompletionResult]::new('--target', 'target', [CompletionResultType]::ParameterName, 'Use a different directory to store the cached syntax and theme set.')
@@ -117,5 +159,5 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
         }
         break
       }
-    }) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
+    }) | Where-Object CompletionText -Like "$wordToComplete*"
 }
