@@ -32,34 +32,36 @@ function winget {
 if (Test-Path C:\Windows\System32\sudo.exe) {
   function sudo {
     $sudoExe = 'C:\Windows\System32\sudo.exe'
-    $commandLine = $MyInvocation.Line.Substring($MyInvocation.OffsetInLine + $MyInvocation.InvocationName.Length)
-    $lineAst = [Parser]::ParseInput($commandLine, [ref]$null, [ref]$null)
-    $sudoOpts = @()
-    $commandAst = $lineAst.Find({
-        param($ast)
-        if ($ast -is [CommandAst] -or $ast -is [ScriptBlockAst]) {
-          $true
-        }
-        else {
-          $sudoOpts += $ast.ToString()
-          $false
-        }
-      }, $false)
-    if ($commandAst -is [ScriptBlockAst]) {
-      $pwshExe = (Get-Process -Id $PID).Path
-      $cwa = $args[$sudoOpts.Length..($args.Length - 1)]
-      $cwa[0] = $cwa[0].ToString()
-      if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @$sudoOpts run $pwshExe -nop -nol -cwa @cwa
-      }
-      else {
-        & $sudoExe @$sudoOpts run $pwshExe -nop -nol -cwa @cwa
-      }
+    if (!$args.Length) {
+      & $sudoExe
       return
     }
-    $commandName = $commandAst.GetCommandName()
-    if ($commandName -eq 'run' -or
-        (Get-Command $commandName -Type Application -TotalCount 1 -ErrorAction Ignore)) {
+    $commandLine = $MyInvocation.Line.Substring($MyInvocation.OffsetInLine + $MyInvocation.InvocationName.Length)
+    $sudoOpts = @()
+    $commandName = ''
+    $isScriptBlock = $false
+    foreach ($i in $args) {
+      if ($i -is [string] -and $i.StartsWith('-')) {
+        $sudoOpts += $i
+        continue
+      }
+      $isScriptBlock = $i -is [scriptblock]
+      $commandName = $i.ToString()
+      break
+    }
+    if ($isScriptBlock) {
+      $pwshExe = (Get-Process -Id $PID).Path
+      $cwa = $args[$sudoOpts.Length..($args.Length - 1)]
+      $cwa[0] = $commandName
+      Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -cwa $cwa"
+      if ($MyInvocation.ExpectingInput) {
+        $input | & $sudoExe @sudoOpts run $pwshExe -nop -nol -cwa @cwa
+      }
+      else {
+        & $sudoExe @sudoOpts run $pwshExe -nop -nol -cwa @cwa
+      }
+    }
+    elseif ($commandName -eq 'run' -or (Get-Command $commandName -Type Application -TotalCount 1 -ErrorAction Ignore)) {
       Write-Debug "$sudoExe $sudoOpts $args"
       if ($MyInvocation.ExpectingInput) {
         $input | & $sudoExe @sudoOpts @args
@@ -70,28 +72,41 @@ if (Test-Path C:\Windows\System32\sudo.exe) {
     }
     elseif (Get-Command $commandName -Type Cmdlet, ExternalScript -TotalCount 1 -ErrorAction Ignore) {
       $pwshExe = (Get-Process -Id $PID).Path
+      $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
       $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
-      Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -e $encodedCommand"
+      Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
       if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @$sudoOpts run $pwshExe -nop -nol -e $encodedCommand
+        $input | & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
       }
       else {
-        & $sudoExe @$sudoOpts run $pwshExe -nop -nol -e $encodedCommand
+        & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
       }
+    }
+    else {
+      throw "can't resolve command $commandLine $commandName $sudoOpts"
     }
   }
 }
 else {
   function sudo {
-    $pwshExe = (Get-Process -Id $PID).Path
-    $ArgumentList = @(if ($args[0] -is [scriptblock]) {
-        @('-nop', '-nol', '-cwa')
-      }
-      else {
-        @('-nop', '-nol', '-c')
-      }) + $args
-    Write-Debug "$pwshExe $ArgumentList"
-    Start-Process -FilePath $pwshExe -ArgumentList $ArgumentList -Verb RunAs
+    $filePath = ''
+    $argumentList = $null
+    if ($args[0] -is [scriptblock]) {
+      $filePath = (Get-Process -Id $PID).Path
+      $argumentList = @('-nop', '-nol', '-cwa') + $args
+    }
+    elseif (Get-Command $args[0] -Type Application -TotalCount 1 -ErrorAction Ignore) {
+      $filePath, $argumentList = $args
+    }
+    elseif (Get-Command $args[0] -Type Cmdlet, ExternalScript -TotalCount 1 -ErrorAction Ignore) {
+      $filePath = (Get-Process -Id $PID).Path
+      $argumentList = @('-nop', '-nol', '-c') + $args
+    }
+    else {
+      throw "can't resolve command $args"
+    }
+    Write-Debug "$filePath $argumentList"
+    Start-Process -FilePath $filePath -ArgumentList $argumentList -Verb RunAs
   }
 }
 

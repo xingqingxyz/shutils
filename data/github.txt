@@ -2,3 +2,4 @@ https://github.com/akiyosi/goneovim/releases/download/goneovim-$tag-linux.tar.bz
 https://github.com/ryanoasis/nerd-fonts/releases/download/$tag/$font.zip
 https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz
 https://github.com/neovim/neovim/releases/download/nightly/nvim-win64.tar.gz
+https://docs.github.com/public/fpt/schema.docs.graphql
