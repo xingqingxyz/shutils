@@ -1,8 +1,8 @@
 {
   "type": "module",
   "devDependencies": {
-    "@types/lodash": "^4.17.13",
-    "@types/node": "^22.10.2",
+    "@types/lodash": "^4.17.14",
+    "@types/node": "^22.10.6",
     "@types/tampermonkey": "^5.0.4"
   },
   "dependencies": {

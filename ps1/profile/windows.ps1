@@ -30,7 +30,7 @@ function winget {
 
 function _runResolved {
   $cmd = (Get-Item (Get-Command $MyInvocation.InvocationName -Type Application -TotalCount 1).Path).ResolvedTarget
-  Start-Process -FilePath $cmd -ArgumentList $args -WorkingDirectory $cmd/.. -Wait -NoNewWindow
+  Start-Process -FilePath $cmd -ArgumentList $args -Wait -NoNewWindow
 }
 
 @('adb', 'fastboot', 'lua-language-server') | ForEach-Object { Set-Alias $_ _runResolved }

@@ -1,3 +1,5 @@
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
 function runHttpServer {
   $listener = [System.Net.HttpListener]::new()
   $url = 'http://localhost:3233/'

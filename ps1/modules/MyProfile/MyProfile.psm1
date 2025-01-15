@@ -266,6 +266,26 @@ function sortJSON {
   }
 }
 
+function Update-Env {
+  param(
+    [Parameter(Mandatory)]
+    [scriptblock]
+    $ScriptBlock,
+    [System.EnvironmentVariableTarget]
+    $Scope = 'User'
+  )
+  $prevEnv = [System.Environment]::GetEnvironmentVariables()
+  & $ScriptBlock
+  $processEnv = [System.Environment]::GetEnvironmentVariables()
+
+  foreach ($key in $processEnv.Keys) {
+    $value = $processEnv.$key
+    if (!$prevEnv.ContainsKey($key) -or $prevEnv.$key -ne $value) {
+      [System.Environment]::SetEnvironmentVariable($key, $value, $Scope)
+    }
+  }
+}
+
 if ($IsWindows -and (Test-Path C:\Windows\System32\sudo.exe)) {
   function sudo {
     $sudoExe = 'C:\Windows\System32\sudo.exe'
@@ -287,7 +307,7 @@ if ($IsWindows -and (Test-Path C:\Windows\System32\sudo.exe)) {
       break
     }
     if ($isScriptBlock) {
-      $pwshExe = (Get-Process -Id $PID).Path
+      $pwshExe = [System.Environment]::ProcessPath
       $cwa = $args[$sudoOpts.Length..($args.Length - 1)]
       $cwa[0] = $commandName
       Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -cwa $cwa"
@@ -307,20 +327,31 @@ if ($IsWindows -and (Test-Path C:\Windows\System32\sudo.exe)) {
         & $sudoExe @sudoOpts @args
       }
     }
-    elseif (Get-Command $commandName -Type Cmdlet, ExternalScript -TotalCount 1 -ErrorAction Ignore) {
-      $pwshExe = (Get-Process -Id $PID).Path
-      $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
-      $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
-      Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
-      if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
-      }
-      else {
-        & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
-      }
-    }
     else {
-      throw "can't resolve command $commandLine $commandName $sudoOpts"
+      $info = Get-Command $args[0] -TotalCount 1 -ErrorAction Ignore
+      switch ($info.CommandType) {
+        ([CommandTypes]::Alias) {
+          $argumentList = $args[$sudoOpts.Length..($args.Length - 1)]
+          $argumentList[0] = $info.Definition
+          return & $sudoExe @sudoOpts @argumentList
+        }
+        { $_ -eq [CommandTypes]::Cmdlet -or $_ -eq [CommandTypes]::ExternalScript -or $_ -eq [CommandTypes]::Function -and $info.ModuleName } {
+          $pwshExe = [System.Environment]::ProcessPath
+          $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
+          $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
+          Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
+          if ($MyInvocation.ExpectingInput) {
+            $input | & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
+          }
+          else {
+            & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
+          }
+          return
+        }
+        Default {
+          throw "can't resolve command $commandLine $commandName $sudoOpts"
+        }
+      }
     }
   }
 }
@@ -329,24 +360,34 @@ else {
     $filePath = ''
     $argumentList = $null
     if (!$args.Length) {
-      vh sudo -Source
-      return
+      return vh sudo -Source
     }
     elseif ($args[0] -is [scriptblock]) {
-      $filePath = (Get-Process -Id $PID).Path
+      $filePath = [System.Environment]::ProcessPath
       $argumentList = @('-nop', '-nol', '-cwa') + $args
     }
-    elseif (Get-Command $args[0] -Type Application -TotalCount 1 -ErrorAction Ignore) {
-      $filePath, $argumentList = $args
-    }
-    elseif (Get-Command $args[0] -Type Cmdlet, ExternalScript -TotalCount 1 -ErrorAction Ignore) {
-      $filePath = (Get-Process -Id $PID).Path
-      $argumentList = @('-nop', '-nol', '-c') + $args
-    }
     else {
-      throw "can't resolve command $args"
+      $info = Get-Command $args[0] -TotalCount 1 -ErrorAction Ignore
+      switch ($info.CommandType) {
+        ([CommandTypes]::Alias) {
+          $args[0] = $info.Definition
+          return sudo @args
+        }
+        ([CommandTypes]::Application) {
+          $filePath, $argumentList = $args
+          break
+        }
+        { $_ -eq [CommandTypes]::Cmdlet -or $_ -eq [CommandTypes]::ExternalScript -or $_ -eq [CommandTypes]::Function -and $info.ModuleName } {
+          $filePath = [System.Environment]::ProcessPath
+          $argumentList = @('-nop', '-nol', '-c') + $args
+          break
+        }
+        Default {
+          throw "can't resolve command $args"
+        }
+      }
     }
     Write-Debug "$filePath $argumentList"
-    Start-Process -FilePath $filePath -ArgumentList $argumentList -Verb RunAs
+    Start-Process -FilePath $filePath -ArgumentList $argumentList -Verb RunAs -WorkingDirectory $PWD.Path
   }
 }

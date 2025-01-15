@@ -15,7 +15,7 @@
   ModuleVersion        = '0.0.1'
 
   # Supported PSEditions
-  CompatiblePSEditions = @('Core', 'Desktop')
+  CompatiblePSEditions = @('Core')
 
   # ID used to uniquely identify this module
   GUID                 = 'e59afded-5b1c-441d-84bc-8e82f6bdac7e'
@@ -69,7 +69,7 @@
   # NestedModules = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('vh', 'vw', 'vi', 'less', 'yq', 'tq', 'packageJSON', 'npm', 'stripAnsi', 'sortJSON', 'sudo')
+  FunctionsToExport    = @('vh', 'vw', 'vi', 'less', 'yq', 'tq', 'packageJSON', 'npm', 'stripAnsi', 'sortJSON', 'Update-Env', 'sudo')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
