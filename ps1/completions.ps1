@@ -9,6 +9,18 @@ Register-ArgumentCompleter -Native -CommandName (Get-Item $PSScriptRoot/completi
   ''
 }
 
+Register-ArgumentCompleter -CommandName vh -ParameterName Command -ScriptBlock {
+  param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+  Get-Command "$wordToComplete*"
+}
+
+Register-ArgumentCompleter -CommandName vw -ParameterName Path -ScriptBlock {
+  param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+  if (!(Test-Path "$wordToComplete*")) {
+    Get-Command "$wordToComplete*"
+  }
+}
+
 function quote([string]$s) {
   if ($s.Length -le 1) {
     return "'$s'"

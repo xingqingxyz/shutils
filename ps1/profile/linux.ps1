@@ -1,7 +1,12 @@
 # alias from interactive bash
 $__alias_arguments_map = @{}
 function _handleAlias {
-  /usr/bin/env $__alias_arguments_map[$MyInvocation.InvocationName] @args
+  if ($MyInvocation.ExpectingInput) {
+    $input | /usr/bin/env $__alias_arguments_map[$MyInvocation.InvocationName] @args
+  }
+  else {
+    /usr/bin/env $__alias_arguments_map[$MyInvocation.InvocationName] @args
+  }
 }
 bash -ic alias 2>$null | ForEach-Object {
   $first, $second = $_.Split(' ', 2)[1].Split('=', 2)

@@ -1,5 +1,7 @@
 # utf-8 process
 [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# PSModulePath
+$env:PSModulePath += [System.IO.Path]::PathSeparator + "$PSScriptRoot/ps1/modules"
 # editing
 Set-PSReadLineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
@@ -56,5 +58,29 @@ Set-PSReadLineKeyHandler -Chord Alt+s -ScriptBlock {
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo $line")
 }
+
+& {
+  $hook = {
+    $npm = switch ($true) {
+      (Test-Path package-lock.json) { 'npm'; break }
+      (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
+      (Test-Path bun.lockb) { 'bun' ; break }
+      (Test-Path yarn.lock) { 'yarn'; break }
+      (Test-Path deno.json) { 'deno'; break }
+      Default { (Get-Command npm -Type Application -TotalCount 1).Path }
+    }
+    Set-Alias -Scope Global _npm $npm
+  }
+  # init search
+  & $hook
+  $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
+  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
+    [Delegate]::Combine($action, [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$hook)
+  }
+  else {
+    $hook
+  }
+}
+
 # shutils
 Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.FullName }

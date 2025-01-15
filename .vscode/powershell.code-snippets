@@ -1,0 +1,7 @@
+{
+  "alias": {
+    "scope": "powershell",
+    "prefix": "alias",
+    "body": "\\$$1 = switch (\\$$1) {\n\t'$2' { '$0'; break }\n\tDefault { \\$$1 }\n}"
+  }
+}
