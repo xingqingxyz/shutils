@@ -4,8 +4,7 @@ using namespace System.Management.Automation
 function vh {
   param([string]$Command = 'vh', [switch]$Source)
   if ($MyInvocation.ExpectingInput) {
-    $input | bat -lhelp
-    return
+    return $input | bat -lhelp
   }
   $info = Get-Command $Command -TotalCount 1
   switch ($info.CommandType) {
@@ -73,8 +72,7 @@ function vw {
   param([Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)][string]$Path = $PWD)
   if (!(Test-Path $Path)) {
     try {
-      vh $Path -Source
-      return
+      return vh $Path -Source
     }
     catch {
       throw "path not found: $Path"
@@ -109,8 +107,7 @@ function vi {
 
 function less {
   if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
-    $input | bat -lman
-    return
+    return $input | bat -lman
   }
   $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
   if ($MyInvocation.ExpectingInput) {
@@ -163,8 +160,7 @@ function npm {
     return
   }
   if ($args.Contains('--help')) {
-    _npm @args | vh
-    return
+    return _npm @args | bat -lhelp
   }
   $command, $rest = $args
   if (@('i', 'install', 'a', 'add').Contains($command) -and !$rest.Contains('-D')) {
@@ -197,12 +193,8 @@ function npm {
 Strip ANSI escape codes from input or all args text.
  #>
 function stripAnsi {
-  @(if ($MyInvocation.ExpectingInput) {
-      $input
-    }
-    else {
-      $args
-    }) | bat --strip-ansi=always --plain
+  @(if ($MyInvocation.ExpectingInput) { $input } else { $args }) |
+    bat --strip-ansi=always --plain
 }
 
 <#
@@ -286,12 +278,11 @@ function Update-Env {
   }
 }
 
-if ($IsWindows -and (Test-Path C:\Windows\System32\sudo.exe)) {
+$sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ErrorAction Ignore).Path
+if (($IsLinux -or $IsWindows) -and $sudoExe) {
   function sudo {
-    $sudoExe = 'C:\Windows\System32\sudo.exe'
     if (!$args.Length) {
-      & $sudoExe
-      return
+      return & $sudoExe
     }
     $commandLine = $MyInvocation.Line.Substring($MyInvocation.OffsetInLine + $MyInvocation.InvocationName.Length)
     $sudoOpts = @()
@@ -310,41 +301,41 @@ if ($IsWindows -and (Test-Path C:\Windows\System32\sudo.exe)) {
       $pwshExe = [System.Environment]::ProcessPath
       $cwa = $args[$sudoOpts.Length..($args.Length - 1)]
       $cwa[0] = $commandName
-      Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -cwa $cwa"
+      Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -cwa $cwa"
       if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @sudoOpts run $pwshExe -nop -nol -cwa @cwa
+        $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -cwa @cwa
       }
       else {
-        & $sudoExe @sudoOpts run $pwshExe -nop -nol -cwa @cwa
+        & $sudoExe @sudoOpts -- $pwshExe -nop -nol -cwa @cwa
       }
     }
-    elseif ($commandName -eq 'run' -or (Get-Command $commandName -Type Application -TotalCount 1 -ErrorAction Ignore)) {
-      Write-Debug "$sudoExe $sudoOpts $args"
+    elseif (Get-Command $commandName -Type Application -TotalCount 1 -ErrorAction Ignore) {
+      $argumentList = $args[$sudoOpts.Length..($args.Length - 1)]
+      Write-Debug "$sudoExe $sudoOpts -- $argumentList"
       if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @sudoOpts @args
+        $input | & $sudoExe @sudoOpts -- @argumentList
       }
       else {
-        & $sudoExe @sudoOpts @args
+        & $sudoExe @sudoOpts -- @argumentList
       }
     }
     else {
-      $info = Get-Command $args[0] -TotalCount 1 -ErrorAction Ignore
+      $info = Get-Command $commandName -TotalCount 1 -ErrorAction Ignore
       switch ($info.CommandType) {
         ([CommandTypes]::Alias) {
-          $argumentList = $args[$sudoOpts.Length..($args.Length - 1)]
-          $argumentList[0] = $info.Definition
-          return & $sudoExe @sudoOpts @argumentList
+          $args[$sudoOpts.Length] = $info.Definition
+          return sudo @args
         }
         { $_ -eq [CommandTypes]::Cmdlet -or $_ -eq [CommandTypes]::ExternalScript -or $_ -eq [CommandTypes]::Function -and $info.ModuleName } {
           $pwshExe = [System.Environment]::ProcessPath
           $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
           $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
-          Write-Debug "$sudoExe $sudoOpts run $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
+          Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
           if ($MyInvocation.ExpectingInput) {
-            $input | & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
+            $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
           }
           else {
-            & $sudoExe @sudoOpts run $pwshExe -nop -nol -e $encodedCommand
+            & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
           }
           return
         }
@@ -360,7 +351,7 @@ else {
     $filePath = ''
     $argumentList = $null
     if (!$args.Length) {
-      return vh sudo -Source
+      return $Function:sudo | bat -lps1
     }
     elseif ($args[0] -is [scriptblock]) {
       $filePath = [System.Environment]::ProcessPath
