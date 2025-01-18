@@ -5,7 +5,7 @@ Register-ArgumentCompleter -Native -CommandName gh, glow, vhs, tstoy -ScriptBloc
 
 Register-ArgumentCompleter -Native -CommandName (Get-Item $PSScriptRoot/completions/*.ps1).BaseName -ScriptBlock {
   param($wordToComplete, $commandAst, $cursorPosition)
-  . $PSScriptRoot/completions/$($commandAst.CommandElements[0].Value)
+  . $PSScriptRoot/completions/$(Split-Path -LeafBase $commandAst.CommandElements[0].Value).ps1
   ''
 }
 

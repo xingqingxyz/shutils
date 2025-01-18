@@ -2,8 +2,8 @@ $_zConfig = @{
   cmd             = 'z'
   dataFile        = "$HOME/.z"
   resolveSymlinks = $true
-  maxHistory      = 100
-  excludeDirs     = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root, (Get-PSDrive -Name Temp).Root.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
+  maxHistory      = 1000.0
+  excludePatterns = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root, ([System.IO.Path]::GetTempPath() + '*'))
   _rankSum        = 0.0
 }
 $_zItemsMap = @{}
@@ -29,21 +29,23 @@ function _zAdd {
     return
   }
   $path = _zGetPath
-  if ($_zConfig.excludeDirs.Contains($path)) {
-    return
-  }
-  $sum = $_zConfig._rankSum
-  if (++$sum -gt $_zConfig.maxHistory) {
-    $sum = 1.0
-    foreach ($item in $_zItemsMap.Values) {
-      if ($item.Rank -lt 1.0) {
-        $_zItemsMap.Remove($item.Path)
-        continue
-      }
-      $sum += ($item.Rank *= 0.99)
+  foreach ($pat in $_zConfig.excludePatterns) {
+    if ($path -like $pat) {
+      return
     }
   }
-  $_zConfig._rankSum = $sum
+  if (++$_zConfig._rankSum -gt $_zConfig.maxHistory) {
+    $sum = 1.0
+    foreach ($item in $_zItemsMap.Values) {
+      if (($item.Rank *= 0.99) -lt 1.0) {
+        $_zItemsMap.Remove($item.Path)
+      }
+      else {
+        $sum += $item.Rank
+      }
+    }
+    $_zConfig._rankSum = $sum
+  }
   # add the new one
   $item = ($_zItemsMap.$path ??= ([PSCustomObject]@{
         Path = $path
@@ -57,6 +59,7 @@ function _zAdd {
 }
 
 function _z {
+  [CmdletBinding(DefaultParameterSetName = 'Main')]
   param (
     [Parameter(ParameterSetName = 'Main')][switch]$Echo,
     [Parameter(ParameterSetName = 'Main')][switch]$List,
@@ -82,7 +85,7 @@ function _z {
   $re = [regex]::new("^.*$($Queries -join '.*').*$")
   $items = $_zItemsMap.Values | Where-Object { $re.IsMatch($_.Path) }
   if ($Cwd) {
-    $items = $items | Where-Object Path -Like "$(_zGetPath .)*"
+    $items = $items | Where-Object Path -Like "$(_zGetPath)$([System.IO.Path]::DirectorySeparatorChar)*"
   }
 
   if (!$items) {
@@ -107,22 +110,34 @@ function _z {
     $items[-1]
   }
   else {
-    Set-Location $items[-1].Path
+    $i = $items.Length
+    while ($i--) {
+      $path = $items[$i].Path
+      try {
+        return Set-Location $path -ErrorAction Stop
+      }
+      catch {
+        Write-Warning "Set-Location failed, removing it: $path"
+        $_zItemsMap.Remove($path)
+      }
+    }
+    _zDumpData
   }
 }
 
-if (!(Test-Path $_zConfig.dataFile)) {
-  $null = New-Item -Force $_zConfig.dataFile
-}
-Get-Content $_zConfig.dataFile | ForEach-Object {
-  $path, [double]$rank, [int]$time = $_.Split("`t")
-  $_zItemsMap.Add($path, [PSCustomObject]@{
-      Path = $path
-      Rank = $rank
-      Time = $time
-    })
-}
 & {
+  if (!(Test-Path $_zConfig.dataFile)) {
+    $null = New-Item -Force $_zConfig.dataFile
+  }
+  Get-Content $_zConfig.dataFile | ForEach-Object {
+    $path, [double]$rank, [int]$time = $_.Split("`t")
+    $_zConfig._rankSum += $rank
+    $_zItemsMap.Add($path, [PSCustomObject]@{
+        Path = $path
+        Rank = $rank
+        Time = $time
+      })
+  }
   $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$function:_zAdd
   $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
   $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {

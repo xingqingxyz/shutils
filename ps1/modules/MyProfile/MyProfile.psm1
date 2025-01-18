@@ -1,4 +1,3 @@
-#Requires -Version 7.4.6
 using namespace System.Management.Automation
 
 function vh {
@@ -279,7 +278,7 @@ function Update-Env {
 }
 
 $sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ErrorAction Ignore).Path
-if (($IsLinux -or $IsWindows) -and $sudoExe) {
+if ($sudoExe) {
   function sudo {
     if (!$args.Length) {
       return & $sudoExe
@@ -346,7 +345,7 @@ if (($IsLinux -or $IsWindows) -and $sudoExe) {
     }
   }
 }
-else {
+elseif ($IsWindows) {
   function sudo {
     $filePath = ''
     $argumentList = $null
