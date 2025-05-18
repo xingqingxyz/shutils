@@ -10,20 +10,12 @@ properties:
   resources:
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: 7zip.7zip
+        id: Microsoft.PowerAutomateDesktop
         source: winget
       directives:
-        description: 7zip.7zip
+        description: Microsoft.PowerAutomateDesktop
         allowPrerelease: true
-      id: 7zip_7zip
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: AutoHotkey.AutoHotkey
-        source: winget
-      directives:
-        description: AutoHotkey.AutoHotkey
-        allowPrerelease: true
-      id: AutoHotkey_AutoHotkey
+      id: Microsoft_PowerAutomateDesktop
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: Baidu.BaiduNetdisk
@@ -106,12 +98,12 @@ properties:
       id: Kingsoft_WPSOffice_CN
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: LocalSend.LocalSend
+        id: KDE.KDEConnect
         source: winget
       directives:
-        description: LocalSend.LocalSend
+        description: KDE.KDEConnect
         allowPrerelease: true
-      id: LocalSend_LocalSend
+      id: KDE_KDEConnect
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: MiKTeX.MiKTeX
@@ -194,14 +186,6 @@ properties:
       id: Nutstore_Nutstore
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: Nvidia.GeForceExperience
-        source: winget
-      directives:
-        description: Nvidia.GeForceExperience
-        allowPrerelease: true
-      id: Nvidia_GeForceExperience
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
         id: OpenJS.NodeJS
         source: winget
       directives:
@@ -224,14 +208,6 @@ properties:
         description: Rustlang.Rustup
         allowPrerelease: true
       id: Rustlang_Rustup
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: SQLite.SQLite
-        source: winget
-      directives:
-        description: SQLite.SQLite
-        allowPrerelease: true
-      id: SQLite_SQLite
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: Tencent.WeChat
@@ -264,14 +240,6 @@ properties:
         description: aria2.aria2
         allowPrerelease: true
       id: aria2_aria2
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: ast-grep.ast-grep
-        source: winget
-      directives:
-        description: ast-grep.ast-grep
-        allowPrerelease: true
-      id: ast_grep_ast_grep
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: astral-sh.uv
@@ -344,11 +312,3 @@ properties:
         description: voidtools.Everything
         allowPrerelease: true
       id: voidtools_Everything
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: voidtools.Everything.Cli
-        source: winget
-      directives:
-        description: voidtools.Everything.Cli
-        allowPrerelease: true
-      id: voidtools_Everything_Cli

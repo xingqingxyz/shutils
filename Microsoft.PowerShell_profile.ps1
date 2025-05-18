@@ -1,12 +1,13 @@
 #Requires -PSEdition Core
 # utf-8 process
-[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[System.Console]::InputEncoding = [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # PSModulePath
 $env:PSModulePath += [System.IO.Path]::PathSeparator + "$PSScriptRoot/ps1/modules"
 # env configs
 $env:BAT_THEME_LIGHT = 'GitHub'
 # editing
 Set-PSReadLineOption -EditMode Windows
+Set-PSReadLineKeyHandler -Chord Ctrl+Delete -Function DeleteEndOfWord
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
 Set-PSReadLineKeyHandler -Chord Ctrl+k -Function ForwardDeleteLine
 Set-PSReadLineKeyHandler -Chord Ctrl+K -Function DeleteLine
@@ -22,7 +23,9 @@ Set-PSReadLineKeyHandler -Chord Ctrl+F1 -ScriptBlock {
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
   $name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
-  Get-Help -Online $name
+  if (Get-Command $name -Type Alias, Cmdlet, Function -ErrorAction Ignore) {
+    Get-Help $name -Online -ErrorAction Ignore
+  }
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+t -ScriptBlock {
   $items = fzf '--walker=file,hidden' -m
@@ -39,7 +42,7 @@ Set-PSReadLineKeyHandler -Chord Alt+c -ScriptBlock {
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+r -ScriptBlock {
-  $history = if ($IsWindows) { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt" } elseif ($IsLinux) { "${env:HOME}/.local/share/pwsh/PSReadLine/$($Host.Name)_history.txt" }
+  $history = if ($IsWindows) { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt" } elseif ($IsLinux) { "${env:HOME}/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt" }
   elseif ($IsMacOS) { throw 'not implemented' }
   $history = Get-Content $history | Select-Object -Unique | fzf --scheme=history
   if (!$history) {
@@ -62,17 +65,42 @@ Set-PSReadLineKeyHandler -Chord Alt+s -ScriptBlock {
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo $line")
 }
 
+Set-PSReadLineKeyHandler -Chord Alt+v -ScriptBlock {
+  $pythonVenvActivate = Test-Path .venv/
+  if (Test-Path Function:\deactivate) {
+    if ([System.IO.Path]::Join($PWD.Path, '.venv') -eq $env:VIRTUAL_ENV) {
+      $pythonVenvActivate = $false
+    }
+    else {
+      $pythonVenvDeactivate = $true
+    }
+  }
+  switch ($true) {
+    $pythonVenvDeactivate {
+      deactivate
+      [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+    }
+    $pythonVenvActivate {
+      if ($IsWindows) {
+        . .venv/Scripts/Activate.ps1
+      }
+      else {
+        . .venv/bin/Activate.ps1
+      }
+      [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+    }
+  }
+}
+
 & {
   $hook = {
-    $npm = switch ($true) {
-      (Test-Path package-lock.json) { 'npm'; break }
-      (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
-      (Test-Path bun.lockb) { 'bun' ; break }
-      (Test-Path yarn.lock) { 'yarn'; break }
-      (Test-Path deno.json) { 'deno'; break }
-      Default { (Get-Command npm -Type Application -TotalCount 1).Path }
-    }
-    Set-Alias -Scope Global _npm $npm
+    Set-Item Variable:Global:npm $(switch ($true) {
+        (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
+        (Test-Path bun.lockb) { 'bun' ; break }
+        (Test-Path yarn.lock) { 'yarn'; break }
+        (Test-Path deno.json) { 'deno'; break }
+        Default { 'npm' }
+      })
   }
   # init search
   & $hook
@@ -86,4 +114,7 @@ Set-PSReadLineKeyHandler -Chord Alt+s -ScriptBlock {
 }
 
 # shutils
-Get-Item $PSScriptRoot/ps1/*.ps1 -ErrorAction Ignore | ForEach-Object { . $_.FullName }
+Get-ChildItem $PSScriptRoot/ps1 -File -ErrorAction Ignore | ForEach-Object { . $_.FullName }
+Set-Alias less Invoke-Less
+Set-Alias npm Invoke-Npm
+Set-Alias sudo Invoke-Sudo

@@ -34,14 +34,6 @@ properties:
       id: Git_Git
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: RustDesk.RustDesk
-        source: winget
-      directives:
-        description: RustDesk.RustDesk
-        allowPrerelease: true
-      id: RustDesk_RustDesk
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
         id: LocalSend.LocalSend
         source: winget
       directives:
@@ -186,14 +178,6 @@ properties:
       id: Python_Python_3_13
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: Microsoft.PowerToys
-        source: winget
-      directives:
-        description: Microsoft.PowerToys
-        allowPrerelease: true
-      id: Microsoft_PowerToys
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
         id: Microsoft.VisualStudioCode
         source: winget
       directives:
@@ -202,17 +186,17 @@ properties:
       id: Microsoft_VisualStudioCode
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: ImageMagick.Q16-HDRI
-        source: winget
-      directives:
-        description: ImageMagick.Q16-HDRI
-        allowPrerelease: true
-      id: ImageMagick_Q16_HDRI
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
         id: Microsoft.WindowsTerminal
         source: winget
       directives:
         description: Microsoft.WindowsTerminal
         allowPrerelease: true
       id: Microsoft_WindowsTerminal
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      settings:
+        id: astral-sh.uv
+        source: winget
+      directives:
+        description: astral-sh.uv
+        allowPrerelease: true
+      id: astral_sh_uv

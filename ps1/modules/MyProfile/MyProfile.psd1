@@ -69,7 +69,7 @@
   # NestedModules = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('vh', 'vw', 'vi', 'less', 'yq', 'tq', 'packageJSON', 'npm', 'stripAnsi', 'sortJSON', 'Update-Env', 'sudo')
+  FunctionsToExport    = @('vh', 'vw', 'vi', 'yq', 'tq', 'packageJSON', 'stripAnsi', 'sortJSON', 'icat', 'Update-Env', 'Invoke-Less', 'Invoke-Npm', 'Invoke-Sudo')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()

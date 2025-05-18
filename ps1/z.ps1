@@ -9,7 +9,8 @@ $_zConfig = @{
 $_zItemsMap = @{}
 
 function _zGetPath {
-  $item = Get-Item -LiteralPath .
+  param([string]$Path = $PWD.Path)
+  $item = Get-Item -LiteralPath $path
   if ($_zConfig.resolveSymlinks -and $item.Mode[0] -eq 'l') {
     $item.ResolvedTarget
   }
@@ -138,6 +139,7 @@ function _z {
         Time = $time
       })
   }
+  _zAdd # for IDE shells
   $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$function:_zAdd
   $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
   $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {

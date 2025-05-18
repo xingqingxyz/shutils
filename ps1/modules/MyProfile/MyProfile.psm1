@@ -104,19 +104,6 @@ function vi {
   }
 }
 
-function less {
-  if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
-    return $input | bat -lman
-  }
-  $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
-  if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd @args
-  }
-  else {
-    & $cmd @args
-  }
-}
-
 function yq {
   if ($MyInvocation.ExpectingInput) {
     $input | ConvertFrom-Yaml | ConvertTo-Json -Depth 100 | jq @args
@@ -145,46 +132,6 @@ function packageJSON {
     $dir = $dir.Parent
   }
   Get-Content -Raw "$dir/package.json" | ConvertFrom-Json -AsHashtable
-}
-
-function npm {
-  if ($MyInvocation.PipelineLength -ne 1) {
-    Set-Alias _npm (Get-Command npm -Type Application -TotalCount 1).Path
-    if ($MyInvocation.ExpectingInput) {
-      $input | _npm @args
-    }
-    else {
-      _npm @args
-    }
-    return
-  }
-  if ($args.Contains('--help')) {
-    return _npm @args | bat -lhelp
-  }
-  $command, $rest = $args
-  if (@('i', 'install', 'a', 'add').Contains($command) -and !$rest.Contains('-D')) {
-    $types = @()
-    $noTypes = @()
-    foreach ($arg in $rest) {
-      if ($arg.StartsWith('-')) {
-        continue
-      }
-      if ($arg.StartsWith('@types/')) {
-        $types += $arg
-      }
-      else {
-        $noTypes += $arg
-      }
-    }
-    if ($types.Length) {
-      _npm $command @types
-    }
-    if ($noTypes.Length) {
-      _npm $command @noTypes
-    }
-    return
-  }
-  _npm @args
 }
 
 <#
@@ -257,6 +204,35 @@ function sortJSON {
   }
 }
 
+function icat {
+  [CmdletBinding(DefaultParameterSetName = 'Path')]
+  param(
+    [Parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'Path', Position = 0)]
+    [string[]]$Path = $PWD,
+    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [string]$Content,
+    [Parameter()]
+    [string]$Format,
+    [Parameter()]
+    [string]$Size = [System.Console]::WindowHeight * 20,
+    [Parameter(ValueFromRemainingArguments)]
+    [System.Object[]]$Remains
+  )
+  if ($Content) {
+    $Content | magick -density 3000 -background transparent "${Format}:-" -resize "${Size}x" -define sixel:diffuse=true @Remains sixel:- 2>$null
+    return
+  }
+  $Path | ForEach-Object {
+    if ($Format) {
+      $Format += ':'
+    }
+    Get-ChildItem $_ | ForEach-Object {
+      magick -density 3000 -background transparent ($Format + $_.FullName) -resize "${Size}x" -define sixel:diffuse=true @Remains sixel:- 2>$null
+      $_.FullName
+    }
+  }
+}
+
 function Update-Env {
   param(
     [Parameter(Mandatory)]
@@ -277,9 +253,70 @@ function Update-Env {
   }
 }
 
+function Invoke-Less {
+  if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
+    return $input | bat -lman
+  }
+  $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd @args
+  }
+  else {
+    & $cmd @args
+  }
+}
+
+function Invoke-Npm {
+  if ($MyInvocation.PipelineLength -ne 1) {
+    $npm = 'npm'
+  }
+  try {
+    Set-Alias npm (Get-Command $npm -Type Application, ExternalScript -TotalCount 1).Path
+  }
+  catch {
+    throw 'npm not found: ' + $npm
+  }
+  if ($MyInvocation.PipelineLength -ne 1) {
+    if ($MyInvocation.ExpectingInput) {
+      $input | npm @args
+    }
+    else {
+      npm @args
+    }
+    return
+  }
+  if ($args.Contains('--help')) {
+    return npm @args | bat -lhelp
+  }
+  $command, $rest = $args
+  if (@('i', 'install', 'a', 'add').Contains($command) -and !$rest.Contains('-D')) {
+    $types = @()
+    $noTypes = @()
+    foreach ($arg in $rest) {
+      if ($arg.StartsWith('-')) {
+        continue
+      }
+      if ($arg.StartsWith('@types/')) {
+        $types += $arg
+      }
+      else {
+        $noTypes += $arg
+      }
+    }
+    if ($types.Length) {
+      npm $command @types
+    }
+    if ($noTypes.Length) {
+      npm $command @noTypes
+    }
+    return
+  }
+  npm @args
+}
+
 $sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ErrorAction Ignore).Path
 if ($sudoExe) {
-  function sudo {
+  function Invoke-Sudo {
     if (!$args.Length) {
       return & $sudoExe
     }
@@ -325,32 +362,37 @@ if ($sudoExe) {
           $args[$sudoOpts.Length] = $info.Definition
           return sudo @args
         }
-        { $_ -eq [CommandTypes]::Cmdlet -or $_ -eq [CommandTypes]::ExternalScript -or $_ -eq [CommandTypes]::Function -and $info.ModuleName } {
-          $pwshExe = [System.Environment]::ProcessPath
-          $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
-          $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
-          Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
-          if ($MyInvocation.ExpectingInput) {
-            $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
+        ([CommandTypes]::Cmdlet) { break }
+        ([CommandTypes]::ExternalScript) { break }
+        ([CommandTypes]::Function) {
+          if ($info.Module -or $info.ScriptBlock.File.StartsWith([System.IO.Path]::GetFullPath($PSScriptRoot + '/../..'))) {
+            break
           }
-          else {
-            & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
-          }
-          return
+          throw "function $commandName is not found in the profile workspace"
         }
         Default {
           throw "can't resolve command $commandLine $commandName $sudoOpts"
         }
       }
+      $pwshExe = $IsWindows ? [System.Environment]::ProcessPath : (Get-Process -Id $PID).Parent.Path
+      $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
+      $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
+      Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
+      if ($MyInvocation.ExpectingInput) {
+        $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
+      }
+      else {
+        & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
+      }
     }
   }
 }
 elseif ($IsWindows) {
-  function sudo {
+  function Invoke-Sudo {
     $filePath = ''
     $argumentList = $null
     if (!$args.Length) {
-      return $Function:sudo | bat -lps1
+      return $MyInvocation.MyCommand.Definition | bat -lps1
     }
     elseif ($args[0] -is [scriptblock]) {
       $filePath = [System.Environment]::ProcessPath
@@ -367,15 +409,20 @@ elseif ($IsWindows) {
           $filePath, $argumentList = $args
           break
         }
-        { $_ -eq [CommandTypes]::Cmdlet -or $_ -eq [CommandTypes]::ExternalScript -or $_ -eq [CommandTypes]::Function -and $info.ModuleName } {
-          $filePath = [System.Environment]::ProcessPath
-          $argumentList = @('-nop', '-nol', '-c') + $args
-          break
+        ([CommandTypes]::Cmdlet) { break }
+        ([CommandTypes]::ExternalScript) { break }
+        ([CommandTypes]::Function) {
+          if ($info.Module -or $info.ScriptBlock.File.StartsWith([System.IO.Path]::GetFullPath($PSScriptRoot + '/../..'))) {
+            break
+          }
+          throw "function $commandName is not found in the profile workspace"
         }
         Default {
           throw "can't resolve command $args"
         }
       }
+      $filePath = [System.Environment]::ProcessPath
+      $argumentList = @('-nop', '-nol', '-c') + $args
     }
     Write-Debug "$filePath $argumentList"
     Start-Process -FilePath $filePath -ArgumentList $argumentList -Verb RunAs -WorkingDirectory $PWD.Path

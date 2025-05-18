@@ -14,6 +14,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      mitt:
+        specifier: ^3.0.1
+        version: 3.0.1
       strip-ansi:
         specifier: ^7.1.0
         version: 7.1.0
@@ -22,22 +25,22 @@ importers:
         version: 5.7.3
     devDependencies:
       '@types/lodash':
-        specifier: ^4.17.14
-        version: 4.17.14
+        specifier: ^4.17.15
+        version: 4.17.15
       '@types/node':
-        specifier: ^22.10.6
-        version: 22.10.6
+        specifier: ^22.13.4
+        version: 22.13.4
       '@types/tampermonkey':
         specifier: ^5.0.4
         version: 5.0.4
 
 packages:
 
-  '@types/lodash@4.17.14':
-    resolution: {integrity: sha512-jsxagdikDiDBeIRaPYtArcT8my4tN1og7MtMRquFT3XNA6axxyHDRUemqDz/taRDdOUn0GnGHRCuff4q48sW9A==}
+  '@types/lodash@4.17.15':
+    resolution: {integrity: sha512-w/P33JFeySuhN6JLkysYUK2gEmy9kHHFN7E8ro0tkfmlDOgxBDzWEZ/J8cWA+fHqFevpswDTFZnDx+R9lbL6xw==}
 
-  '@types/node@22.10.6':
-    resolution: {integrity: sha512-qNiuwC4ZDAUNcY47xgaSuS92cjf8JbSUoaKS77bmLG1rU7MlATVSiw/IlrjtIyyskXBZ8KkNfjK/P5na7rgXbQ==}
+  '@types/node@22.13.4':
+    resolution: {integrity: sha512-ywP2X0DYtX3y08eFVx5fNIw7/uIv8hYUKgXoK8oayJlLnKcRfEYCxWMVE1XagUdVtCJlZT1AU4LXEABW+L1Peg==}
 
   '@types/tampermonkey@5.0.4':
     resolution: {integrity: sha512-HEJ0O5CkDZSwIgd9Zip4xM8o7gZC8zBmJuH1YEXNINIC+aCWEXD10pnpo3NQG5IWHx+Xr4fMSGq1jqeKXH2lpA==}
@@ -93,6 +96,9 @@ packages:
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
+  mitt@3.0.1:
+    resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
+
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
@@ -120,8 +126,8 @@ packages:
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
 
-  undici@6.21.0:
-    resolution: {integrity: sha512-BUgJXc752Kou3oOIuU1i+yZZypyZRqNPW0vqoMPl8VaoalSfeR0D8/t4iAS3yirs79SSMTxTag+ZC86uswv+Cw==}
+  undici@6.21.1:
+    resolution: {integrity: sha512-q/1rj5D0/zayJB2FraXdaWxbhWiNKDvu8naDT2dl1yTlvJp4BLtOcp2a5BvgGNQpYYJzau7tf1WgKv3b+7mqpQ==}
     engines: {node: '>=18.17'}
 
   whatwg-encoding@3.1.1:
@@ -134,9 +140,9 @@ packages:
 
 snapshots:
 
-  '@types/lodash@4.17.14': {}
+  '@types/lodash@4.17.15': {}
 
-  '@types/node@22.10.6':
+  '@types/node@22.13.4':
     dependencies:
       undici-types: 6.20.0
 
@@ -166,7 +172,7 @@ snapshots:
       parse5: 7.2.1
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 6.21.0
+      undici: 6.21.1
       whatwg-mimetype: 4.0.0
 
   css-select@5.1.0:
@@ -217,6 +223,8 @@ snapshots:
 
   lodash@4.17.21: {}
 
+  mitt@3.0.1: {}
+
   nth-check@2.1.1:
     dependencies:
       boolbase: 1.0.0
@@ -244,7 +252,7 @@ snapshots:
 
   undici-types@6.20.0: {}
 
-  undici@6.21.0: {}
+  undici@6.21.1: {}
 
   whatwg-encoding@3.1.1:
     dependencies:

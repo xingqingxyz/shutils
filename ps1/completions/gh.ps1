@@ -1,4 +1,4 @@
-Register-ArgumentCompleter -Native -CommandName $args[0] -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommandPath) -ScriptBlock {
   # powershell completion for cobra drived cli tools
   param(
     [string]$wordToComplete,

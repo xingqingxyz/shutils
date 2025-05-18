@@ -12,15 +12,12 @@ query getInfo($owner: String!, $repo: String!) {
   repository(owner: $owner, name: $repo) {
     releases(first: 1) {
       nodes {
-        url
         tagName
         description
         updatedAt
         releaseAssets(first: 1) {
           nodes {
             name
-            size
-            downloadUrl
           }
         }
       }
