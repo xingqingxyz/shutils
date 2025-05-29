@@ -11,7 +11,12 @@ function winget {
 
 function _runResolved {
   $cmd = (Get-Item (Get-Command $MyInvocation.InvocationName -Type Application -TotalCount 1).Path).ResolvedTarget
-  Start-Process -FilePath $cmd -ArgumentList $args -Wait -NoNewWindow
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd @args
+  }
+  else {
+    & $cmd @args
+  }
 }
 
-@('adb', 'fastboot', 'lua-language-server') | ForEach-Object { Set-Alias $_ _runResolved }
+Get-ChildItem ${env:LOCALAPPDATA}/Microsoft/WinGet/Links | ForEach-Object { Set-Alias $_ _runResolved }

@@ -226,14 +226,6 @@ properties:
       id: VideoLAN_VLC
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: XAMPPRocky.Tokei
-        source: winget
-      directives:
-        description: XAMPPRocky.Tokei
-        allowPrerelease: true
-      id: XAMPPRocky_Tokei
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
         id: aria2.aria2
         source: winget
       directives:
@@ -248,14 +240,6 @@ properties:
         description: astral-sh.uv
         allowPrerelease: true
       id: astral_sh_uv
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: bootandy.dust
-        source: winget
-      directives:
-        description: bootandy.dust
-        allowPrerelease: true
-      id: bootandy_dust
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: dandavison.delta

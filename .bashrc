@@ -1,3 +1,10 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+  . /etc/bashrc
+fi
+
 # shopt -s histappend
 shopt -s globstar
 HISTCONTROL=ignoreboth
@@ -6,22 +13,9 @@ HISTFILESIZE=10000
 
 # aliases
 alias code='code --enable-proposed-api xingqingxyz.mvext'
-alias tree='tree --gitignore' ls='ls --color=auto' grep='grep --color=auto' vi='nvim -u NONE' py=python
-
-# env preferences
-export LESS='--quit-if-one-screen --quit-at-eof --use-color --wordwrap --mouse --ignore-case --incsearch --search-options=W'
-
-# bat
-export BAT_THEME=''
-
-# oh-my-posh
-if type -P oh-my-posh > /dev/null; then
-  export POSH_THEME="/home/mn/.config/oh-my-posh/paradox.omp.json"
-  eval "$(oh-my-posh init bash)"
-fi
 
 # shutils
-for i in bash/*.sh; do
+for i in ${BASH_SOURCE[0]%/*}/bash/**/*.sh; do
   . "$i"
 done
 

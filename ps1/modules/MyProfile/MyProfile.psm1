@@ -95,15 +95,6 @@ function vw {
   }
 }
 
-function vi {
-  if ($MyInvocation.ExpectingInput) {
-    $input | nvim -u NORC @args
-  }
-  else {
-    nvim -u NORC @args
-  }
-}
-
 function yq {
   if ($MyInvocation.ExpectingInput) {
     $input | ConvertFrom-Yaml | ConvertTo-Json -Depth 100 | jq @args
@@ -139,7 +130,12 @@ function packageJSON {
 Strip ANSI escape codes from input or all args text.
  #>
 function stripAnsi {
-  @(if ($MyInvocation.ExpectingInput) { $input } else { $args }) |
+  @(if ($MyInvocation.ExpectingInput) {
+      $input
+    }
+    else {
+      $args
+    }) |
     bat --strip-ansi=always --plain
 }
 
@@ -160,9 +156,15 @@ function sortJSON {
   Get-ChildItem $Path -File | ForEach-Object {
     $cur = $_
     $ext = switch ($cur.Extension.ToLower().Substring(1)) {
-      'jsonc' { 'json'; break }
-      'yml' { 'yaml'; break }
-      Default { $_ }
+      'jsonc' {
+        'json'; break
+      }
+      'yml' {
+        'yaml'; break
+      }
+      Default {
+        $_
+      }
     }
     $content = Get-Content -Raw -Encoding $Encoding $cur
     $content = switch ($ext) {
@@ -204,6 +206,16 @@ function sortJSON {
   }
 }
 
+function loadEnv {
+  param([string]$Path = $PWD.Path + '/.env')
+  if (Test-Path $Path) {
+    Get-Content $Path | ForEach-Object {
+      $name, $value = $_.Split('=', 2)
+      Set-Item Env:$name $value
+    }
+  }
+}
+
 function icat {
   [CmdletBinding(DefaultParameterSetName = 'Path')]
   param(
@@ -239,16 +251,54 @@ function Update-Env {
     [scriptblock]
     $ScriptBlock,
     [System.EnvironmentVariableTarget]
-    $Scope = 'User'
+    $Scope = 'User',
+    [string]
+    $Description = (Get-Date).ToString()
   )
+  if ($Scope -eq [System.EnvironmentVariableTarget]::Process) {
+    return & $ScriptBlock
+  }
+
   $prevEnv = [System.Environment]::GetEnvironmentVariables()
   & $ScriptBlock
   $processEnv = [System.Environment]::GetEnvironmentVariables()
 
-  foreach ($key in $processEnv.Keys) {
-    $value = $processEnv.$key
-    if (!$prevEnv.ContainsKey($key) -or $prevEnv.$key -ne $value) {
-      [System.Environment]::SetEnvironmentVariable($key, $value, $Scope)
+  switch ($true) {
+    $IsWindows {
+      foreach ($key in $processEnv.Keys) {
+        $value = $processEnv.$key
+        if (!$prevEnv.ContainsKey($key) -or $prevEnv.$key -ne $value) {
+          [System.Environment]::SetEnvironmentVariable($key, $value, $Scope)
+        }
+      }
+      break
+    }
+    $IsLinux {
+      $Description = $Description.Replace("`n", ' ')
+      $cmd = $processEnv.GetEnumerator() | ForEach-Object {
+        if (!$prevEnv.ContainsKey($_.Name) -or $prevEnv.($_.Name) -ne $_.Value) {
+          $_.Name + '=' + $_.Value
+        }
+      } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
+      switch ($Scope) {
+        ([System.EnvironmentVariableTarget]::User) {
+          if (Test-Path ~/.bash_profile) {
+            $cmd >> ~/.bash_profile
+          }
+          else {
+            $cmd >> ~/.profile
+          }
+          break
+        }
+        ([System.EnvironmentVariableTarget]::Machine) {
+          $cmd | sudo Out-File /etc/profile.d/sh.local
+          break
+        }
+      }
+      break
+    }
+    Default {
+      throw 'not implemented'
     }
   }
 }
@@ -315,6 +365,11 @@ function Invoke-Npm {
 }
 
 $sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ErrorAction Ignore).Path
+$pwshExe = [System.Environment]::ProcessPath
+$pwshArgs = @()
+if ((Split-Path -LeafBase $pwshExe) -ne 'pwsh') {
+  $pwshArgs = [System.Environment]::GetCommandLineArgs()
+}
 if ($sudoExe) {
   function Invoke-Sudo {
     if (!$args.Length) {
@@ -334,15 +389,14 @@ if ($sudoExe) {
       break
     }
     if ($isScriptBlock) {
-      $pwshExe = [System.Environment]::ProcessPath
       $cwa = $args[$sudoOpts.Length..($args.Length - 1)]
       $cwa[0] = $commandName
-      Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -cwa $cwa"
+      Write-Debug "$sudoExe $sudoOpts -- $pwshExe $pwshArgs -nop -nol -cwa $cwa"
       if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -cwa @cwa
+        $input | & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -cwa @cwa
       }
       else {
-        & $sudoExe @sudoOpts -- $pwshExe -nop -nol -cwa @cwa
+        & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -cwa @cwa
       }
     }
     elseif (Get-Command $commandName -Type Application -TotalCount 1 -ErrorAction Ignore) {
@@ -362,8 +416,12 @@ if ($sudoExe) {
           $args[$sudoOpts.Length] = $info.Definition
           return sudo @args
         }
-        ([CommandTypes]::Cmdlet) { break }
-        ([CommandTypes]::ExternalScript) { break }
+        ([CommandTypes]::Cmdlet) {
+          break
+        }
+        ([CommandTypes]::ExternalScript) {
+          break
+        }
         ([CommandTypes]::Function) {
           if ($info.Module -or $info.ScriptBlock.File.StartsWith([System.IO.Path]::GetFullPath($PSScriptRoot + '/../..'))) {
             break
@@ -374,31 +432,26 @@ if ($sudoExe) {
           throw "can't resolve command $commandLine $commandName $sudoOpts"
         }
       }
-      $pwshExe = $IsWindows ? [System.Environment]::ProcessPath : (Get-Process -Id $PID).Parent.Path
       $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
       $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
-      Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
+      Write-Debug "$sudoExe $sudoOpts -- $pwshExe $pwshArgs -nop -nol -e $encodedCommand{$commandLine}"
       if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
+        $input | & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -e $encodedCommand
       }
       else {
-        & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
+        & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -e $encodedCommand
       }
     }
   }
 }
 elseif ($IsWindows) {
   function Invoke-Sudo {
-    $filePath = ''
+    $filePath = $null
     $argumentList = $null
     if (!$args.Length) {
       return $MyInvocation.MyCommand.Definition | bat -lps1
     }
-    elseif ($args[0] -is [scriptblock]) {
-      $filePath = [System.Environment]::ProcessPath
-      $argumentList = @('-nop', '-nol', '-cwa') + $args
-    }
-    else {
+    elseif ($args[0] -isnot [scriptblock]) {
       $info = Get-Command $args[0] -TotalCount 1 -ErrorAction Ignore
       switch ($info.CommandType) {
         ([CommandTypes]::Alias) {
@@ -409,8 +462,12 @@ elseif ($IsWindows) {
           $filePath, $argumentList = $args
           break
         }
-        ([CommandTypes]::Cmdlet) { break }
-        ([CommandTypes]::ExternalScript) { break }
+        ([CommandTypes]::Cmdlet) {
+          break
+        }
+        ([CommandTypes]::ExternalScript) {
+          break
+        }
         ([CommandTypes]::Function) {
           if ($info.Module -or $info.ScriptBlock.File.StartsWith([System.IO.Path]::GetFullPath($PSScriptRoot + '/../..'))) {
             break
@@ -421,9 +478,12 @@ elseif ($IsWindows) {
           throw "can't resolve command $args"
         }
       }
-      $filePath = [System.Environment]::ProcessPath
-      $argumentList = @('-nop', '-nol', '-c') + $args
     }
+    if ($null -eq $filePath) {
+      $filePath = $pwshExe
+      $argumentList = $pwshArgs + @('-nop', '-nol', '-cwa') + $args
+    }
+    # TODO: can't handle stdin $MyInvocation.ExpectingInput
     Write-Debug "$filePath $argumentList"
     Start-Process -FilePath $filePath -ArgumentList $argumentList -Verb RunAs -WorkingDirectory $PWD.Path
   }

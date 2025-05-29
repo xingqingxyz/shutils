@@ -18,14 +18,6 @@ properties:
       id: 7zip_7zip
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: AutoHotkey.AutoHotkey
-        source: winget
-      directives:
-        description: AutoHotkey.AutoHotkey
-        allowPrerelease: true
-      id: AutoHotkey_AutoHotkey
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
         id: Git.Git
         source: winget
       directives:
@@ -56,14 +48,6 @@ properties:
         description: voidtools.Everything
         allowPrerelease: true
       id: voidtools_Everything
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Nvidia.GeForceExperience
-        source: winget
-      directives:
-        description: Nvidia.GeForceExperience
-        allowPrerelease: true
-      id: Nvidia_GeForceExperience
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: Microsoft.PowerShell
@@ -138,14 +122,6 @@ properties:
       id: aria2_aria2
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
-        id: bootandy.dust
-        source: winget
-      directives:
-        description: bootandy.dust
-        allowPrerelease: true
-      id: bootandy_dust
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
         id: junegunn.fzf
         source: winget
       directives:
@@ -168,14 +144,6 @@ properties:
         description: sharkdp.fd
         allowPrerelease: true
       id: sharkdp_fd
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      settings:
-        id: Python.Python.3.13
-        source: winget
-      directives:
-        description: Python.Python.3.13
-        allowPrerelease: true
-      id: Python_Python_3_13
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       settings:
         id: Microsoft.VisualStudioCode

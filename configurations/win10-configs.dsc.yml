@@ -3,7 +3,7 @@ properties:
   assertions:
     - resource: Microsoft.Windows.Developer/OsVersion
       settings:
-        MinVersion: 10.0.22000
+        MinVersion: 10.0.18090
       directives:
         description: Verify min OS version requirement
         allowPrerelease: true
@@ -132,29 +132,22 @@ properties:
         allowPrerelease: true
     - resource: Microsoft.WinGet.DSC/WinGetAdminSettings
       settings:
-        Settings: >-
-          {
-            "$schema": "https://raw.githubusercontents.com/microsoft/winget-cli/master/schemas/JSON/settings/settings.schema.0.2.json",
-            "installBehavior": {
-              "preferences": {
-                "scope": "machine"
-              }
-            },
-            "uninstallBehavior": {
-              "purgePortablePackage": true
-            },
-            "telemetry": {
-              "disable": true
-            },
-            "experimentalFeatures": {
-              "resume": true,
-              "configureExport": true,
-              "configureSelfElevate": true,
-              "directMSI": true,
-              "experimentalARG": true,
-              "experimentalCMD": true
-            }
-          }
+        Settings:
+          $schema: https://raw.githubusercontents.com/microsoft/winget-cli/master/schemas/JSON/settings/settings.schema.0.2.json
+          installBehavior:
+            preferences:
+              scope: machine
+          uninstallBehavior:
+            purgePortablePackage: true
+          telemetry:
+            disable: true
+          experimentalFeatures:
+            resume: true
+            configureExport: true
+            configureSelfElevate: true
+            directMSI: true
+            experimentalARG: true
+            experimentalCMD: true
       directives:
         description: Microsoft.WinGet.DSC/WinGetAdminSettings
         allowPrerelease: true
@@ -171,185 +164,78 @@ properties:
       directives:
         description: ComputerManagementDsc/WindowsOptionalFeature
         allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/PowerRename
+    - directives:
+        description: Configure PowerToys
       settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/PowerRename
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/AlwaysOnTop
-      settings:
-        Enabled: true
-        DoNotActivateOnGameMode: true
-        FrameThickness: 2
-      directives:
-        description: Microsoft.PowerToys.Configure/AlwaysOnTop
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/Awake
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/Awake
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/ColorPicker
-      settings:
-        Enabled: true
-        ShowColorName: true
-        CopiedColorRepresentation: HEX
-        ActivationAction: OpenColorPickerAndThenEditor
-      directives:
-        description: Microsoft.PowerToys.Configure/ColorPicker
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/CropAndLock
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/CropAndLock
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/EnvironmentVariables
-      settings:
-        Enabled: true
-        LaunchAdministrator: true
-      directives:
-        description: Microsoft.PowerToys.Configure/EnvironmentVariables
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/FancyZones
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/FancyZones
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/FileLocksmith
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/FileLocksmith
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/FindMyMouse
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/FindMyMouse
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/Hosts
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/Hosts
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/ImageResizer
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/ImageResizer
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/Peek
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/Peek
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/KeyboardManager
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/KeyboardManager
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/ShortcutGuide
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/ShortcutGuide
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/VideoConference
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/VideoConference
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/GeneralSettings
-      settings:
-        Startup: true
-        ShowNewUpdatesToastNotification: false
-        EnableExperimentation: false
-        AutoDownloadUpdates: false
-        Theme: System
-        EnableWarningsElevatedApps: true
-        ShowWhatsNewAfterUpdates: true
-      directives:
-        description: Microsoft.PowerToys.Configure/GeneralSettings
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/MeasureTool
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/MeasureTool
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/MouseHighlighter
-      settings:
-        Enabled: true
-        DefaultMeasureStyle: 1
-      directives:
-        description: Microsoft.PowerToys.Configure/MouseHighlighter
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/MouseJump
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/MouseJump
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/MousePointerCrosshairs
-      settings:
-        CrosshairsThickness: 2
-        CrosshairsBorderSize: 0
-        CrosshairsAutoHide: true
-        Enabled: false
-        CrosshairsRadius: 0
-      directives:
-        description: Microsoft.PowerToys.Configure/MousePointerCrosshairs
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/MouseWithoutBorders
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/MouseWithoutBorders
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/PastePlain
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/PastePlain
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/PowerPreview
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/PowerPreview
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/RegistryPreview
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/RegistryPreview
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/PowerAccent
-      settings:
-        Enabled: false
-      directives:
-        description: Microsoft.PowerToys.Configure/PowerAccent
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/PowerLauncher
-      settings:
-        Enabled: true
-      directives:
-        description: Microsoft.PowerToys.Configure/PowerLauncher
-        allowPrerelease: true
-    - resource: Microsoft.PowerToys.Configure/PowerOcr
-      settings:
-        Enabled: true
-      directives:
-        description: Microsoft.PowerToys.Configure/PowerOcr
-        allowPrerelease: true
+        AlwaysOnTop:
+          Enabled: true
+          DoNotActivateOnGameMode: true
+          FrameThickness: 2
+        Awake:
+          Enabled: true
+        ColorPicker:
+          Enabled: true
+          ShowColorName: true
+          CopiedColorRepresentation: HEX
+          ActivationAction: OpenColorPickerAndThenEditor
+        CropAndLock:
+          Enabled: false
+        EnvironmentVariables:
+          Enabled: false
+          LaunchAdministrator: true
+        FancyZones:
+          Enabled: false
+        FileLocksmith:
+          Enabled: false
+        FindMyMouse:
+          Enabled: false
+        GeneralSettings:
+          Startup: true
+          ShowNewUpdatesToastNotification: false
+          EnableExperimentation: false
+          AutoDownloadUpdates: false
+          Theme: System
+          EnableWarningsElevatedApps: true
+          ShowWhatsNewAfterUpdates: true
+        Hosts:
+          Enabled: false
+        ImageResizer:
+          Enabled: false
+        KeyboardManager:
+          Enabled: false
+        MeasureTool:
+          Enabled: true
+        MouseHighlighter:
+          Enabled: false
+        MouseJump:
+          Enabled: false
+        MousePointerCrosshairs:
+          Enabled: false
+          CrosshairsThickness: 2
+          CrosshairsBorderSize: 0
+          CrosshairsAutoHide: true
+          CrosshairsRadius: 0
+        MouseWithoutBorders:
+          Enabled: false
+        Peek:
+          Enabled: false
+        PowerAccent:
+          Enabled: false
+        PowerLauncher:
+          Enabled: false
+        PowerOcr:
+          Enabled: false
+        PowerPreview:
+          Enabled: false
+        PowerRename:
+          Enabled: false
+        RegistryPreview:
+          Enabled: true
+        ShortcutGuide:
+          Enabled: false
+        VideoConference:
+          Enabled: false
+      resource: Microsoft.PowerToys.Configure/PowerToysConfigure
     - resource: PSDscResources/Environment
       settings:
         Value: --quit-if-one-screen --use-color --wordwrap --mouse --ignore-case --incsearch --search-options=W -R

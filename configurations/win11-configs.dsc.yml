@@ -26,7 +26,7 @@ properties:
       id: LESS
     - resource: PSDscResources/Environment
       settings:
-        Value: nvim
+        Value: nano
         Name: EDITOR
         Ensure: Present
       directives:
@@ -57,7 +57,7 @@ properties:
     - resource: Microsoft.Windows.Developer/Taskbar
       settings:
         Alignment: Middle
-        SearchboxMode: SearchBox
+        SearchboxMode: Hide
         WidgetsButton: Hide
         TaskViewButton: Show
         HideLabelsMode: Always
@@ -107,7 +107,7 @@ properties:
           DoNotActivateOnGameMode: true
           FrameThickness: 2
         Awake:
-          Enabled: false
+          Enabled: true
         ColorPicker:
           Enabled: true
           ShowColorName: true
@@ -116,7 +116,7 @@ properties:
         CropAndLock:
           Enabled: false
         EnvironmentVariables:
-          Enabled: true
+          Enabled: false
           LaunchAdministrator: true
         FancyZones:
           Enabled: false
@@ -133,7 +133,7 @@ properties:
           EnableWarningsElevatedApps: true
           ShowWhatsNewAfterUpdates: true
         Hosts:
-          Enabled: true
+          Enabled: false
         ImageResizer:
           Enabled: false
         KeyboardManager:
@@ -157,9 +157,9 @@ properties:
         PowerAccent:
           Enabled: false
         PowerLauncher:
-          Enabled: true
+          Enabled: false
         PowerOcr:
-          Enabled: true
+          Enabled: false
         PowerPreview:
           Enabled: false
         PowerRename:

@@ -3,8 +3,6 @@
 [System.Console]::InputEncoding = [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # PSModulePath
 $env:PSModulePath += [System.IO.Path]::PathSeparator + "$PSScriptRoot/ps1/modules"
-# env configs
-$env:BAT_THEME_LIGHT = 'GitHub'
 # editing
 Set-PSReadLineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Chord Ctrl+Delete -Function DeleteEndOfWord
