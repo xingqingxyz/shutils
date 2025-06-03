@@ -40,8 +40,11 @@ Set-PSReadLineKeyHandler -Chord Alt+c -ScriptBlock {
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+r -ScriptBlock {
-  $history = if ($IsWindows) { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt" } elseif ($IsLinux) { "${env:HOME}/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt" }
-  elseif ($IsMacOS) { throw 'not implemented' }
+  $history = switch ($true) {
+    $IsWindows { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt"; break }
+    $IsLinux { "${env:HOME}/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
+    default { throw 'not implemented' }
+  }
   $history = Get-Content $history | Select-Object -Unique | fzf --scheme=history
   if (!$history) {
     return

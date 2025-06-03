@@ -9,14 +9,4 @@ function winget {
   winget.exe @args
 }
 
-function _runResolved {
-  $cmd = (Get-Item (Get-Command $MyInvocation.InvocationName -Type Application -TotalCount 1).Path).ResolvedTarget
-  if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd @args
-  }
-  else {
-    & $cmd @args
-  }
-}
-
-Get-ChildItem ${env:LOCALAPPDATA}/Microsoft/WinGet/Links | ForEach-Object { Set-Alias $_ _runResolved }
+Get-ChildItem ${env:LOCALAPPDATA}/Microsoft/WinGet/Links | ForEach-Object { Set-Alias $_.BaseName $_.ResolvedTarget }

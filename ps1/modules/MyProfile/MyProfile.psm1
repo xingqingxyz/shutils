@@ -366,9 +366,8 @@ function Invoke-Npm {
 
 $sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ErrorAction Ignore).Path
 $pwshExe = [System.Environment]::ProcessPath
-$pwshArgs = @()
 if ((Split-Path -LeafBase $pwshExe) -ne 'pwsh') {
-  $pwshArgs = [System.Environment]::GetCommandLineArgs()
+  $pwshExe = (Get-Command pwsh -CommandType Application -TotalCount 1 -ea Ignore).Path ?? 'pwsh'
 }
 if ($sudoExe) {
   function Invoke-Sudo {
@@ -391,12 +390,12 @@ if ($sudoExe) {
     if ($isScriptBlock) {
       $cwa = $args[$sudoOpts.Length..($args.Length - 1)]
       $cwa[0] = $commandName
-      Write-Debug "$sudoExe $sudoOpts -- $pwshExe $pwshArgs -nop -nol -cwa $cwa"
+      Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -cwa $cwa"
       if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -cwa @cwa
+        $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -cwa @cwa
       }
       else {
-        & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -cwa @cwa
+        & $sudoExe @sudoOpts -- $pwshExe -nop -nol -cwa @cwa
       }
     }
     elseif (Get-Command $commandName -Type Application -TotalCount 1 -ErrorAction Ignore) {
@@ -434,12 +433,12 @@ if ($sudoExe) {
       }
       $commandLine = "$($args[$sudoOpts.Length..($args.Length - 1)])"
       $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandLine))
-      Write-Debug "$sudoExe $sudoOpts -- $pwshExe $pwshArgs -nop -nol -e $encodedCommand{$commandLine}"
+      Write-Debug "$sudoExe $sudoOpts -- $pwshExe -nop -nol -e $encodedCommand{$commandLine}"
       if ($MyInvocation.ExpectingInput) {
-        $input | & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -e $encodedCommand
+        $input | & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
       }
       else {
-        & $sudoExe @sudoOpts -- $pwshExe @pwshArgs -nop -nol -e $encodedCommand
+        & $sudoExe @sudoOpts -- $pwshExe -nop -nol -e $encodedCommand
       }
     }
   }
@@ -481,7 +480,7 @@ elseif ($IsWindows) {
     }
     if ($null -eq $filePath) {
       $filePath = $pwshExe
-      $argumentList = $pwshArgs + @('-nop', '-nol', '-cwa') + $args
+      $argumentList = @('-nop', '-nol', '-cwa') + $args
     }
     # TODO: can't handle stdin $MyInvocation.ExpectingInput
     Write-Debug "$filePath $argumentList"
