@@ -67,7 +67,7 @@ filter_many() {
   local i
   for i in "${@:2}"; do
     # shellcheck disable=SC2053
-    if [[ "$i" = $1 ]]; then
+    if [[ $i == $1 ]]; then
       echo "$i"
     fi
   done
@@ -84,7 +84,7 @@ filter() {
   local i
   for i in "${_array[@]}"; do
     # shellcheck disable=SC2053
-    if [[ "$i" = $1 ]]; then
+    if [[ $i == $1 ]]; then
       if [ -n "$3" ]; then
         _target+=("$i")
       else

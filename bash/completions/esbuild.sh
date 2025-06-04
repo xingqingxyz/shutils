@@ -1,6 +1,6 @@
 _esbuild() {
   local prev
-  if [[ "$3" = [:=] ]]; then
+  if [[ $3 == [:=] ]]; then
     prev=${COMP_WORDS[COMP_CWORD - 2]}
   else
     prev=$3
@@ -80,7 +80,7 @@ _esbuild() {
       mapfile -t COMPREPLY < <(compgen -W '--bundle --minify --sourcemap  --spliting --watch --allow-overwrite --analyze --charset=utf8 --ignore-annotations --jsx-dev --jsx-side-effects --keep-names --minify-whitespace --minify-identifiers --minify-syntax --preserve-symlinks --sources-content=false --version' -- "$2")
       local -a opts
       mapfile -t opts < <(compgen -W '--define: --external: --format= --target= --loader: --outdir= --outfile= --packages= --platform= --serve= --asset-names= --banner: --certfile= --chunk-names= --color= --drop: --drop-labels= --entry-names= --footer: --global-name= --inject: --jsx-factory= --jsx-fragment= --jsx-import-source= --jsx= --keyfile= --legal-comments= --line-limit= --log-level= --log-limit= --log-override: --main-fields= --mangle-cache= --mangle-props= --mangle-quoted= --metafile= --out-extension: --outbase= --public-path= --pure: --reserve-props= --resolve-extensions= --serve-fallback= --servedir= --source-root= --sourcefile= --sourcemap= --supported: --tree-shaking= --tsconfig=' -- "$2")
-      if [[ "${#COMPREPLY[@]}" = 0 && "${#opts[@]}" = 1 ]]; then
+      if [[ ${#COMPREPLY[@]} == 0 && ${#opts[@]} == 1 ]]; then
         compopt -o nospace
       fi
       COMPREPLY+=("${opts[@]}")

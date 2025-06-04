@@ -15,7 +15,7 @@ HISTFILESIZE=10000
 alias code='code --enable-proposed-api xingqingxyz.mvext'
 
 # shutils
-for i in ${BASH_SOURCE[0]%/*}/bash/**/*.sh; do
+for i in "${BASH_SOURCE[0]%/*}"/bash/*.sh; do
   . "$i"
 done
 
@@ -35,9 +35,10 @@ FZF_ALT_C_OPTS='--preview="tree {} | head -n 200"'
 
 _idefault_complete() {
   mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
-  [ ${#COMPREPLY} != 0 ] && compopt -o nospace
+  [ ${#COMPREPLY[@]} != 0 ] && compopt -o nospace
 }
 
-complete -o bashdefault -F _idefault_complete -I
-
+if [[ $MSYSTEM != MINGW* ]]; then
+  complete -o bashdefault -F _idefault_complete -I
+fi
 unset i

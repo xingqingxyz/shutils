@@ -7,9 +7,9 @@ _nvim() {
       mapfile -t COMPREPLY < <(compgen -W 'NONE' -- "$2")
       ;;
     *)
-      if [[ "$2" = -V* ]]; then
+      if [[ $2 == -V* ]]; then
         compopt -o nospace
-        if [[ "$2" = -V*([[:digit:]]) ]]; then
+        if [[ $2 == -V*([[:digit:]]) ]]; then
           mapfile -t COMPREPLY < <(compgen -W "$(echo -n -V{0..16})" -- "$2")
         else
           mapfile -t COMPREPLY < <(compgen -P "$(grep -oP '^-V\d+' <<< "$2")" -f -- "${2##-V+([[:digit:]])}")

@@ -23,7 +23,7 @@ _rust-analyzer() {
         compgen -W '--config-path --output' -- "$2"
         ;;
       *)
-        if [[ "$COMP_CWORD" = 1 || "$2" = -* ]]; then
+        if [[ $COMP_CWORD == 1 || $2 == -* ]]; then
           compgen -W 'analysis-stats diagnostics -h --help highlight --log-file lsif --no-log-buffering parse --print-config-schema -q --quiet run-tests rustc-tests scip search ssr symbols -v --verbose --version --wait-dbg' -- "$2"
         fi
         ;;

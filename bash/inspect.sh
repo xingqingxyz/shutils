@@ -1,4 +1,4 @@
-_mn_preview_ident() {
+vw() {
   while [ "$1" ]; do
     case "$(type -t "$1")" in
       alias)
@@ -14,7 +14,7 @@ _mn_preview_ident() {
         declare -fp "$1" | bat -nl bash
         ;;
       *)
-        if [[ "$1" =~ \* ]]; then
+        if [[ $1 =~ \* ]]; then
           eval "declare -p \${!$1}"
         else
           declare -p "$1"
@@ -24,6 +24,3 @@ _mn_preview_ident() {
     shift
   done
 }
-
-# pretty print
-alias pp=_mn_preview_ident

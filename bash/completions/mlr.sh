@@ -5,7 +5,7 @@ _mlr() {
       return
       ;;
   esac
-  if [[ $COMP_CWORD = 1 || $2 = -* ]]; then
+  if [[ $COMP_CWORD == 1 || $2 == -* ]]; then
     mapfile -t COMPREPLY < <(compgen -W 'help -h --help -V --version' -- "$2")
   fi
 }

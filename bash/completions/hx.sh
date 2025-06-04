@@ -12,7 +12,7 @@ _hx() {
       )
       ;;
     *)
-      [[ "$2" == -* ]] || return
+      [[ $2 == -* ]] || return
       mapfile -t COMPREPLY < <(
         compgen -W "-h --help --tutor -V --version -v -vv -vvv --health -g --grammar --vsplit --hsplit -c --config --log" -- "$2"
       )

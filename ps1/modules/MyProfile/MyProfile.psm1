@@ -68,29 +68,32 @@ function vh {
 }
 
 function vw {
-  param([Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)][string]$Path = $PWD)
-  if (!(Test-Path $Path)) {
-    try {
-      return vh $Path -Source
+  param([string[]]$Path)
+  $files = @()
+  $dirs = @()
+  @($input; $Path) | ForEach-Object {
+    if ($null -eq $_) {
+      return
     }
-    catch {
-      throw "path not found: $Path"
+    $item = $_ -is [string] ? (Get-Item $_) : $_
+    switch ($item.GetType()) {
+      ([System.IO.DirectoryInfo]) {
+        $dirs += $item.FullName
+        break
+      }
+      ([System.IO.FileInfo]) {
+        $files += $item.FullName
+        break
+      }
     }
   }
-  switch ((Get-Item $Path).GetType()) {
-    ([System.IO.DirectoryInfo]) {
-      $Path = fzf --scheme=path
-      if ($LASTEXITCODE -ne 0) {
-        Get-ChildItem $Path
-      }
-      else {
-        vw $Path
-      }
-      break
-    }
-    ([System.IO.FileInfo]) {
-      bat $Path
-      break
+  if ($files) {
+    bat @files
+  }
+  if ($dirs) {
+    $dirs | ForEach-Object {
+      "`e[36m- ${_}`e[0m" # cyan
+      fd -tf --base-directory $_
     }
   }
 }

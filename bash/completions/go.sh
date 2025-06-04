@@ -1,7 +1,7 @@
 _go() {
   local cmd word
 
-  for word in "${COMP_WORDS[@]:1:((COMP_CWORD - 1))}"; do
+  for word in "${COMP_WORDS[@]:1:COMP_CWORD-1}"; do
     cmd+="${cmd:+__}${word}"
   done
   # TODO

@@ -25,7 +25,7 @@ _fzf_history() {
       |
       # TODO: consider HISTCONTROL and not use awk or simplify it
       "$awk" -v hist_cnt="$HISTCMD" -f "${BASH_SOURCE[0]%/*}/fzf-hist.awk" \
-      | FZF_DEFAULT_OPTS=$opts fzf -q "${READLINE_LINE:0:$READLINE_POINT}"
+      | FZF_DEFAULT_OPTS=$opts fzf -q "${READLINE_LINE:0:READLINE_POINT}"
   ) || return
   out=${out#*$'\t'}
   READLINE_LINE=$out${READLINE_LINE:READLINE_POINT}
