@@ -15,8 +15,7 @@ HISTSIZE=5000
 HISTFILESIZE=10000
 
 # aliases
-alias cls=clear
-alias code='code --enable-proposed-api xingqingxyz.mvext'
+alias cls=clear r='fc -s'
 
 # fzf
 # export FZF_DEFAUT_OPTS=

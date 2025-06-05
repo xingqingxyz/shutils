@@ -27,7 +27,7 @@ format_dur() {
       text=${left}d${right}h
     fi
   fi
-  echo -e "\\e[${color}m$text\\e[0m"
+  printf '\e[%dm%s\e[0m' "$color" "$text"
 }
 
 make_link() {
@@ -40,13 +40,13 @@ make_link() {
       if [ -v WSLENV ]; then
         # FIXME: ${val@P} expansion bugs
         path=$(wslpath -w "$1")
-        path=${path//\\/'\\\\'}
       fi
       ;;
     *)
       echo "$path"
       return
   esac
+  path=${path//\\/'\\\\'}
   printf '\e]8;;file://%s\a%s\e]8;;\a' "$path" "${2:-$1}"
 }
 
@@ -55,14 +55,15 @@ _on_invoke() {
 }
 
 _prompt() {
-  local code=$?
+  local code=$? out items
   LAST_CMD_DUR=$(awk "{printf \"%017.6f\", ($EPOCHREALTIME - $LAST_CMD_TIME)}" <<< '')
-  if [ $code = 0 ]; then
-    PS1="\e[32mOK\e[0m ($(format_dur "$LAST_CMD_DUR")) $(make_link "$PWD") \e[32m$\e[0m "
-  else
-    PS1="\e[31m$code\e[0m ($(format_dur "$LAST_CMD_DUR")) $(make_link "$PWD") \e[31m$\e[0m "
+  out='\w'
+  items=('\!' "$(format_dur "$LAST_CMD_DUR")" "$(make_link "$PWD" "${out@P}")" '$')
+  if [ $code != 0 ]; then
+    items[0]='\e[31m'$code'\e[0m:\!'
+    items[-1]='\e[31m$\e[0m'
   fi
-  return $code
+  PS1=$(printf '%s (%s) %s %s ' "${items[@]}")
 }
 
 _idefault_complete() {
@@ -74,11 +75,8 @@ bind '"\C-x\C-j": accept-line'
 bind -x '"\C-x\C-i": _on_invoke'
 bind '"\C-j": "\C-m"'
 bind '"\C-m": "\C-x\C-i\C-x\C-j"'
+complete -o bashdefault -F _idefault_complete -I
 
 if [[ $PROMPT_COMMAND != '_prompt;'* ]]; then
-  PROMPT_COMMAND="_prompt;$PROMPT_COMMAND"
-fi
-
-if [[ $OSTYPE = @(linux-gnu|darwin) ]]; then
-  complete -o bashdefault -F _idefault_complete -I
+  PROMPT_COMMAND[0]='_prompt;'
 fi

@@ -55,7 +55,7 @@ function prompt {
     $PWD.Path
   }
   if (!$lastHist) {
-    "PS [`e[32m${env:USERNAME}@${env:HOSTNAME}${env:COMPUTERNAME}`e[0m] $cwd$('>' * ($nestedPromptLevel + 1)) "
+    "PS [`e[32m${env:USER}${env:USERNAME}@${env:HOSTNAME}${env:COMPUTERNAME}`e[0m] $cwd$('>' * ($nestedPromptLevel + 1)) "
   }
   elseif ($lastStatus) {
     "`e[32mPS`e[0m ($(Format-Duration $lastHist.Duration)) $cwd$('>' * ($nestedPromptLevel + 1)) "
