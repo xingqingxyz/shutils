@@ -32,45 +32,39 @@ _fzf_history() {
   READLINE_POINT=${#out}
 }
 
-_fzf_z() {
+_fzf_cd() {
   local query out
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
   out=$(eval "${FZF_ALT_C_COMMAND:-fd -Htd}" \
     | FZF_DEFAULT_OPTS+=" ${FZF_ALT_C_OPTS} --height ${FZF_BIND_HEIGHT:-40%}
       --bind=ctrl-z:ignore --reverse --scheme=path +m" fzf -q "$query") || return
-  echo "cd -- ${out@Q}"
+  cd -- "$out"
 }
 
 _fzf_ident() {
-  local query out
+  local query out start
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
+  start=$(( READLINE_POINT - ${#query} ))
   # alias builtin command keyword variable
-  out=$(compgen -abckv -A function \
-    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_K_OPTS --height ${FZF_BIND_HEIGHT:-40%}
-      --bind=ctrl-z:ignore +m --reverse" fzf -q "$query") || return
-  READLINE_LINE=${READLINE_LINE:0:READLINE_POINT}$out${READLINE_LINE:READLINE_POINT}
-  ((READLINE_POINT += ${#out}))
+  out=$(compgen -abckv -A function -- "$query" \
+    | uniq \
+    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_O_OPTS --height ${FZF_BIND_HEIGHT:-40%}
+      --bind=ctrl-z:ignore +m --reverse" fzf -q "^$query") || return
+  READLINE_LINE=${READLINE_LINE:0:start}$out${READLINE_LINE:READLINE_POINT}
+  ((READLINE_POINT = start + ${#out}))
 }
 
 if ((BASH_VERSINFO[0] < 4)); then
   echo 'bash version < 4 : has not bind ctrl-t ctrl-r' >&2
 else
   # CTRL-T - Paste the selected file path into the command line
-  bind -m emacs-standard -x '"\C-t": _fzf_file_widget'
-  bind -m vi-command -x '"\C-t": _fzf_file_widget'
-  bind -m vi-insert -x '"\C-t": _fzf_file_widget'
-
   # CTRL-R - Paste the selected command from history into the command line
-  bind -m emacs-standard -x '"\C-r": _fzf_history'
-  bind -m vi-command -x '"\C-r": _fzf_history'
-  bind -m vi-insert -x '"\C-r": _fzf_history'
-
   # CTRL-O Select any shell ident
-  bind -m emacs-standard -x '"\C-o": _fzf_ident'
-  bind -m vi-command -x '"\C-o": _fzf_ident'
-  bind -m vi-insert -x '"\C-o": _fzf_ident'
+  bind -x '"\C-t": _fzf_file_widget'
+  bind -x '"\C-r": _fzf_history'
+  bind -x '"\C-o": _fzf_ident'
 fi
 
 # Required to refresh the prompt after fzf
@@ -82,6 +76,6 @@ bind -m vi-insert '"\C-z": emacs-editing-mode'
 bind -m emacs-standard '"\C-z": vi-editing-mode'
 
 # ALT-C - cd into the selected directory
-bind -m emacs-standard '"\ec": " \C-b\C-k \C-u$(_fzf_z)\e\C-e\er\C-m\C-y\C-h\e \C-y\ey\C-x\C-x\C-d"'
+bind -m emacs-standard '"\ec": " \C-b\C-k \C-u$(_fzf_cd)\e\C-e\er\C-m\C-y\C-h\e \C-y\ey\C-x\C-x\C-d"'
 bind -m vi-command '"\ec": "\C-z\ec\C-z"'
 bind -m vi-insert '"\ec": "\C-z\ec\C-z"'

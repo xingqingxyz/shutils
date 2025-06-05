@@ -17,7 +17,7 @@ class ZItem:
 
 
 class ZConfig:
-    cmd = ("z",)
+    cmd = ("z")
     datafile = f"{HOME}/.z"
     datasep = "|"
     resolve_symlinks = True
@@ -44,6 +44,8 @@ class Z:
                 if not line:
                     continue
                 item = line.split(ZConfig.datasep)
+                if len(item) != 3:
+                    raise TypeError(f'z data file is broken: {ZConfig.datafile}')
                 item = ZItem(item[0], float(item[1]), int(item[2]))
                 self.items_map[item.path] = item
                 self.rank_sum += item.rank
@@ -64,10 +66,12 @@ class Z:
                 continue
             if any(map(lambda p: fnmatch(path, p), ZConfig.exclude_patterns)):
                 continue
-            item = self.items_map.get(path, ZItem(path, 0.0, 0))
+            if path not in self.items_map:
+                self.items_map[path] = ZItem(path, 0.0, 0)
+            item = self.items_map[path]
             item.rank += 1.0
             item.time = int(time.time())
-            rank_sum += 1
+            rank_sum += 1.0
         if rank_sum > ZConfig.max_history:
             rank_sum = 0.0
             for item in self.items_map.values():
@@ -104,6 +108,9 @@ class Z:
         cwd=False,
         queries: list[str] = [],
     ):
+        if len(queries) == 1 and fnmatch(queries[0], '*[\\/]*'):
+            print(queries[0])
+            exit(99)
         re_query = re.compile(f"^.*{'.*'.join(queries)}.*$")
         items = filter(lambda x: re_query.match(x.path), self.items_map.values())
         if cwd:
@@ -130,8 +137,8 @@ class Z:
         rank_sum = self.rank_sum
         for item in reversed(items):
             if os.path.isdir(item.path):
-                print(f"cd -- '{item.path}'")
-                exit(99)  # ord('c')
+                print(item.path)
+                exit(99)
             warning("directory not exist, removing it: " + item.path)
             del self.items_map[item.path]
             rank_sum -= item.rank

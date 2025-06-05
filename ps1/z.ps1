@@ -92,6 +92,9 @@ function _z {
       break
     }
     'Main' {
+      if ($Queries.Length -eq 1 -and $Queries[0] -like '*[\/]*') {
+        return Set-Location $Queries[0]
+      }
       $re = [regex]::new("^.*$($Queries -join '.*').*$")
       $items = $_zItemsMap.Values.Where{ $re.IsMatch($_.Path) }
       if ($Cwd) {

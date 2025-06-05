@@ -1,8 +1,5 @@
 # .bash_profile
 
-# Get the aliases and functions
-. "${BASH_SOURCE[0]%/*}/.bashrc"
-
 export \
   PAGER='less' \
   EDITOR='nano' \
@@ -14,8 +11,10 @@ export \
   XMODIFIERS='@im=fcitx' \
   QT_IM_MODULE='fcitx' \
   GTK_IM_MODULE='fcitx' \
-  SHUTILS_ROOT="$HOME/p/shutils" \
   PATH="$HOME/.local/bin:$PATH:$HOME/.local/share/dscV3"
+
+# Get the aliases and functions
+. "${BASH_SOURCE[0]%/*}/.bashrc"
 
 if [ -n "$DESKTOP_SESSION" ] && type -fP fcitx5 &> /dev/null; then
   fcitx5 &
