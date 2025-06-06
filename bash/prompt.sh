@@ -8,28 +8,47 @@ _prompt() {
   local code=$? path=$PWD items color dur
   dur=$(awk "{printf \"%017.6f\", ($EPOCHREALTIME - $LAST_CMD_TIME)}" <<< '')
 
+declare LAST_CMD_TIME=$EPOCHREALTIME
+
+_on_invoke() {
+  LAST_CMD_TIME=$EPOCHREALTIME
+}
+
+_prompt() {
+  local code=$? path=$PWD items color dur
+  dur=$(awk "{printf \"%017.6f\", ($EPOCHREALTIME - $LAST_CMD_TIME)}" <<< '')
+
   # colors: green, cyan, blue, yellow, magenta, red
   if [ ${dur:0:-3} = 0000000000.000 ]; then
+  if [ ${dur:0:-3} = 0000000000.000 ]; then
     color=32
+    dur=$(( "1${dur: -3}" - 1000 ))μs
+  elif [ ${dur:0:10} = 0000000000 ]; then
     dur=$(( "1${dur: -3}" - 1000 ))μs
   elif [ ${dur:0:10} = 0000000000 ]; then
     color=36
     dur=$(( "1${dur: -6:3}" - 1000 )).${dur: -3}ms
   elif [ ${dur:0:7} = 0000000 ]; then
+    dur=$(( "1${dur: -6:3}" - 1000 )).${dur: -3}ms
+  elif [ ${dur:0:7} = 0000000 ]; then
     color=34
+    dur=$(( "1${dur:7:3}" - 1000 )).${dur: -6:3}s
     dur=$(( "1${dur:7:3}" - 1000 )).${dur: -6:3}s
   else
     local left=$(( "1${dur:0:10}" - 10000000000 )) right
     if (( right = left % 60 )) && (( (left /= 60) < 60 )); then
       color=33
       dur=${left}m${right}s
+      dur=${left}m${right}s
     elif (( right = left % 60 )) && (( (left /= 60) < 24 )); then
       color=35
+      dur=${left}h${right}m
       dur=${left}h${right}m
     else
       (( right = left % 24 ))
       (( left /= 24 ))
       color=31
+      dur=${left}d${right}h
       dur=${left}d${right}h
     fi
   fi
@@ -37,16 +56,27 @@ _prompt() {
   case "$OSTYPE" in
     msys|cygwin)
       path=$(cygpath -w "$path")
+      path=$(cygpath -w "$path")
       ;;
     linux-gnu|darwin)
       if [ -v WSLENV ]; then
+        path=$(wslpath -w "$path")
+        :
         path=$(wslpath -w "$path")
         :
       fi
       ;;
   esac
   # FIXME: ${val@P} expansion bugs
+  # FIXME: ${val@P} expansion bugs
   path=${path//\\/'\\\\'}
+
+  items=(
+    '\!'
+    '(\e['"${color}m$dur"'\e[0m)'
+    '\e]8;;file://'"$path"'\e\\\w\e]8;;\e\\'
+    '\n$ '
+  )
 
   items=(
     '\!'
@@ -58,6 +88,7 @@ _prompt() {
     items[0]='\e[31m'$code'\e[0m:\!'
   fi
   PS1=${items[*]}
+  PS1=${items[*]}
 }
 
 _idefault_complete() {
@@ -68,6 +99,9 @@ _idefault_complete() {
 if [[ $PROMPT_COMMAND != '_prompt;'* ]]; then
   PROMPT_COMMAND[0]='_prompt;'
   bind '"\C-m": "$(_on_invoke)\e\C-e\C-j"'
+  bind '"\C-m": "$(_on_invoke)\e\C-e\C-j"'
 fi
+
+complete -o bashdefault -F _idefault_complete -I
 
 complete -o bashdefault -F _idefault_complete -I
