@@ -1,5 +1,9 @@
 function Format-Duration {
-  param([timespan]$Duration)
+  param(
+    [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [timespan]
+    $Duration
+  )
   # colors: white, green, cyan, blue, yellow, magenta, red
   "`e[{0}m{1}`e[0m" -f $(switch ($true) {
       { $Duration.TotalNanoseconds -lt 1000 } {
@@ -45,25 +49,26 @@ function prompt {
   $lastHist = Get-History -Count 1 -ErrorAction Ignore
   $cwd = if ($PWD.Provider.Name -eq 'FileSystem') {
     if ($IsLinux -and (Test-Path Env:/WSLENV)) {
-      "`e]8;;file://$(wslpath -w $PWD.Path)`a$PWD`e]8;;`a"
+      "`e]8;;file://$(wslpath -w $PWD.Path)`e\$PWD`e]8;;`e\"
     }
     else {
-      "`e]8;;file://$PWD`a$PWD`e]8;;`a"
+      "`e]8;;file://$PWD`e\$PWD`e]8;;`e\"
     }
   }
   else {
     $PWD.Path
   }
   if (!$lastHist) {
-    "PS [`e[32m${env:USER}${env:USERNAME}@${env:HOSTNAME}${env:COMPUTERNAME}`e[0m] $cwd$('>' * ($nestedPromptLevel + 1)) "
+    return "PS [`e[32m$([System.Environment]::UserName)@$([System.Environment]::UserDomainName)`e[0m] $cwd$('>' * ($nestedPromptLevel + 1)) "
   }
-  elseif ($lastStatus) {
-    "`e[32mPS`e[0m ($(Format-Duration $lastHist.Duration)) $cwd$('>' * ($nestedPromptLevel + 1)) "
+  $status = if ($lastStatus) {
+    "`e[32mPS`e[0m"
   }
   elseif ($Error -and $lastHist.Id -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
-    "`e[31mPS`e[0m ($(Format-Duration $lastHist.Duration)) $cwd$('>' * ($nestedPromptLevel + 1)) "
+    "`e[31mPS`e[0m"
   }
   else {
-    "`e[31m$LASTEXITCODE`e[0m ($(Format-Duration $lastHist.Duration)) $cwd$('>' * ($nestedPromptLevel + 1)) "
+    "`e[31m$LASTEXITCODE`e[0m"
   }
+  '{0} ({1}:{2}) {3}{4} ' -f $status, $MyInvocation.HistoryId, (Format-Duration $lastHist.Duration), $cwd, ('>' * ($nestedPromptLevel + 1))
 }
