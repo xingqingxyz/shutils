@@ -45,10 +45,10 @@ function prompt {
   $lastHist = Get-History -Count 1 -ErrorAction Ignore
   $cwd = if ($PWD.Provider.Name -eq 'FileSystem') {
     if ($IsLinux -and (Test-Path Env:/WSLENV)) {
-      "`e]8;;file://$(wslpath -w $PWD.Path)`a$PWD`e]8;;`a"
+      "`e]8;;file://$(wslpath -w $PWD.Path)`e\$PWD`e]8;;`e\"
     }
     else {
-      "`e]8;;file://$PWD`a$PWD`e]8;;`a"
+      "`e]8;;file://$PWD`e\$PWD`e]8;;`e\"
     }
   }
   else {

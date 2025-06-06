@@ -1,6 +1,7 @@
 # .bash_profile
 
 export \
+  LANG='zh_CN.UTF-8' \
   PAGER='less' \
   EDITOR='nano' \
   BAT_THEME_LIGHT='GitHub' \
