@@ -65,7 +65,7 @@ function Set-PoshPromptType {
 }
 
 function Update-PoshErrorCode {
-  $lastHistory = Get-History -Count 1 -ErrorAction Ignore
+  $lastHistory = Get-History -Count 1 -ea Ignore
   # error code should be updated only when a non-empty command is run
   if (($null -eq $lastHistory) -or ($script:LastHistoryId -eq $lastHistory.Id)) {
     $script:ExecutionTime = 0

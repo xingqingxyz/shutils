@@ -46,29 +46,29 @@ function Format-Duration {
 
 function prompt {
   $lastStatus = $?
-  $lastHist = Get-History -Count 1 -ErrorAction Ignore
-  $cwd = if ($PWD.Provider.Name -eq 'FileSystem') {
-    if ($IsLinux -and (Test-Path Env:/WSLENV)) {
-      "`e]8;;file://$(wslpath -w $PWD.Path)`e\$PWD`e]8;;`e\"
-    }
-    else {
-      "`e]8;;file://$PWD`e\$PWD`e]8;;`e\"
-    }
+  if ($MyInvocation.HistoryId -eq 1) {
+    return "PS [`e[32m$([System.Environment]::UserName)@$([System.Environment]::UserDomainName)`e[0m] $PWD$('>' * ($nestedPromptLevel + 1)) "
   }
-  else {
-    $PWD.Path
-  }
-  if (!$lastHist) {
-    return "PS [`e[32m$([System.Environment]::UserName)@$([System.Environment]::UserDomainName)`e[0m] $cwd$('>' * ($nestedPromptLevel + 1)) "
-  }
+  $dur = Format-Duration (Get-History -Count 1 -ea Ignore).Duration
   $status = if ($lastStatus) {
     "`e[32mPS`e[0m"
   }
-  elseif ($Error -and $lastHist.Id -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
+  elseif ($Error -and $MyInvocation.HistoryId - 1 -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
     "`e[31mPS`e[0m"
   }
   else {
     "`e[31m$LASTEXITCODE`e[0m"
   }
-  '{0} ({1}:{2}) {3}{4} ' -f $status, $MyInvocation.HistoryId, (Format-Duration $lastHist.Duration), $cwd, ('>' * ($nestedPromptLevel + 1))
+  $cwd = if ($PWD.Provider.Name -eq 'FileSystem') {
+    if ($env:WSL_DISTRO_NAME) {
+      "`e]8;;file://$(wslpath -w $PWD.ProviderPath)`e\$PWD`e]8;;`e\"
+    }
+    else {
+      "`e]8;;file://$($PWD.ProviderPath)`e\$PWD`e]8;;`e\"
+    }
+  }
+  else {
+    $PWD.Path
+  }
+  '{0} ({1}:{2}) {3}{4} ' -f $status, $MyInvocation.HistoryId, $dur, $cwd, ('>' * ($nestedPromptLevel + 1))
 }

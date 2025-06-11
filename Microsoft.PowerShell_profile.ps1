@@ -21,14 +21,14 @@ Set-PSReadLineKeyHandler -Chord Ctrl+F1 -ScriptBlock {
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
   $name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
-  if (Get-Command $name -Type Alias, Cmdlet, Function -ErrorAction Ignore) {
-    Get-Help $name -Online -ErrorAction Ignore
+  if (Get-Command $name -Type Alias, Cmdlet, Function -ea Ignore) {
+    Get-Help $name -Online -ea Ignore
   }
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+t -ScriptBlock {
-  $items = fzf '--walker=file,hidden' -m
+  $items = @(fzf '--walker=file,hidden' -m)
   if ($items) {
-    [Microsoft.PowerShell.PSConsoleReadLine]::Insert("'$($items -join "' '")'")
+    [Microsoft.PowerShell.PSConsoleReadLine]::Insert($items.ForEach{ "'$_'" } -join ' ')
   }
 }
 Set-PSReadLineKeyHandler -Chord Alt+c -ScriptBlock {
@@ -61,15 +61,22 @@ Set-PSReadLineKeyHandler -Chord Alt+z -ScriptBlock {
   }
 }
 Set-PSReadLineKeyHandler -Chord Alt+s -ScriptBlock {
-  $line = ''
-  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo $line")
+  [System.Management.Automation.Language.Ast]$ast = $null
+  [System.Management.Automation.Language.Token[]]$tokens = $null
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$ast, [ref]$tokens, [ref]$null, [ref]$null)
+  $line = $ast.ToString()
+  if (($tokens.Where{ $_.TokenFlags -eq 'CommandName' }).Count -eq 1) {
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo $line")
+  }
+  else {
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo {$line}")
+  }
+  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
-
 Set-PSReadLineKeyHandler -Chord Alt+v -ScriptBlock {
   $pythonVenvActivate = Test-Path .venv/
   if (Test-Path Function:\deactivate) {
-    if ([System.IO.Path]::Join($PWD.Path, '.venv') -eq $env:VIRTUAL_ENV) {
+    if ([System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation, '.venv') -eq $env:VIRTUAL_ENV) {
       $pythonVenvActivate = $false
     }
     else {
@@ -93,29 +100,7 @@ Set-PSReadLineKeyHandler -Chord Alt+v -ScriptBlock {
   }
 }
 
-& {
-  $hook = {
-    Set-Item Variable:Global:npm $(switch ($true) {
-        (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
-        (Test-Path bun.lockb) { 'bun' ; break }
-        (Test-Path yarn.lock) { 'yarn'; break }
-        (Test-Path deno.json) { 'deno'; break }
-        Default { 'npm' }
-      })
-  }
-  # init search
-  & $hook
-  $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
-  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
-    [Delegate]::Combine($action, [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$hook)
-  }
-  else {
-    $hook
-  }
-}
-
 # shutils
-Get-ChildItem $PSScriptRoot/ps1 -File -ErrorAction Ignore | ForEach-Object { . $_.FullName }
+Get-ChildItem $PSScriptRoot/ps1 -File -ea Ignore | ForEach-Object { . $_.FullName }
 Set-Alias less Invoke-Less
-Set-Alias npm Invoke-Npm
 Set-Alias sudo Invoke-Sudo

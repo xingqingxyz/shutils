@@ -9,4 +9,6 @@ function winget {
   winget.exe @args
 }
 
-Get-ChildItem ${env:LOCALAPPDATA}/Microsoft/WinGet/Links | ForEach-Object { Set-Alias $_.BaseName $_.ResolvedTarget }
+Set-Alias vi 'C:\Program Files\Git\usr\bin\vim.exe'
+Set-Alias unzip 'C:\Program Files\Git\usr\bin\unzip.exe'
+Set-Alias rsync 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\rsync\rsync.exe'

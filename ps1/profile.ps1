@@ -1,6 +1,6 @@
 if ($IsWindows) {
-  . $PSScriptRoot/profile/windows.ps1
+  . $PSScriptRoot/windows/profile.ps1
 }
 else {
-  . $PSScriptRoot/profile/linux.ps1
+  . $PSScriptRoot/linux/profile.ps1
 }

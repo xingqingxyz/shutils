@@ -18,7 +18,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
       $i.Value
     })
 
-  if ($npm -ne 'npm') {
+  if ($npm -ne 'npm' -and $commandAst.CommandElements[0].ToString() -eq 'npm') {
     $line = "$($commandAst.CommandElements)"
     [Microsoft.PowerShell.PSConsoleReadLine]::Replace($commandAst.CommandElements[0].Extent.StartOffset, $line.Length, [regex]::Replace($line, '^\S+', $npm))
     return ''

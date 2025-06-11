@@ -85,7 +85,7 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
 
   #call the command store the output in $out and redirect stderr and stdout to null
   # $out is an array contains each line per element
-  Invoke-Expression -OutVariable out "$RequestComp" 2>&1 | Out-Null
+  $null = Invoke-Expression -OutVariable out "$RequestComp" 2>&1
 
   # get directive from last line
   [int]$Directive = $out[-1].TrimStart(':')

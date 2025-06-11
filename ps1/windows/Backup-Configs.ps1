@@ -1,13 +1,12 @@
 $bakDir = "$PSScriptRoot\backup\configs"
 Remove-Item $bakDir -Recurse -Force
-mkdir $bakDir | Out-Null
-# from bak to actual expression
+$null = New-Item -Type Directory -Force $bakDir
 $bakList = [System.Collections.Stack]::new()
 $bakId = 0
 
 function Backup-Files {
     foreach ($item in $bakList) {
-        Copy-Item -Recurse -Force -ErrorAction Ignore $item.bakSource $bakDir\$($item.bakName)
+        Copy-Item -Recurse -Force -ea Ignore $item.bakSource $bakDir\$($item.bakName)
     }
 }
 
@@ -41,12 +40,10 @@ function Add-BakFile {
 # pwsh
 Add-BakFile { "$PROFILE\..\Microsoft.PowerShell_profile.ps1" } { "$PROFILE\.." }
 Add-BakFile { "$PROFILE\..\Microsoft.VSCode_profile.ps1" } { "$PROFILE\.." }
-Add-BakFile { powershell.exe -noprofile -c `$PROFILE } { "$(powershell.exe -noprofile -c `$PROFILE)\.." }
-Add-BakFile { "$PROFILE\..\Scripts" } { "$PROFILE\.." }
+Add-BakFile { powershell.exe -nop -c `$PROFILE } { "$(powershell.exe -nop -c `$PROFILE)\.." }
 
 # mingw bash
 Add-BakFile '~\.bashrc'
-Add-BakFile '~\.bash_completion'
 Add-BakFile '~\.bash_profile'
 
 # git
@@ -67,7 +64,7 @@ Add-BakFile { "$env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_8wekyb3d
 Add-BakFile { "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json" }
 
 # alacritty
-Add-BakFile { "$env:APPDATA\alacritty\alacritty.yml" }
+Add-BakFile { "$env:APPDATA\alacritty\alacritty.toml" }
 
 # bat
 Add-BakFile { "$(bat.exe --config-dir)\config" }

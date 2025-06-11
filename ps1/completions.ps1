@@ -9,7 +9,7 @@ function TabExpansion2 {
    To customize your own custom options, pass a hashtable to CompleteInput, e.g.
          return [System.Management.Automation.CommandCompletion]::CompleteInput($inputScript, $cursorColumn,
              @{ RelativeFilePaths=$false }
-#>
+  #>
 
   [CmdletBinding(DefaultParameterSetName = 'ScriptInputSet')]
   [OutputType([System.Management.Automation.CommandCompletion])]
@@ -48,11 +48,14 @@ function TabExpansion2 {
         $_completionLoadSet.Remove($commandName)
       }
     }
-    return [System.Management.Automation.CommandCompletion]::CompleteInput(
-      <#ast#>              $ast,
-      <#tokens#>           $tokens,
-      <#positionOfCursor#> $positionOfCursor,
-      <#options#>          $options)
+    try {
+      return [System.Management.Automation.CommandCompletion]::CompleteInput(
+        <#ast#>              $ast,
+        <#tokens#>           $tokens,
+        <#positionOfCursor#> $positionOfCursor,
+        <#options#>          $options)
+    }
+    catch {}
   }
 }
 

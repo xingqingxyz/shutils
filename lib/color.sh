@@ -11,11 +11,7 @@ format_dur() {
     color=34
     text=$(( "1${1:7:3}" - 1000 )).${1: -6:3}s
   else
-<<<<<<< HEAD
     local left=$(( "1${1:0:10}" - 10000000000 )) right
-=======
-    local left=${1:0:10} right
->>>>>>> 8f653298c2194ad63e3ad5ec00b7e93d0fdf7860
     if (( right = left % 60 )) && (( (left /= 60) < 60 )); then
       color=33
       text=${left}m${right}s
@@ -32,7 +28,7 @@ format_dur() {
   printf '\e[%dm%s\e[0m' "$color" "$text"
 }
 
-vmake_link() {
+make_link() {
   local path=$1
   case "$OSTYPE" in
     msys|cygwin)

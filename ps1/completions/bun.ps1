@@ -158,7 +158,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
           @('--bun')
         }
         else {
-          (Get-ChildItem node_modules/.bin -ErrorAction Ignore).BaseName | Select-Object -Unique
+          (Get-ChildItem node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
         }
         break
       }

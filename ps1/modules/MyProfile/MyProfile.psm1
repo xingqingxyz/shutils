@@ -248,6 +248,49 @@ function icat {
   }
 }
 
+function Set-Region {
+  [CmdletBinding(DefaultParameterSetName = 'Path')]
+  param(
+    [Parameter(Mandatory, Position = 0)][string]$ID,
+    [Parameter(Mandatory, Position = 1)][string[]]$Content,
+    [Parameter(Mandatory, Position = 2, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')][string]$Path,
+    [Parameter(ParameterSetName = 'Path')][switch]$Inplace,
+    [Parameter(Mandatory, Position = 2, ValueFromPipeline, ParameterSetName = 'Source')][string[]]$Source
+  )
+
+  $found = 0
+  $Source = @(if ($PSCmdlet.ParameterSetName -eq 'Path') {
+      Get-Content $Path
+    }
+    else {
+      $Source.Split("`n")
+    }).ForEach{
+    if ($found -eq 0 -and $_.TrimStart().StartsWith('#region ' + $ID)) {
+      $found = 1
+      $_
+      return
+    }
+    elseif ($found -eq 1) {
+      if ($_.Trim() -eq '#endregion') {
+        $found = 2
+        $Content
+        $_
+      }
+      return
+    }
+    $_
+  }
+  if ($found -eq 0) {
+    $Source += @("#region $ID", $Content, '#endregion')
+  }
+  if ($Inplace) {
+    $Source > $Path
+  }
+  else {
+    $Source
+  }
+}
+
 function Update-Env {
   param(
     [Parameter(Mandatory)]
@@ -285,17 +328,15 @@ function Update-Env {
       } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
       switch ($Scope) {
         ([System.EnvironmentVariableTarget]::User) {
-          if (Test-Path ~/.bash_profile) {
-            $cmd >> ~/.bash_profile
-          }
-          else {
-            $cmd >> ~/.profile
-          }
-          break
+          return Set-Region UserEnv $cmd $(if (Test-Path ~/.bash_profile) {
+              "$HOME/.bash_profile"
+            }
+            else {
+              "$HOME/.profile"
+            })
         }
         ([System.EnvironmentVariableTarget]::Machine) {
-          $cmd | sudo Out-File /etc/profile.d/sh.local
-          break
+          return Invoke-Sudo Set-Region SysEnv $cmd /etc/profile.d/sh.local
         }
       }
       break
@@ -303,6 +344,36 @@ function Update-Env {
     Default {
       throw 'not implemented'
     }
+  }
+}
+
+function which([string]$Exe) {
+  (Get-Item (Get-Command -Type Application -TotalCount 1 $Exe).Path).ResolvedTarget
+}
+
+function env {
+  $envMap = @{}
+  for ($i = 0; $i -lt $args.Length; $i++) {
+    $name, $value = $args[$i].Split('=')
+    if ($null -ne $value -and $name -match '^\w+$') {
+      $envMap.Add($name, $value)
+    }
+    else {
+      break
+    }
+  }
+  $cmd, $ags = $args[$i], $args[($i + 1)..($args.Length)]
+  $envMap.GetEnumerator().ForEach{ Set-Item env:$($_.Key) $_.Value }
+  try {
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd @ags
+    }
+    else {
+      & $cmd @ags
+    }
+  }
+  finally {
+    $envMap.Keys.ForEach{ Remove-Item env:$_ }
   }
 }
 
@@ -319,55 +390,7 @@ function Invoke-Less {
   }
 }
 
-function Invoke-Npm {
-  if ($MyInvocation.PipelineLength -ne 1) {
-    $npm = 'npm'
-  }
-  try {
-    Set-Alias npm (Get-Command $npm -Type Application, ExternalScript -TotalCount 1).Path
-  }
-  catch {
-    throw 'npm not found: ' + $npm
-  }
-  if ($MyInvocation.PipelineLength -ne 1) {
-    if ($MyInvocation.ExpectingInput) {
-      $input | npm @args
-    }
-    else {
-      npm @args
-    }
-    return
-  }
-  if ($args.Contains('--help')) {
-    return npm @args | bat -lhelp
-  }
-  $command, $rest = $args
-  if (@('i', 'install', 'a', 'add').Contains($command) -and !$rest.Contains('-D')) {
-    $types = @()
-    $noTypes = @()
-    foreach ($arg in $rest) {
-      if ($arg.StartsWith('-')) {
-        continue
-      }
-      if ($arg.StartsWith('@types/')) {
-        $types += $arg
-      }
-      else {
-        $noTypes += $arg
-      }
-    }
-    if ($types.Length) {
-      npm $command @types
-    }
-    if ($noTypes.Length) {
-      npm $command @noTypes
-    }
-    return
-  }
-  npm @args
-}
-
-$sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ErrorAction Ignore).Path
+$sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ea Ignore).Path
 $pwshExe = [System.Environment]::ProcessPath
 if ((Split-Path -LeafBase $pwshExe) -ne 'pwsh') {
   $pwshExe = (Get-Command pwsh -CommandType Application -TotalCount 1 -ea Ignore).Path ?? 'pwsh'
@@ -401,7 +424,7 @@ if ($sudoExe) {
         & $sudoExe @sudoOpts -- $pwshExe -nop -nol -cwa @cwa
       }
     }
-    elseif (Get-Command $commandName -Type Application -TotalCount 1 -ErrorAction Ignore) {
+    elseif (Get-Command $commandName -Type Application -TotalCount 1 -ea Ignore) {
       $argumentList = $args[$sudoOpts.Length..($args.Length - 1)]
       Write-Debug "$sudoExe $sudoOpts -- $argumentList"
       if ($MyInvocation.ExpectingInput) {
@@ -412,7 +435,7 @@ if ($sudoExe) {
       }
     }
     else {
-      $info = Get-Command $commandName -TotalCount 1 -ErrorAction Ignore
+      $info = Get-Command $commandName -TotalCount 1 -ea Ignore
       switch ($info.CommandType) {
         ([CommandTypes]::Alias) {
           $args[$sudoOpts.Length] = $info.Definition
@@ -454,7 +477,7 @@ elseif ($IsWindows) {
       return $MyInvocation.MyCommand.Definition | bat -lps1
     }
     elseif ($args[0] -isnot [scriptblock]) {
-      $info = Get-Command $args[0] -TotalCount 1 -ErrorAction Ignore
+      $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
       switch ($info.CommandType) {
         ([CommandTypes]::Alias) {
           $args[0] = $info.Definition

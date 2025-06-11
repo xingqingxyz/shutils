@@ -9,9 +9,9 @@ function _handleAlias {
   }
 }
 bash -ic alias 2>$null | ForEach-Object {
-  $first, $second = $_.Split(' ', 2)[1].Split('=', 2)
-  $__alias_arguments_map[$first] = $second.SubString(1, $second.Length - 2).Split(' ')
-  Set-Alias $first _handleAlias
+  $name, $value = $_.Split(' ', 2)[1].Split('=', 2)
+  $__alias_arguments_map.$name = $value.SubString(1, $value.Length - 2).Split(' ')
+  Set-Alias $name _handleAlias
 }
 
 <#
@@ -58,7 +58,7 @@ function mkdir {
 }
 
 # remove can't use aliases
-Remove-Alias l., which -ErrorAction Ignore
+Remove-Alias l., which -ea Ignore
 Set-Alias ls Get-ChildItem
 Set-Alias cp Copy-Item
 Set-Alias mv Move-Item
