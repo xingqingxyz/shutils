@@ -15,16 +15,16 @@ HISTSIZE=5000
 HISTFILESIZE=10000
 
 # aliases
-alias cls=clear r='fc -s'
+alias cls=clear r='fc -s' tree='tree -C --hyperlink --gitignore'
 
 # fzf
 # export FZF_DEFAUT_OPTS=
 # export FZF_DEFAUT_COMMAND=
 
-FZF_CTRL_T_OPTS='--preview="bat --color=always --plain --no-pager {}"'
-FZF_CTRL_R_OPTS='--preview="echo {}"'
+FZF_CTRL_T_OPTS='--preview="bat --color=always --plain --no-pager"'
+FZF_CTRL_R_OPTS='--preview=echo'
 FZF_CTRL_O_OPTS=''
-FZF_ALT_C_OPTS='--preview="tree {} | head -n 200"'
+FZF_ALT_C_OPTS='--preview="tree -C --hyperlink"'
 # FZF_COMP_OPTS=
 # FZF_COMP_TRIGGER='*'
 

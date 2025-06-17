@@ -8,22 +8,22 @@ function Format-Duration {
   "`e[{0}m{1}`e[0m" -f $(switch ($true) {
       { $Duration.TotalNanoseconds -lt 1000 } {
         37
-        "$($Duration.Microseconds)ns"
+        [string]$Duration.Microseconds + 'ns'
         break
       }
       { $Duration.TotalMicroseconds -lt 1000 } {
         32
-        '{0}.{1:000}μs' -f $Duration.Microseconds, $Duration.Nanoseconds
+        [string]($Duration.Microseconds + $Duration.Nanoseconds / 1000) + 'μs'
         break
       }
       { $Duration.TotalMilliseconds -lt 1000 } {
         36
-        '{0}.{1:000}ms' -f $Duration.Milliseconds, $Duration.Microseconds
+        [string]($Duration.Milliseconds + $Duration.Microseconds / 1000) + 'ms'
         break
       }
       { $Duration.TotalSeconds -lt 60 } {
         34
-        '{0}.{1:000}s' -f $Duration.Seconds, $Duration.Milliseconds
+        [string]($Duration.Seconds + $Duration.Milliseconds / 1000) + 's'
         break
       }
       { $Duration.TotalMinutes -lt 60 } {
@@ -47,7 +47,7 @@ function Format-Duration {
 function prompt {
   $lastStatus = $?
   if ($MyInvocation.HistoryId -eq 1) {
-    return "PS [`e[32m$([System.Environment]::UserName)@$([System.Environment]::UserDomainName)`e[0m] $PWD$('>' * ($nestedPromptLevel + 1)) "
+    return "PS [`e[32m$([System.Environment]::UserName)@$([System.Environment]::MachineName)`e[0m] `e]8;;file://$PWD`e\$PWD`e]8;;`e\$('>' * ($nestedPromptLevel + 1)) "
   }
   $dur = Format-Duration (Get-History -Count 1 -ea Ignore).Duration
   $status = if ($lastStatus) {

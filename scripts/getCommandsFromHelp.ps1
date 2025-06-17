@@ -9,7 +9,7 @@ $contents = @(if ($args.Length -gt 1) {
     throw 'no contents'
   }) | Tee-Object help.log
 
-$contents | ForEach-Object {
+$contents.ForEach{
   try {
     $text = $_.Substring(0, $sep)
   }

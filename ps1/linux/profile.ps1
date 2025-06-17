@@ -1,19 +1,3 @@
-# alias from interactive bash
-$__alias_arguments_map = @{}
-function _handleAlias {
-  if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env $__alias_arguments_map[$MyInvocation.InvocationName] @args
-  }
-  else {
-    /usr/bin/env $__alias_arguments_map[$MyInvocation.InvocationName] @args
-  }
-}
-bash -ic alias 2>$null | ForEach-Object {
-  $name, $value = $_.Split(' ', 2)[1].Split('=', 2)
-  $__alias_arguments_map.$name = $value.SubString(1, $value.Length - 2).Split(' ')
-  Set-Alias $name _handleAlias
-}
-
 <#
 .FORWARDHELPTARGETNAME New-Item
 .FORWARDHELPCATEGORY Cmdlet
@@ -57,9 +41,30 @@ function mkdir {
   }
 }
 
-# remove can't use aliases
-Remove-Alias l., which -ea Ignore
+function Invoke-ExecutableAlias {
+  if ($MyInvocation.ExpectingInput) {
+    $input | /usr/bin/env $_executableAliasMap[$MyInvocation.InvocationName] @args
+  }
+  else {
+    /usr/bin/env $_executableAliasMap[$MyInvocation.InvocationName] @args
+  }
+}
+
+$_executableAliasMap = @{
+  egrep   = 'egrep', '--color=auto'
+  grep    = 'grep', '--color=auto'
+  xzegrep = 'xzegrep', '--color=auto'
+  xzfgrep = 'xzfgrep', '--color=auto'
+  xzgrep  = 'xzgrep', '--color=auto'
+  zegrep  = 'zegrep', '--color=auto'
+  zfgrep  = 'zfgrep', '--color=auto'
+  zgrep   = 'zgrep', '--color=auto'
+  tree    = 'tree', '-C', '--hyperlink', '--gitignore'
+  fd    = 'fd', '--hyperlink=auto'
+}
+$_executableAliasMap.Keys.ForEach{ Set-Alias $_ Invoke-ExecutableAlias }
 Set-Alias ls Get-ChildItem
 Set-Alias cp Copy-Item
 Set-Alias mv Move-Item
 Set-Alias rm Remove-Item
+Set-Alias sort Sort-Object

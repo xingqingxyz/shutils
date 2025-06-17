@@ -9,8 +9,7 @@ $_zConfig = @{
 $_zRankSum = 0.0
 $_zItemsMap = @{}
 
-function _zGetPath {
-  param([string]$Path = $PWD.Path)
+function _zGetPath([string]$Path) {
   try {
     $item = Get-Item $Path -ea Stop
   }
@@ -26,7 +25,7 @@ function _zGetPath {
 }
 
 function _zDumpData {
-  $_zItemsMap.Values | ForEach-Object {
+  $_zItemsMap.Values.ForEach{
     $_.Path, $_.Rank, $_.Time -join $_zConfig.dataSeperator
   } > $_zConfig.dataFile
 }
@@ -98,7 +97,7 @@ function _z {
       $re = [regex]::new("^.*$($Queries -join '.*').*$")
       $items = $_zItemsMap.Values.Where{ $re.IsMatch($_.Path) }
       if ($Cwd) {
-        $items = $items | Where-Object Path -Like "$(_zGetPath)$([System.IO.Path]::DirectorySeparatorChar)*"
+        $items = $items | Where-Object Path -Like "$(_zGetPath .)$([System.IO.Path]::DirectorySeparatorChar)*"
       }
       if (!$items) {
         return Write-Warning "no matches found for regexp $re"

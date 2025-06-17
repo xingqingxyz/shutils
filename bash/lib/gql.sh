@@ -7,7 +7,7 @@ gql_get_release() {
     q='.releases.nodes[0]'
   fi
   gh api graphql -F owner="$owner" -F repo="$repo" \
-    -F query="@${BASH_SOURCE[0]%/*}/../gql/$typ.gql" \
+    -F query="@$SHUTILS_ROOT/gql/$typ.gql" \
     -f operationName="$oper" -q ".data.repository$q" \
     | _gql_query_release "$oper"
 }
@@ -24,5 +24,5 @@ _gql_query_release() {
     "---",
     (.releaseAssets.nodes[] |
     "- [\(.name)](\(.downloadUrl)) | \(.size / pow(2; 20) | tostring[:4])M")
-  ] | join("\n")' | glow
+  ] | join("\n")'
 }

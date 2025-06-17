@@ -9,6 +9,6 @@ function winget {
   winget.exe @args
 }
 
-Set-Alias vi 'C:\Program Files\Git\usr\bin\vim.exe'
-Set-Alias unzip 'C:\Program Files\Git\usr\bin\unzip.exe'
+# utf-8 process
+[System.Console]::InputEncoding = [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Set-Alias rsync 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\rsync\rsync.exe'

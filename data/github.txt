@@ -1,1 +1,3 @@
 https://docs.github.com/public/fpt/schema.docs.graphql
+curl -f https://zed.dev/install.sh | sh
+aria2c https://github.com/xingqingxyz/mvext/archive/refs/heads/main.zip
