@@ -6,7 +6,7 @@ function vw {
     if ($input[0] -is [System.IO.FileInfo]) {
       return bat @input
     }
-    return $input | bat -lhelp
+    return $input | bat --plain -lhelp
   }
   $info = Get-Command $Command -TotalCount 1
   if ($info.CommandType -eq 'Alias') {
@@ -154,45 +154,6 @@ function which([string]$Name) {
   (Get-Item (Get-Command -Type Application -TotalCount 1 $Name).Path).ResolvedTarget
 }
 
-function env {
-  $envMap = @{}
-  for ($i = 0; $i -lt $args.Length; $i++) {
-    $name, $value = $args[$i].Split('=')
-    if ($null -ne $value -and $name -match '^\w+$') {
-      $envMap.Add($name, $value)
-    }
-    else {
-      break
-    }
-  }
-  $cmd, $ags = $args[$i], $args[($i + 1)..($args.Length)]
-  $envMap.GetEnumerator().ForEach{ Set-Item env:$($_.Key) $_.Value }
-  try {
-    if ($MyInvocation.ExpectingInput) {
-      $input | & $cmd @ags
-    }
-    else {
-      & $cmd @ags
-    }
-  }
-  finally {
-    $envMap.Keys.ForEach{ Remove-Item env:$_ }
-  }
-}
-
-function loadEnv {
-  param(
-    [string]
-    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation + '/.env'
-  )
-  if (Test-Path $Path) {
-    Get-Content $Path | ForEach-Object {
-      $name, $value = $_.Split('=', 2)
-      Set-Item Env:$name $value
-    }
-  }
-}
-
 <#
 .SYNOPSIS
 Strip ANSI escape codes from input or all args text.
@@ -274,10 +235,60 @@ function Set-Region {
     $InputObject += @("#region $Name", $Content, '#endregion')
   }
   if ($Inplace) {
-    $InputObject > $Path
+    try {
+      $InputObject > $Path
+    }
+    catch {
+      $InputObject
+    }
   }
   else {
     $InputObject
+  }
+}
+
+function Invoke-Application {
+  param(
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Command,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $ArgumentList,
+    [Parameter()]
+    [string]
+    $WorkingDirectory,
+    [Parameter()]
+    [hashtable]
+    $Environment = @{},
+    [Parameter(ValueFromPipeline)]
+    [System.Object]
+    $InputObject
+  )
+  Push-Location -StackName 'Invoke-Application' $WorkingDirectory
+  $Environment.GetEnumerator().ForEach{ Set-Item env:$($_.Key) $_.Value }
+  try {
+    if ($InputObject) {
+      $InputObject | & $Command @ArgumentList
+    }
+    else {
+      & $Command @ArgumentList
+    }
+  }
+  finally {
+    Pop-Location -StackName 'Invoke-Application'
+    $Environment.Keys.ForEach{ Remove-Item env:$_ -ea Ignore }
+  }
+}
+
+function Enable-Env {
+  param(
+    [string]
+    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation + '/.env'
+  )
+  Get-Content $Path | ForEach-Object {
+    $name, $value = $_.Split('=', 2)
+    Set-Item Env:$name $value
   }
 }
 
@@ -299,12 +310,19 @@ function Update-Env {
   & $ScriptBlock
   $processEnv = [System.Environment]::GetEnvironmentVariables()
 
+
   switch ($true) {
     $IsWindows {
       foreach ($key in $processEnv.Keys) {
-        $value = $processEnv.$key
-        if (!$prevEnv.ContainsKey($key) -or $prevEnv.$key -ne $value) {
-          [System.Environment]::SetEnvironmentVariable($key, $value, $Scope)
+        if ($prevEnv.$key -ne $processEnv.$key) {
+          if ($key -eq 'Path') {
+            Write-Information "overwriting $Scope Path by all process env updates"
+            $processEnv.Path = [System.Collections.Generic.HashSet[string]]::new(
+              $processEnv.Path.Split(';')).ExceptWith(
+              [System.Environment]::GetEnvironmentVariable('Path', $Scope -eq 'User' ? 'Machine' : 'User').Split(';')
+            ) -join ';'
+          }
+          [System.Environment]::SetEnvironmentVariable($key, $processEnv.$key, $Scope)
         }
       }
       break
@@ -312,7 +330,11 @@ function Update-Env {
     $IsLinux {
       $Description = $Description.Replace("`n", ' ')
       $cmd = $processEnv.GetEnumerator().ForEach{
-        if (!$prevEnv.ContainsKey($_.Name) -or $prevEnv.($_.Name) -ne $_.Value) {
+        # Cannot handle PATH change on Linux
+        if ($_.Name -eq 'PATH') {
+          return
+        }
+        if ($prevEnv.($_.Name) -ne $_.Value) {
           $_.Name + '=' + $_.Value
         }
       } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
@@ -362,9 +384,9 @@ if ($sudoExe) {
       [Parameter(Position = 0, Mandatory, ParameterSetName = 'ScriptBlock')]
       [scriptblock]
       $ScriptBlock,
-      [Parameter(Position = 0, ParameterSetName = 'Command')]
+      [Parameter(Position = 0, Mandatory, ParameterSetName = 'Command')]
       [string]
-      $Command = $ScriptBlock.ToString(),
+      $Command,
       [Parameter(ValueFromPipeline)]
       [System.Object]
       $InputObject,
@@ -373,6 +395,7 @@ if ($sudoExe) {
       $ArgumentList
     )
     [string[]]$extraArgs = if ($ScriptBlock) {
+      $Command = $ScriptBlock.ToString()
       @($pwshExe, '-nop', '-cwa')
     }
     else {
@@ -398,7 +421,7 @@ if ($sudoExe) {
         @($pwshExe, '-nop', '-c')
       }
     }
-    $ArgumentList = $extraArgs + $Command + $ArgumentList
+    $ArgumentList = $extraArgs + @($Command) + $ArgumentList
     Write-Debug "$sudoExe -- $ArgumentList"
     if ($InputObject) {
       $InputObject | & $sudoExe -- @ArgumentList
@@ -415,9 +438,9 @@ elseif ($IsWindows) {
       [Parameter(Position = 0, Mandatory, ParameterSetName = 'ScriptBlock')]
       [scriptblock]
       $ScriptBlock,
-      [Parameter(Position = 0, ParameterSetName = 'Command')]
+      [Parameter(Position = 0, Mandatory, ParameterSetName = 'Command')]
       [string]
-      $Command = $ScriptBlock.ToString(),
+      $Command,
       [Parameter(ValueFromPipeline)]
       [System.Object]
       $InputObject,
@@ -429,6 +452,7 @@ elseif ($IsWindows) {
       $WorkingDirectory = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation
     )
     [string[]]$extraArgs = if ($ScriptBlock) {
+      $Command = $ScriptBlock.ToString()
       @($pwshExe, '-nop', '-cwa')
     }
     else {
@@ -454,7 +478,7 @@ elseif ($IsWindows) {
         @($pwshExe, '-nop', '-c')
       }
     }
-    $Command, $ArgumentList = $extraArgs + $Command + $ArgumentList
+    $Command, $ArgumentList = $extraArgs + @($Command) + $ArgumentList
     Write-Debug "$Command $ArgumentList"
     Start-Process -FilePath $Command -ArgumentList $ArgumentList -Verb RunAs -WorkingDirectory $WorkingDirectory
   }

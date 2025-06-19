@@ -57,7 +57,7 @@
   # RequiredAssemblies = @()
 
   # Script files (.ps1) that are run in the caller's environment prior to importing this module.
-  ScriptsToProcess     = @('./Register.ps1')
+  # ScriptsToProcess = @()
 
   # Type files (.ps1xml) to be loaded when importing this module
   # TypesToProcess = @()
@@ -66,7 +66,7 @@
   # FormatsToProcess = @()
 
   # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-  NestedModules        = @('./Replacer.psm1')
+  # NestedModules = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
   FunctionsToExport    = @('Invoke-Npm', 'Invoke-Npx')
@@ -78,7 +78,7 @@
   VariablesToExport    = '*'
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-  AliasesToExport      = @()
+  AliasesToExport      = @('npm', 'npx')
 
   # DSC resources to export from this module
   # DscResourcesToExport = @()

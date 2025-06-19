@@ -28,7 +28,7 @@ Set-PSReadLineKeyHandler -Chord Alt+c -Description 'Fzf select sub directories t
   if (!$dir) {
     return
   }
-  Set-Location $dir
+  Set-Location -LiteralPath $dir
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history files to replace command line' -ScriptBlock {
@@ -37,7 +37,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
     $IsLinux { "${env:HOME}/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
     default { throw 'not implemented' }
   }
-  $history = Get-Content $history | Select-Object -Unique | fzf --scheme=history
+  $history = Get-Content $history | Select-Object -Unique | fzf --scheme=history --wrap
   if (!$history) {
     return
   }
@@ -48,7 +48,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
   $path = $_zItemsMap.Keys | fzf --scheme=path
   if ($LASTEXITCODE -eq 0) {
-    Set-Location $path
+    Set-Location -LiteralPath $path
     [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
   }
 }

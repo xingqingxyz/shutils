@@ -120,7 +120,7 @@ function _z {
       for ($i = $items.Count - 1; $i -ge 0; $i--) {
         $item = $items[$i]
         try {
-          Set-Location $item.Path -ea Stop
+          Set-Location -LiteralPath $item.Path -ea Stop
           break
         }
         catch {
@@ -153,11 +153,7 @@ function _z {
   }
   $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]] { _z -Add . }
   $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
-  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
-    [Delegate]::Combine($action, $hook)
-  }
-  else {
-    $hook
-  }
+  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction =
+  $action ? [Delegate]::Combine($action, $hook) : $hook
 }
 Set-Alias $_zConfig.cmd _z

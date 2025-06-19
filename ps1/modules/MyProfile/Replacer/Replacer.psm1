@@ -1,5 +1,3 @@
-$npm = 'npm'
-
 function Invoke-Npm {
   if ($MyInvocation.PipelineLength -ne 1) {
     $npm = 'npm'
@@ -69,7 +67,11 @@ function Invoke-Npx {
   }
 }
 
+[string]$npm = ''
 $hook = {
+  if ($PWD.Provider.Name -ne 'FileSystem') {
+    return
+  }
   $Script:npm = $(switch ($true) {
       (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
       (Test-Path bun.lockb) { 'bun' ; break }
@@ -79,12 +81,16 @@ $hook = {
     })
 }
 & $hook
+$hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$hook
 $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
-$ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
-  [Delegate]::Combine($action.Target.Constants.Where{ $_.Module.Name -ne $MyInvocation.MyCommand.ModuleName } + [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]]$hook)
-}
-else {
-  $hook
-}
+$ExecutionContext.SessionState.InvokeCommand.LocationChangedAction =
+$action ? [Delegate]::Combine($action, $hook) : $hook
 Set-Alias npm Invoke-Npm
 Set-Alias npx Invoke-Npx
+
+$ExecutionContext.SessionState.Module.OnRemove = {
+  $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
+  $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = if ($action) {
+    [Delegate]::Remove($action, $hook)
+  }
+}

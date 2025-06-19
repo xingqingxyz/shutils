@@ -12,7 +12,7 @@
   RootModule           = './MyProfile.psm1'
 
   # Version number of this module.
-  ModuleVersion        = '0.0.2'
+  ModuleVersion        = '0.0.3'
 
   # Supported PSEditions
   CompatiblePSEditions = @('Core')
@@ -69,7 +69,7 @@
   NestedModules        = @('./Replacer/Replacer.psm1')
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('vw', 'yq', 'tq', 'packageJSON', 'stripAnsi', 'sortJSON', 'loadEnv', 'icat', 'Set-Region', 'Update-Env', 'which', 'env', 'Invoke-Less', 'Invoke-Sudo')
+  FunctionsToExport    = @('vw', 'yq', 'tq', 'packageJSON', 'sortJSON', 'stripAnsi', 'icat', 'which', 'Set-Region', 'Invoke-Application', 'Enable-Env', 'Update-Env', 'Invoke-Less', 'Invoke-Sudo')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -87,7 +87,7 @@
   # ModuleList = @()
 
   # List of all files packaged with this module
-  FileList             = @('./MyProfile.psd1', './MyProfile.psm1')
+  # FileList             = @('./MyProfile.psd1', './MyProfile.psm1')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData          = @{
