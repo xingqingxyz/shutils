@@ -57,7 +57,7 @@ function prompt {
     "`e[31mPS`e[0m"
   }
   else {
-    "`e[31m$LASTEXITCODE`e[0m"
+    "`e[$(32 - [int][bool]$LASTEXITCODE)m$LASTEXITCODE`e[0m"
   }
   $cwd = if ($PWD.Provider.Name -eq 'FileSystem') {
     if ($env:WSL_DISTRO_NAME) {

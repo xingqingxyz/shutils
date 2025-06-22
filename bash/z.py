@@ -17,7 +17,7 @@ class ZItem:
 
 
 class ZConfig:
-    cmd = ("z")
+    cmd = "z"
     datafile = f"{HOME}/.z"
     datasep = "|"
     resolve_symlinks = True
@@ -45,7 +45,7 @@ class Z:
                     continue
                 item = line.split(ZConfig.datasep)
                 if len(item) != 3:
-                    raise TypeError(f'z data file is broken: {ZConfig.datafile}')
+                    raise TypeError(f"z data file is broken: {ZConfig.datafile}")
                 item = ZItem(item[0], float(item[1]), int(item[2]))
                 self.items_map[item.path] = item
                 self.rank_sum += item.rank
@@ -108,7 +108,7 @@ class Z:
         cwd=False,
         queries: list[str] = [],
     ):
-        if len(queries) == 1 and fnmatch(queries[0], '*[\\/]*'):
+        if len(queries) == 1 and fnmatch(queries[0], "*[\\/]*"):
             print(queries[0])
             exit(99)
         re_query = re.compile(f"^.*{'.*'.join(queries)}.*$")

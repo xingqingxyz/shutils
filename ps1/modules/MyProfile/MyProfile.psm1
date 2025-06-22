@@ -1,12 +1,29 @@
 using namespace System.Management.Automation
 
 function vw {
-  param([string]$Command = 'vw')
+  param(
+    [ArgumentCompleter({
+        [OutputType([System.Management.Automation.CompletionResult])]
+        param(
+          [string] $CommandName,
+          [string] $ParameterName,
+          [string] $WordToComplete,
+          [System.Management.Automation.Language.CommandAst] $CommandAst,
+          [System.Collections.IDictionary] $FakeBoundParameters
+        )
+        $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
+        if ($results.Length) { $results } else {
+          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+        }
+      })]
+    [string]
+    $Command = 'vw'
+  )
   if ($MyInvocation.ExpectingInput) {
     if ($input[0] -is [System.IO.FileInfo]) {
       return bat @input
     }
-    return $input | bat --plain -lhelp
+    return $input | bat -plhelp
   }
   $info = Get-Command $Command -TotalCount 1
   if ($info.CommandType -eq 'Alias') {
@@ -20,7 +37,7 @@ function vw {
       return $Command
     }
     { ([CommandTypes]::Filter + [CommandTypes]::Function).HasFlag($_) } {
-      return $info.Definition | bat -lps1
+      return $info.Definition | bat -plps1
     }
     { ([CommandTypes]::Application + [CommandTypes]::Script + [CommandTypes]::ExternalScript).HasFlag($_) } {
       return bat $info.Path
@@ -166,30 +183,31 @@ function stripAnsi {
 function icat {
   [CmdletBinding(DefaultParameterSetName = 'Path')]
   param(
-    [Parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
+    [Parameter(Position = 0, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
     [string[]]
     $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation,
-    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string]
+    [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [System.Object]
     $InputObject,
-    [Parameter(ParameterSetName = 'Stdin')]
+    [Parameter(Mandatory, ParameterSetName = 'Stdin')]
     [string]
     $Format,
     [Parameter()]
     [string]
     $Size = [System.Console]::WindowHeight * 20,
-    [Parameter(Position = 0, ValueFromRemainingArguments)]
-    [System.Object[]]
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
     $ArgumentList
   )
   if ($InputObject) {
+    if (!$IsWindows) {
+      Write-Warning 'icat from stdin pipe is unsupported on unix due to pwsh pipe restrictions'
+    }
     return $InputObject | magick -density 3000 -background transparent "${Format}:-" -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
   }
-  $Path.ForEach{
-    Get-ChildItem $_ | ForEach-Object {
-      magick -density 3000 -background transparent $_.FullName -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
-      $_.FullName
-    }
+  (Get-Item $Path).FullName.ForEach{
+    magick -density 3000 -background transparent $_ -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
+    $_
   }
 }
 
@@ -248,6 +266,7 @@ function Set-Region {
 }
 
 function Invoke-Application {
+  [CmdletBinding()]
   param(
     [Parameter(Mandatory, Position = 0)]
     [string]
@@ -265,9 +284,18 @@ function Invoke-Application {
     [System.Object]
     $InputObject
   )
-  Push-Location -StackName 'Invoke-Application' $WorkingDirectory
-  $Environment.GetEnumerator().ForEach{ Set-Item env:$($_.Key) $_.Value }
+  $Command = (Get-Command -Type Application -TotalCount 1 -ea Stop $Command).Path
+  Push-Location -StackName 'Invoke-Application' -LiteralPath $WorkingDirectory
+  $saveEnvironment = @{}
+  $Environment.GetEnumerator().ForEach{
+    try {
+      $saveEnvironment.($_.Key) = (Get-Item -LiteralPath env:$($_.Key) -ea Stop).Value
+    }
+    catch { }
+    Set-Item -LiteralPath env:$($_.Key) $_.Value -ea Stop
+  }
   try {
+    Write-Debug "$Command $ArgumentList"
     if ($InputObject) {
       $InputObject | & $Command @ArgumentList
     }
@@ -277,7 +305,14 @@ function Invoke-Application {
   }
   finally {
     Pop-Location -StackName 'Invoke-Application'
-    $Environment.Keys.ForEach{ Remove-Item env:$_ -ea Ignore }
+    foreach ($key in $Environment.Keys) {
+      if ($saveEnvironment.Contains($key)) {
+        Set-Item -LiteralPath env:$($key) $saveEnvironment.$key
+      }
+      else {
+        Remove-Item -LiteralPath env:$key -ea Ignore
+      }
+    }
   }
 }
 
@@ -483,3 +518,7 @@ elseif ($IsWindows) {
     Start-Process -FilePath $Command -ArgumentList $ArgumentList -Verb RunAs -WorkingDirectory $WorkingDirectory
   }
 }
+
+Set-Alias ia Invoke-Application
+Set-Alias less Invoke-Less
+Set-Alias sudo Invoke-Sudo

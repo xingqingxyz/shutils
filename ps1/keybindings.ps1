@@ -13,8 +13,12 @@ Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell doc
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
   $name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
-  if (Get-Command $name -Type Alias, Cmdlet, Function -ea Ignore) {
-    Get-Help $name -Online -ea Ignore
+  $info = Get-Command $name -ea Ignore
+  if ($info.CommandType -eq 'Alias') {
+    $info = $info.ResolvedCommand
+  }
+  if ($info.HelpUri) {
+    Start-Process $info.HelpUri
   }
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+t -Description 'Fzf select relative files to insert' -ScriptBlock {
@@ -46,7 +50,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $history)
 }
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
-  $path = $_zItemsMap.Keys | fzf --scheme=path
+  $path = Invoke-Z -List | fzf --scheme=path
   if ($LASTEXITCODE -eq 0) {
     Set-Location -LiteralPath $path
     [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
@@ -66,8 +70,8 @@ Set-PSReadLineKeyHandler -Chord Alt+s -Description 'Add sudo to command line and
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -ScriptBlock {
-  $pythonVenvActivate = Test-Path .venv/
-  if (Test-Path Function:\deactivate) {
+  $pythonVenvActivate = Test-Path -LiteralPath .venv/
+  if (Test-Path -LiteralPath Function:\deactivate) {
     if ([System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation, '.venv') -eq $env:VIRTUAL_ENV) {
       $pythonVenvActivate = $false
     }
@@ -90,4 +94,13 @@ Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -S
       [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
     }
   }
+}
+Set-PSReadLineKeyHandler -Chord Alt+e -Description 'Eval command line and replace it, except empty results' -ScriptBlock {
+  $line = ''
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
+  [string]$result = Invoke-Expression $line
+  if ([string]::IsNullOrWhiteSpace($result)) {
+    return
+  }
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $result)
 }

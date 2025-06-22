@@ -66,10 +66,10 @@
   # FormatsToProcess = @()
 
   # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-  NestedModules        = @('./Replacer/Replacer.psm1')
+  NestedModules        = @('Z.psm1')
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('vw', 'yq', 'tq', 'packageJSON', 'sortJSON', 'stripAnsi', 'icat', 'which', 'Set-Region', 'Invoke-Application', 'Enable-Env', 'Update-Env', 'Invoke-Less', 'Invoke-Sudo')
+  FunctionsToExport    = @('vw', 'yq', 'tq', 'packageJSON', 'sortJSON', 'stripAnsi', 'icat', 'which', 'Set-Region', 'Invoke-Application', 'Enable-Env', 'Update-Env', 'Invoke-Less', 'Invoke-Sudo', 'Invoke-Z')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -78,13 +78,13 @@
   VariablesToExport    = '*'
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-  AliasesToExport      = @()
+  AliasesToExport      = @('ia', 'less', 'sudo', 'z')
 
   # DSC resources to export from this module
   # DscResourcesToExport = @()
 
   # List of all modules packaged with this module
-  # ModuleList = @()
+  # ModuleList           = @('./MyProfile.psm1', './Z.psm1')
 
   # List of all files packaged with this module
   # FileList             = @('./MyProfile.psd1', './MyProfile.psm1')
