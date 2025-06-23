@@ -37,7 +37,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         }
         elseif ($prev.StartsWith('bun')) {
           @('a', 'add', 'build', 'create', 'exec', 'i', 'init', 'install', 'link', 'outdated', 'patch', 'pm', 'publish', 'remove', 'repl', 'rm', 'run', 'test', 'unlink', 'update', 'upgrade', 'x')
-          (packageJSON).scripts?.Keys
+          (packageJSON).scripts.Keys
         }
         break
       }
@@ -68,7 +68,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
           @('--silent', '--filter', '-b', '--bun', '--shell', '--watch', '--hot', '--no-clear-screen', '--smol', '-r', '--preload', '--inspect', '--inspect-wait', '--inspect-brk', '--if-present', '--no-install', '--install', '-e', '--eval', '--print', '--prefer-offline', '--prefer-latest', '-p', '--port', '--conditions', '--fetch-preconnect', '--max-http-header-size', '--main-fields', '--extension-order', '--tsconfig-override', '-d', '--define', '--drop', '-l', '--loader', '--no-macros', '--jsx-factory', '--jsx-fragment', '--jsx-import-source', '--jsx-runtime', '--ignore-dce-annotations', '--env-file', '--cwd', '-c', '--config', '-h', '--help')
         }
         elseif ($prev.StartsWith('run')) {
-          (packageJSON).scripts?.Keys
+          (packageJSON).scripts.Keys
         }
         break
       }
@@ -199,5 +199,5 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         }
         break
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

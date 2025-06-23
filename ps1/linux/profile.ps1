@@ -8,18 +8,6 @@ function Invoke-ExecutableAlias {
   }
 }
 
-function man {
-  if (!$args.Length) {
-    return man -k . | fzf -m --reverse --wrap | ForEach-Object {
-      $keyword, $section = $_.Split(' - ', 2)[0].TrimEnd().Split(' ', 2)
-      $section = [int]$section.SubString(1, $section.Length - 2)
-      Invoke-Application -Environment @{MANROFFOPT = '-c'; MANPAGER = "${env:SHUTILS_ROOT}/scripts/man.sh" } man $section $keyword
-    }
-  }
-
-  Invoke-Application -Environment @{MANROFFOPT = '-c'; MANPAGER = "${env:SHUTILS_ROOT}/scripts/man.sh" } man $args
-}
-
 $_executableAliasMap = @{
   egrep   = 'egrep', '--color=auto'
   grep    = 'grep', '--color=auto'

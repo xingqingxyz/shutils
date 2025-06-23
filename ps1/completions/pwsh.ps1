@@ -27,5 +27,5 @@ Register-ArgumentCompleter -Native -CommandName pwsh -ScriptBlock {
       Default {
         @('-File', '-f', '-Command', '-c', '-CommandWithArgs', '-cwa', '-ConfigurationName', '-config', '-ConfigurationFile', '-CustomPipeName', '-EncodedCommand', '-e', '-ec', '-ExecutionPolicy', '-ex', '-ep', '-InputFormat', '-inp', '-if', '-Interactive', '-i', '-Login', '-l', '-MTA', '-NoExit', '-noe', '-NoLogo', '-nol', '-NonInteractive', '-noni', '-NoProfile', '-nop', '-NoProfileLoadTime', '-OutputFormat', '-o', '-of', '-SettingsFile', '-settings', '-SSHServerMode', '-sshs', '-STA', '-Version', '-v', '-WindowStyle', '-w', '-WorkingDirectory', '-wd', '-Help', '-?', '/?')
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

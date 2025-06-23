@@ -34,50 +34,50 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
       '' {
         switch ($prev) {
           '--binary' {
-            @('as-text', 'no-printing') | ForEach-Object { [CompletionResult]::new($_) }
+            @('as-text', 'no-printing').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--color' {
-            @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            @('always', 'auto', 'never').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--completion' {
-            @('bash', 'fish', 'ps1', 'zsh') | ForEach-Object { [CompletionResult]::new($_) }
+            @('bash', 'fish', 'ps1', 'zsh').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--decorations' {
-            @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            @('always', 'auto', 'never').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--language' {
-            @('bash', 'zsh', 'fish', 'elvish', 'pwsh', 'ps1', 'sh', 'py', 'python', 'js', 'ts', 'rs', 'go', 'man', 'help', 'awk', 'md', 'ini', 'json', 'jsonc', 'yml', 'xml', 'html', 'cs', 'vb', 'cpp', 'c', 'lua', 'codeql', 'sql', 'rb', 'makefile', 'cmake', 'gql', 'tsx', 'mdx', 'svelte', 'vue', 'angular', 'astro', 'css', 'scss', 'sass', 'stylus', 'htmx', 'rst', 'ipynb') | ForEach-Object { [CompletionResult]::new($_) }
+            @('bash', 'zsh', 'fish', 'elvish', 'pwsh', 'ps1', 'sh', 'py', 'python', 'js', 'ts', 'rs', 'go', 'man', 'help', 'awk', 'md', 'ini', 'json', 'jsonc', 'yml', 'xml', 'html', 'cs', 'vb', 'cpp', 'c', 'lua', 'codeql', 'sql', 'rb', 'makefile', 'cmake', 'gql', 'tsx', 'mdx', 'svelte', 'vue', 'angular', 'astro', 'css', 'scss', 'sass', 'stylus', 'htmx', 'rst', 'ipynb').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--strip-ansi' {
-            @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            @('always', 'auto', 'never').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--style' {
-            @('default', 'full', 'auto', 'changes', 'header', 'header-filename', 'header-filesize', 'grid', 'rule', 'ship', 'plain', 'numbers') | ForEach-Object { [CompletionResult]::new($_) }
+            @('default', 'full', 'auto', 'changes', 'header', 'header-filename', 'header-filesize', 'grid', 'rule', 'ship', 'plain', 'numbers').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--theme' {
             @(
               bat --list-themes --color=never
               @('auto', 'dark', 'light')
-            ) | ForEach-Object { [CompletionResult]::new($_) }
+            ).ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--paging' {
-            @('always', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            @('always', 'auto', 'never').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--wrap' {
-            @('character', 'auto', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            @('character', 'auto', 'never').ForEach{ [CompletionResult]::new($_) }
             break
           }
           '--italic-text' {
-            @('always', 'never') | ForEach-Object { [CompletionResult]::new($_) }
+            @('always', 'never').ForEach{ [CompletionResult]::new($_) }
             break
           }
           Default {

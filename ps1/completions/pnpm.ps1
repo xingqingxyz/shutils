@@ -13,14 +13,6 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
       }
       $i.Value
     }) -join ';'
-  # $cursorPosition -= $wordToComplete.Length
-  # foreach ($i in $commandAst.CommandElements) {
-  #   if ($i.Extent.StartOffset -ge $cursorPosition) {
-  #     break
-  #   }
-  #   $prev = $i
-  # }
-  # $prev = $prev.ToString()
   $command = switch ($command) {
     'c' { 'config'; break }
     'i' { 'install'; break }
@@ -135,7 +127,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         }
         else {
           $json = npm ls --json | ConvertFrom-Json -AsHashtable
-          $json.Keys | ForEach-Object {
+          $json.Keys.ForEach{
             if ($_ -like '*dependencies') {
               $json.$_.Keys
             }
@@ -149,7 +141,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         }
         else {
           $json = npm ls --json | ConvertFrom-Json -AsHashtable
-          $json.Keys | ForEach-Object {
+          $json.Keys.ForEach{
             if ($_ -like '*dependencies') {
               $json.$_.Keys
             }
@@ -157,5 +149,5 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         }
         break
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

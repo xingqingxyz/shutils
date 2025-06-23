@@ -18,5 +18,5 @@ Register-ArgumentCompleter -Native -CommandName es -ScriptBlock {
         }
         break
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

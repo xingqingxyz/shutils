@@ -18,12 +18,6 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
       $i.Value
     })
 
-  if ($npm -ne 'npm' -and $commandAst.CommandElements[0].ToString() -eq 'npm') {
-    $line = "$($commandAst.CommandElements)"
-    [Microsoft.PowerShell.PSConsoleReadLine]::Replace($commandAst.CommandElements[0].Extent.StartOffset, $line.Length, [regex]::Replace($line, '^\S+', $npm))
-    return ''
-  }
-
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
     if ($i.Extent.StartOffset -ge $cursorPosition) {
@@ -49,6 +43,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
     }
   }
   $command = $commands -join ';'
+
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
@@ -193,5 +188,5 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
         }
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

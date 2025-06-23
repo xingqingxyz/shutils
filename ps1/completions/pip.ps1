@@ -7,6 +7,6 @@ Register-ArgumentCompleter -Native -CommandName pip -ScriptBlock {
   $env:COMP_WORDS = $commandAst.ToString()
   $env:COMP_CWORD = $commandAst.CommandElements.Count - 1
   $env:PIP_AUTO_COMPLETE = 1
-  (pip) -split ' '
-  Remove-Item Env:COMP_WORDS, Env:COMP_CWORD, Env:PIP_AUTO_COMPLETE
+  (pip).Split(' ')
+  Remove-Item -LiteralPath Env:COMP_WORDS, Env:COMP_CWORD, Env:PIP_AUTO_COMPLETE
 }

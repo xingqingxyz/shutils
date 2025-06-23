@@ -6,8 +6,8 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
     [int]$cursorPosition
   )
   function debug {
-    if ($env:BASH_COMP_DEBUG_FILE) {
-      "$args" | Out-File -Append -FilePath "$env:BASH_COMP_DEBUG_FILE"
+    if ($env:COMP_DEBUG_FILE) {
+      "$args" >> $env:COMP_DEBUG_FILE
     }
   }
 
@@ -16,7 +16,7 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
   }
 
   # Get the current command line and convert into a string
-  $Command = $CommandAst.ToString()
+  $Command = $commandAst.ToString()
 
   debug '========= starting completion logic =========='
   debug "WordToComplete: $WordToComplete Command: $Command CursorPosition: $CursorPosition"
@@ -61,22 +61,11 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
     $Flag, $WordToComplete = $WordToComplete.Split('=', 2)
   }
 
-  if ($WordToComplete -eq '' -And -Not $IsEqualFlag) {
+  if ($WordToComplete -eq '' -and !$IsEqualFlag) {
     # If the last parameter is complete (there is a space following it)
     # We add an extra empty parameter so we can indicate this to the go method.
     debug 'Adding extra empty parameter'
-    # PowerShell 7.2+ changed the way how the arguments are passed to executables,
-    # so for pre-7.2 or when Legacy argument passing is enabled we need to use
-    # `"`" to pass an empty argument, a "" or '' does not work!!!
-    if ($PSVersionTable.PsVersion -lt [version]'7.2.0' -or
-            ($PSVersionTable.PsVersion -lt [version]'7.3.0' -and -not [ExperimentalFeature]::IsEnabled('PSNativeCommandArgumentPassing')) -or
-            (($PSVersionTable.PsVersion -ge [version]'7.3.0' -or [ExperimentalFeature]::IsEnabled('PSNativeCommandArgumentPassing')) -and
-      $PSNativeCommandArgumentPassing -eq 'Legacy')) {
-      $RequestComp = "$RequestComp" + ' `"`"'
-    }
-    else {
-      $RequestComp = "$RequestComp" + ' ""'
-    }
+    $RequestComp = "$RequestComp" + ' ""'
   }
 
   debug "Calling $RequestComp"
@@ -106,7 +95,7 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
   }
 
   $Longest = 0
-  $Values = @($out | ForEach-Object {
+  $Values = @($out.ForEach{
       #Split the output in name and description
       $Name, $Description = $_.Split("`t", 2)
       debug "Name: $Name Description: $Description"
@@ -118,7 +107,7 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
 
       # Set the description to a one space string if there is none set.
       # This is needed because the CompletionResult does not accept an empty string as argument
-      if (-Not $Description) {
+      if (!$Description) {
         $Description = ' '
       }
       @{ Name = "$Name"; Description = "$Description" }
@@ -139,7 +128,7 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
     return
   }
 
-  $Values = $Values | Where-Object {
+  $Values = $Values.Where{
     # filter the result
     $_.Name -like "$WordToComplete*"
 
@@ -169,10 +158,10 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
   }
 
   # Get the current mode
-  $Mode = (Get-PSReadLineKeyHandler | Where-Object { $_.Key -eq 'Tab' }).Function
+  $Mode = (Get-PSReadLineKeyHandler | Where-Object Key -EQ Tab).Function
   debug "Mode: $Mode"
 
-  $Values | ForEach-Object {
+  $Values.ForEach{
 
     # store temporary because switch will overwrite $_
     $comp = $_

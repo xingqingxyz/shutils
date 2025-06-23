@@ -11,11 +11,11 @@ Register-ArgumentCompleter -Native -CommandName conjure -ScriptBlock {
 
   @(switch ($prev) {
       '-debug' { @(''); break }
-      Default { 
+      Default {
         if ($wordToComplete.StartsWith('-')) {
-          @('-monitor', '-quiet', '-regard-warnings', '-seed', '-verbose', '-debug', '-help', '-list', '-log', '-version') 
+          @('-monitor', '-quiet', '-regard-warnings', '-seed', '-verbose', '-debug', '-help', '-list', '-log', '-version')
         }
         break
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

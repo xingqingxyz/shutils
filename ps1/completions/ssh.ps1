@@ -15,5 +15,5 @@ Register-ArgumentCompleter -Native -CommandName ssh -ScriptBlock {
           @()
         }
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

@@ -37,7 +37,7 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
             if ($commandAst.CommandElements.Count -le 2) {
               @('ext', 'status', 'version', 'help', 'tunnel', 'serve-web')
             }
-            break 
+            break
           }
         }
         break
@@ -53,7 +53,7 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
             if ($commandAst.CommandElements.Count -le 3) {
               @('list', 'install', 'uninstall', 'update', 'help')
             }
-            break 
+            break
           }
         }
         break
@@ -162,5 +162,5 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
     elseif ($prev -eq '--log') {
       @('trace', 'debug', 'info', 'warn', 'error', 'critical', 'off')
     }
-  ) | Where-Object { $_ -like "$wordToComplete*" }
+  ).Where{ $_ -like "$wordToComplete*" }
 }

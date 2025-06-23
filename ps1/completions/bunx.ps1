@@ -4,6 +4,6 @@ Register-ArgumentCompleter -Native -CommandName bunx -ScriptBlock {
       @('--bun')
     }
     else {
-    (Get-ChildItem node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+      (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
+    }).Where{ $_ -like "$wordToComplete*" }
 }

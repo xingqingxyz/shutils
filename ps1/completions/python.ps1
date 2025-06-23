@@ -22,5 +22,5 @@ Register-ArgumentCompleter -Native -CommandName python, py -ScriptBlock {
           @('--check-hash-based-pycs', '--help-env', '--help-xoptions', '--help-all', '-X', '-b', '-B', '-c', '-d', '-E', '-h', '-i', '-I', '-m', '-O', '-OO', '-P', '-q', '-s', '-S', '-u', '-v', '-V', '-W', '-x', '-X', '--check-hash-based-pycs', '--help-env', '--help-xoptions', '--help-all')
         }
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

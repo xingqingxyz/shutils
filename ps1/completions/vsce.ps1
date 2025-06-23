@@ -111,10 +111,10 @@ Register-ArgumentCompleter -Native -CommandName vsce -ScriptBlock {
           Default { $prev }
         }
         switch ($prev) {
-          '--target' { 
+          '--target' {
             @('win32-x64', 'win32-arm64', 'linux-x64',
               'linux-arm64', 'linux-armhf', 'darwin-x64',
-              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web') | ForEach-Object { [CompletionResult]::new($_, $_, [CompletionResultType]::ParameterValue, 'unknown') }
+              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web').ForEach{ [CompletionResult]::new($_, $_, [CompletionResultType]::ParameterValue, 'unknown') }
             break
           }
         }
@@ -159,10 +159,10 @@ Register-ArgumentCompleter -Native -CommandName vsce -ScriptBlock {
           Default { $prev }
         }
         switch ($prev) {
-          '--target' { 
+          '--target' {
             @('win32-x64', 'win32-arm64', 'linux-x64',
               'linux-arm64', 'linux-armhf', 'darwin-x64',
-              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web') | ForEach-Object { [CompletionResult]::new($_, $_, [CompletionResultType]::ParameterValue, 'unknown') }
+              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web').ForEach{ [CompletionResult]::new($_, $_, [CompletionResultType]::ParameterValue, 'unknown') }
             break
           }
         }

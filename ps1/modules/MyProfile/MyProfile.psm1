@@ -396,7 +396,7 @@ function Update-Env {
 
 function Invoke-Less {
   if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
-    return $input | bat -lman
+    return $input | bat -plman
   }
   $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
   if ($MyInvocation.ExpectingInput) {

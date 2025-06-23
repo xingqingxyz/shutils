@@ -28,5 +28,5 @@ Register-ArgumentCompleter -Native -CommandName aria2c -ScriptBlock {
         }
         break
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

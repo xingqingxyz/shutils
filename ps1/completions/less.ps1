@@ -137,5 +137,5 @@ Register-ArgumentCompleter -Native -CommandName less -ScriptBlock {
     [CompletionResult]::new('--use-color', 'use-color', [CompletionResultType]::ParameterValue, 'Enables colored text.')
     [CompletionResult]::new('--wheel-lines', 'wheel-lines', [CompletionResultType]::ParameterValue, 'Each click of the mouse wheel moves N lines.')
     [CompletionResult]::new('--wordwrap', 'wordwrap', [CompletionResultType]::ParameterValue, 'Wrap lines at spaces.')
-  ) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
+  ) | Where-Object CompletionText -Like "$wordToComplete*"
 }

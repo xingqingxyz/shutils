@@ -15,5 +15,5 @@ Register-ArgumentCompleter -Native -CommandName stream -ScriptBlock {
           @('-authenticate', '-colorspace', '-compress', '-define', '-density', '-depth', '-extract', '-identify', '-interlace', '-interpolate', '-limit', '-map', '-monitor', '-quantize', '-quiet', '-regard-warnings', '-respect-parentheses', '-sampling-factor', '-seed', '-set', '-size', '-storage-type', '-synchronize', '-taint', '-transparent-color', '-verbose', '-virtual-pixel', '-channel', '-debug', '-help', '-list', '-log', '-version')
         }
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

@@ -35,7 +35,7 @@ Register-ArgumentCompleter -Native -CommandName dnf, dnf5, yum -ScriptBlock {
     return $words
   }
   $re = [regex]::new('^(\S+)\s+\((.+)\)$')
-  $words | ForEach-Object {
+  $words.ForEach{
     $g = $re.Match($_).Groups
     [CompletionResult]::new($g[1], $g[1], [CompletionResultType]::ParameterValue, $g[2])
   }

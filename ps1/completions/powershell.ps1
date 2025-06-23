@@ -21,5 +21,5 @@ Register-ArgumentCompleter -Native -CommandName powershell -ScriptBlock {
       Default {
         @('-PSConsoleFile', '-Version', '-NoLogo', '-NoExit', '-Sta', '-Mta', '-NoProfile', '-NonInteractive', '-InputFormat', '-OutputFormat', '-WindowStyle', '-EncodedCommand', '-ConfigurationName', '-File', '-ExecutionPolicy', '-Command', '-Help', '-?', '/?')
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

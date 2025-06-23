@@ -136,6 +136,6 @@ The option can be specified multiple times to run benchmarks for all possible pa
       }
     })
 
-  $completions.Where{ $_.CompletionText -like "$wordToComplete*" } |
+  $completions | Where-Object CompletionText -Like "$wordToComplete*" |
     Sort-Object -Property ListItemText
 }

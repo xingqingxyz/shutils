@@ -55,5 +55,5 @@ Register-ArgumentCompleter -Native -CommandName chafa -ScriptBlock {
         @('-h', '--help', '--version', '-v', '--verbose', '-f', '--format', '-O', '--optimize', '--relative', '--passthrough', '--polite', '--align', '--clear', '--exact-size', '--fit-width', '--font-ratio', '--margin-bottom', '--margin-right', '--scale', '-s', '--size', '--stretch', '--view-size', '--animate', '-d', '--duration', '--speed', '--watch', '--bg', '-c', '--colors', '--color-extractor', '--color-space', '--dither', '--dither-grain', '--dither-intensity', '--fg', '--invert', '-p', '--preprocess', '-t', '--threshold', '--threads', '-w', '--work', '--fg-only', '--fill', '--glyph-file', '--symbols')
         break
       }
-    }) | Where-Object { $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

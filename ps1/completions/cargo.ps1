@@ -35,7 +35,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          @('-V', '--version', '--list', '--explain', '-v', '--verbose', '-q', '--quiet', '--color', '--locked', '--offline', '--frozen', '--config', '-h', '--help') | ForEach-Object { [CompletionResult]::new($_) }
+          @('-V', '--version', '--list', '--explain', '-v', '--verbose', '-q', '--quiet', '--color', '--locked', '--offline', '--frozen', '--config', '-h', '--help').ForEach{ [CompletionResult]::new($_) }
           break
         }
         [CompletionResult]::new('add', 'add', [CompletionResultType]::ParameterValue, 'Add dependencies to a Cargo.toml manifest file')
@@ -825,7 +825,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
       'report_future-incompatibilities' {
         switch ($prev) {
           '--color' {
-            @('auto', 'always', 'never') | ForEach-Object { [CompletionResult]::new($_) } | ForEach-Object { [CompletionResult]::new($_) }
+            @('auto', 'always', 'never').ForEach{ [CompletionResult]::new($_) }.ForEach{ [CompletionResult]::new($_) }
             break
           }
           '-Z' {

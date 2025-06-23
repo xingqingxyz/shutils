@@ -4,7 +4,7 @@ using namespace System.Management.Automation.Language
 Register-ArgumentCompleter -Native -CommandName tree-sitter -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
 
-  $subcmd = "$($commandAst.CommandElements[1])"
+  $subcmd = $commandAst.CommandElements[1].ToString()
   @(switch ($subcmd) {
       'init-config' {
         [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterValue, 'Print help')

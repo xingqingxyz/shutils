@@ -27,7 +27,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          @('-h', '--help', '-v', '--version') | ForEach-Object { [CompletionResult]::new($_) }
+          @('-h', '--help', '-v', '--version').ForEach{ [CompletionResult]::new($_) }
           break
         }
         [CompletionResult]::new('add', 'add', [CompletionResultType]::ParameterName, 'Add file contents to the index')
@@ -2312,7 +2312,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
           [CompletionResult]::new('--verbose', '--verbose', [CompletionResultType]::ParameterName, 'Provide more progress information')
         }
         elseif ($commandAst.CommandElements.Count -le 3) {
-          
+
         }
         break
       }
@@ -3650,7 +3650,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
         }
         break
       }
-      'flow' { 
+      'flow' {
         if ($commandAst.CommandElements.Count -le 3) {
           [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterName, 'Initialize a new git repo with support for the branching model.')
           [CompletionResult]::new('feature', 'feature', [CompletionResultType]::ParameterName, 'Manage your feature branches.')
@@ -3662,7 +3662,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
           [CompletionResult]::new('config', 'config', [CompletionResultType]::ParameterName, 'Manage your git-flow configuration.')
           [CompletionResult]::new('log', 'log', [CompletionResultType]::ParameterName, 'Show log deviating from base branch.')
         }
-        break 
+        break
       }
       'flow;init' {
         if ($wordToComplete.StartsWith('-')) {

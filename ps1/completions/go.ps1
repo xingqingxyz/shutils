@@ -345,7 +345,7 @@ examples).
         [CompletionResult]::new('-o', 'o', [CompletionResultType]::ParameterValue, 'The -o flag causes vendor to create the vendor directory at the given path instead of "vendor".')
       }
       'mod;why' {
-        @('-m', '--vendor') | ForEach-Object { [CompletionResult]::new($_) }
+        @('-m', '--vendor').ForEach{ [CompletionResult]::new($_) }
       }
       'run' {
         [CompletionResult]::new('-exec', 'exec', [CompletionResultType]::ParameterName, "If the -exec flag is given, 'go run' invokes the binary using xprog: 'xprog a.out arguments...'.")
@@ -359,7 +359,7 @@ examples).
       }
       'vet' {
         [CompletionResult]::new('-vettool=prog', 'vettool=prog', [CompletionResultType]::ParameterName, 'The -vettool=prog flag selects a different analysis tool with alternative or additional checks.')
-        @('-C', '-n', '-x', '-v', '-tags', '-toolexec') | ForEach-Object { [CompletionResult]::new($_) }
+        @('-C', '-n', '-x', '-v', '-tags', '-toolexec').ForEach{ [CompletionResult]::new($_) }
       }
       'work' {
         [CompletionResult]::new('edit', 'edit', [CompletionResultType]::ParameterValue, 'edit go.work from tools or scripts')
@@ -387,5 +387,5 @@ examples).
         [CompletionResult]::new('-e', 'e', [CompletionResultType]::ParameterValue, 'The -e flag causes vendor to attempt to proceed despite errors encountered while loading packages.')
         [CompletionResult]::new('-o', 'o', [CompletionResultType]::ParameterValue, 'The -o flag causes vendor to create the vendor directory at the given path instead of "vendor".')
       }
-    }) | Where-Object { $_.CompletionText -like "$wordToComplete*" }
+    }) | Where-Object CompletionText -Like "$wordToComplete*"
 }
