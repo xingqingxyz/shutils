@@ -22,7 +22,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($command) {
       '' {

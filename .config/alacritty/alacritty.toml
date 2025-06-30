@@ -1,0 +1,43 @@
+[cursor.style]
+shape    = "Beam"
+blinking = "On"
+
+[[keyboard.bindings]]
+key    = "n"
+mods   = "Control|Shift"
+action = "CreateNewWindow"
+
+[[keyboard.bindings]]
+key    = "Enter"
+mods   = "Alt"
+action = "ToggleFullscreen"
+
+[[keyboard.bindings]]
+key    = "F11"
+action = "ToggleFullscreen"
+
+[mouse]
+hide_when_typing = true
+
+[terminal]
+shell = "pwsh"
+
+[font]
+normal.family = "Adwaita Mono"
+size          = 12
+
+[window]
+resize_increments = true
+
+[window.dimensions]
+columns = 90
+lines   = 30
+
+[bell]
+animation = "EaseOut"
+color     = "#111111"
+duration  = 216
+
+[general]
+import = ["~/p/alacritty-theme/themes/enfocado_dark.toml"]
+

@@ -22,7 +22,7 @@ Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
   $prev = switch ($prev) {
     '-l' { '--language'; break }
     '--theme-light' { '--theme'; break }

@@ -1,0 +1,18 @@
+#!/bin/bash
+[ "$INLESSFILTER" ] && exit 1
+
+if [ $(file -b --mime-encoding "$1") != binary ]; then
+  bat -p --color=always "$1"
+  exit 0
+fi
+
+out=$(INLESSFILTER=1 /usr/bin/lesspipe.sh "$1")
+[ -z "$out" ] && exit 0
+if file -b - <<< $out | grep -q troff; then
+  cat <<< $out
+  exit 0
+fi
+fname=${1%.*}
+fname=${fname%.tar}
+LESSOPEN= LESSCLOSE= bat -p --color=always --file-name="$fname" <<< $out
+exit 0

@@ -25,7 +25,7 @@ function Register-ArgumentCompleter {
       Microsoft.PowerShell.Core\Register-ArgumentCompleter @PSBoundParameters
     }
     else {
-      $CommandName.ForEach{ $_completionFuncMap.Add($_, $ScriptBlock) }
+      $CommandName.ForEach{ $_completionFuncMap.$_ = $ScriptBlock }
     }
   }
 }

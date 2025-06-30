@@ -25,7 +25,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   $commands[0] = switch ($commands[0]) {
     'c' { 'config'; break }

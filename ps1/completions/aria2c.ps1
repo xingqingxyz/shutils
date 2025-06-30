@@ -7,7 +7,7 @@ Register-ArgumentCompleter -Native -CommandName aria2c -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($prev) {
       '--help' {

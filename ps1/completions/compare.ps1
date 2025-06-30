@@ -7,7 +7,7 @@ Register-ArgumentCompleter -Native -CommandName composite -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($prev) {
       '-alpha' { @('on', 'activate', 'off', 'deactivate', 'set', 'opaque', 'copy', 'transparent', 'extract', 'background', 'shape'); break }

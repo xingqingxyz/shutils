@@ -6,7 +6,7 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # shutils
-eval "$(printf '. %q\n' "${BASH_SOURCE[0]%/*}"/bash/*.sh)"
+eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
 
 # shopt -s histappend
 shopt -s globstar
@@ -23,7 +23,7 @@ alias cls=clear \
 
 if [[ $TERM_PROGRAM != vscode* ]]; then
   alias fd='fd --hyperlink=auto'
-  if declare -xp WSL_DISTRO_NAME &>/dev/null; then
+  if declare -xp WSL_DISTRO_NAME &> /dev/null; then
     alias rg='--hyperlink-format=file://${wslprefix}${path}'
   else
     alias rg='--hyperlink-format=default'

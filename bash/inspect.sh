@@ -1,24 +1,32 @@
 vw() {
+  if [ $# = 0 ]; then
+    if [ -p /dev/stdin ]; then
+      bat -plhelp
+    else
+      vw vw
+    fi
+    return
+  fi
   while [ "$1" ]; do
     case "$(type -t "$1")" in
       alias)
-        alias "$1"
+        alias "$1" | bat -plsh
         ;;
       builtin | keyword)
-        help "$1"
+        help "$1" | bat -plhelp
         ;;
       file)
-        "$1" --help 2>&1 | bat --plain -l help
+        bat "$(command -v "$1")"
         ;;
       function)
-        declare -fp "$1" | bat -nl bash
+        declare -fp "$1" | bat -plsh
         ;;
       *)
-        if [[ $1 =~ \* ]]; then
+        if [ "${1: -1}" = '*' ]; then
           eval "declare -p \${!$1}"
         else
           declare -p "$1"
-        fi | bat --plain -l bash
+        fi | bat -plsh
         ;;
     esac
     shift

@@ -7,7 +7,7 @@ Register-ArgumentCompleter -Native -CommandName pdftohtml -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($prev) {
       '-enc' { 'ASCII7', 'Latin1', 'Symbol', 'UTF-16', 'UTF-8' }

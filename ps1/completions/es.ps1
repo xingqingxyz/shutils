@@ -7,7 +7,7 @@ Register-ArgumentCompleter -Native -CommandName es -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($prev) {
       '-sort' { @('name', 'path', 'size', 'extension', 'date-created', 'date-modified', 'date-accessed', 'attributes', 'file-list-file-name', 'run-count', 'date-recently-changed', 'date-run'); break }

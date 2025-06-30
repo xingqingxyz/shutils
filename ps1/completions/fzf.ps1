@@ -7,7 +7,7 @@ Register-ArgumentCompleter -Native -CommandName fzf -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   $wordToComplete = $wordToComplete.TrimEnd("'")
 
