@@ -11,20 +11,15 @@ _fzf_file_widget() {
 }
 
 _fzf_history() {
-  local awk=awk name ver dat opts out
-  read -r name ver dat < <(mawk -W version 2> /dev/null)
-  if [[ $name == mawk && $(sort -VC <<< $'1.3.4\n'"$ver") && dat -ge 20230302 ]]; then
-    awk=mawk
-  fi
+  local opts out
   opts="${FZF_DEFAULT_OPTS} ${FZF_CTRL_R_OPTS}
     --height ${FZF_CTRL_R_HEIGHT:-40%} --reverse +m --read0 -n2..,..
     --scheme=history --bind=ctrl-r:toggle-sort --bind=ctrl-z:ignore"
+  # TODO: consider HISTCONTROL and not use awk or simplify it
+  # prevent the time str
   out=$(
-    # prevent the time str
-    HISTTIMEFORMAT='' fc -lr $((-1 << 31)) 2> /dev/null \
-      |
-      # TODO: consider HISTCONTROL and not use awk or simplify it
-      "$awk" -v hist_cnt="$HISTCMD" -f "${BASH_SOURCE[0]%/*}/fzf-hist.awk" \
+    HISTTIMEFORMAT='' fc -lr 0x7fffffff 2> /dev/null \
+      | awk -v hist_cnt="$HISTCMD" -f "${BASH_SOURCE[0]%/*}/fzf-hist.awk" \
       | FZF_DEFAULT_OPTS=$opts fzf -q "${READLINE_LINE:0:READLINE_POINT}"
   ) || return
   out=${out#*$'\t'}
@@ -46,7 +41,7 @@ _fzf_ident() {
   local query out start
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
-  start=$(( READLINE_POINT - ${#query} ))
+  start=$((READLINE_POINT - ${#query}))
   # alias builtin command keyword variable
   out=$(compgen -abckv -A function -- "$query" \
     | uniq \
