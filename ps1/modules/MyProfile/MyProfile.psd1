@@ -69,7 +69,7 @@
   NestedModules        = @('Z.psm1')
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('vw', 'yq', 'tq', 'packageJSON', 'sortJSON', 'stripAnsi', 'icat', 'which', 'Set-Region', 'Invoke-Application', 'Enable-Env', 'Update-Env', 'Invoke-Less', 'Invoke-Sudo', 'Invoke-Z')
+  FunctionsToExport    = @('vw', 'yq', 'tq', 'packageJSON', 'sortJSON', 'stripAnsi', 'icat', 'Set-Region', 'Enable-Env', 'Update-Env', 'Invoke-Application', 'Invoke-Which', 'Invoke-Less', 'Invoke-Sudo', 'Invoke-Z')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -78,7 +78,7 @@
   VariablesToExport    = '*'
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-  AliasesToExport      = @('ia', 'less', 'sudo', 'z')
+  AliasesToExport      = @('ia', 'z')
 
   # DSC resources to export from this module
   # DscResourcesToExport = @()

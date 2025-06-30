@@ -21,7 +21,7 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($command) {
       '' {

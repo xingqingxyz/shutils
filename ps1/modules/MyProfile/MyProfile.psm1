@@ -3,13 +3,14 @@ using namespace System.Management.Automation
 function vw {
   param(
     [ArgumentCompleter({
+        # note: using namespace not effects, this executed likes background job
         [OutputType([System.Management.Automation.CompletionResult])]
         param(
-          [string] $CommandName,
-          [string] $ParameterName,
-          [string] $WordToComplete,
-          [System.Management.Automation.Language.CommandAst] $CommandAst,
-          [System.Collections.IDictionary] $FakeBoundParameters
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete,
+          [System.Management.Automation.Language.CommandAst]$CommandAst,
+          [System.Collections.IDictionary]$FakeBoundParameters
         )
         $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
         if ($results.Length) { $results } else {
@@ -167,10 +168,6 @@ function sortJSON {
   }
 }
 
-function which([string]$Name) {
-  (Get-Item (Get-Command -Type Application -TotalCount 1 $Name).Path).ResolvedTarget
-}
-
 <#
 .SYNOPSIS
 Strip ANSI escape codes from input or all args text.
@@ -265,6 +262,83 @@ function Set-Region {
   }
 }
 
+function Enable-Env {
+  param(
+    [string]
+    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation + '/.env'
+  )
+  Get-Content $Path | ForEach-Object {
+    $name, $value = $_.Split('=', 2)
+    Set-Item Env:$name $value
+  }
+}
+
+function Update-Env {
+  param(
+    [Parameter(Position = 0, Mandatory)]
+    [scriptblock]
+    $ScriptBlock,
+    [System.EnvironmentVariableTarget]
+    $Scope = 'User',
+    [string]
+    $Description = (Get-Date).ToString()
+  )
+  if ($Scope -eq [System.EnvironmentVariableTarget]::Process) {
+    return & $ScriptBlock
+  }
+
+  $prevEnv = [System.Environment]::GetEnvironmentVariables()
+  & $ScriptBlock
+  $processEnv = [System.Environment]::GetEnvironmentVariables()
+
+  switch ($true) {
+    $IsWindows {
+      foreach ($key in $processEnv.Keys) {
+        if ($prevEnv.$key -ne $processEnv.$key) {
+          if ($key -eq 'Path') {
+            Write-Information "overwriting $Scope Path by all process env updates"
+            $processEnv.Path = [System.Collections.Generic.HashSet[string]]::new(
+              $processEnv.Path.Split(';')).ExceptWith(
+              [System.Environment]::GetEnvironmentVariable('Path', $Scope -eq 'User' ? 'Machine' : 'User').Split(';')
+            ) -join ';'
+          }
+          [System.Environment]::SetEnvironmentVariable($key, $processEnv.$key, $Scope)
+        }
+      }
+      break
+    }
+    $IsLinux {
+      $Description = $Description.Replace("`n", ' ')
+      $cmd = $processEnv.GetEnumerator().ForEach{
+        # Cannot handle PATH change on Linux
+        if ($_.Name -eq 'PATH') {
+          return
+        }
+        if ($prevEnv.($_.Name) -ne $_.Value) {
+          $_.Name + '=' + $_.Value
+        }
+      } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
+      switch ($Scope) {
+        ([System.EnvironmentVariableTarget]::User) {
+          return Set-Region UserEnv $cmd $(if (Test-Path ~/.bash_profile) {
+              "$HOME/.bash_profile"
+            }
+            else {
+              "$HOME/.profile"
+            })
+        }
+        ([System.EnvironmentVariableTarget]::Machine) {
+          return Invoke-Sudo Set-Region SysEnv $cmd /etc/profile.d/sh.local
+        }
+      }
+      break
+    }
+    Default {
+      throw 'not implemented'
+    }
+  }
+}
+
 function Invoke-Application {
   [CmdletBinding()]
   param(
@@ -316,82 +390,8 @@ function Invoke-Application {
   }
 }
 
-function Enable-Env {
-  param(
-    [string]
-    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation + '/.env'
-  )
-  Get-Content $Path | ForEach-Object {
-    $name, $value = $_.Split('=', 2)
-    Set-Item Env:$name $value
-  }
-}
-
-function Update-Env {
-  param(
-    [Parameter(Position = 0, Mandatory)]
-    [scriptblock]
-    $ScriptBlock,
-    [System.EnvironmentVariableTarget]
-    $Scope = 'User',
-    [string]
-    $Description = (Get-Date).ToString()
-  )
-  if ($Scope -eq [System.EnvironmentVariableTarget]::Process) {
-    return & $ScriptBlock
-  }
-
-  $prevEnv = [System.Environment]::GetEnvironmentVariables()
-  & $ScriptBlock
-  $processEnv = [System.Environment]::GetEnvironmentVariables()
-
-
-  switch ($true) {
-    $IsWindows {
-      foreach ($key in $processEnv.Keys) {
-        if ($prevEnv.$key -ne $processEnv.$key) {
-          if ($key -eq 'Path') {
-            Write-Information "overwriting $Scope Path by all process env updates"
-            $processEnv.Path = [System.Collections.Generic.HashSet[string]]::new(
-              $processEnv.Path.Split(';')).ExceptWith(
-              [System.Environment]::GetEnvironmentVariable('Path', $Scope -eq 'User' ? 'Machine' : 'User').Split(';')
-            ) -join ';'
-          }
-          [System.Environment]::SetEnvironmentVariable($key, $processEnv.$key, $Scope)
-        }
-      }
-      break
-    }
-    $IsLinux {
-      $Description = $Description.Replace("`n", ' ')
-      $cmd = $processEnv.GetEnumerator().ForEach{
-        # Cannot handle PATH change on Linux
-        if ($_.Name -eq 'PATH') {
-          return
-        }
-        if ($prevEnv.($_.Name) -ne $_.Value) {
-          $_.Name + '=' + $_.Value
-        }
-      } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
-      switch ($Scope) {
-        ([System.EnvironmentVariableTarget]::User) {
-          return Set-Region UserEnv $cmd $(if (Test-Path ~/.bash_profile) {
-              "$HOME/.bash_profile"
-            }
-            else {
-              "$HOME/.profile"
-            })
-        }
-        ([System.EnvironmentVariableTarget]::Machine) {
-          return Invoke-Sudo Set-Region SysEnv $cmd /etc/profile.d/sh.local
-        }
-      }
-      break
-    }
-    Default {
-      throw 'not implemented'
-    }
-  }
+function Invoke-Which([string]$Name) {
+  (Get-Item (Get-Command -Type Application -TotalCount 1 $Name).Path).ResolvedTarget
 }
 
 function Invoke-Less {
@@ -420,12 +420,54 @@ if ($sudoExe) {
       [scriptblock]
       $ScriptBlock,
       [Parameter(Position = 0, Mandatory, ParameterSetName = 'Command')]
+      [ArgumentCompleter({
+          [OutputType([System.Management.Automation.CompletionResult])]
+          param (
+            [string]$commandName,
+            [string]$parameterName,
+            [string]$wordToComplete,
+            [System.Management.Automation.Language.CommandAst]$commandAst,
+            [System.Collections.IDictionary]$fakeBoundParameters
+          )
+          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+        })]
       [string]
       $Command,
       [Parameter(ValueFromPipeline)]
       [System.Object]
       $InputObject,
       [Parameter(Position = 1, ValueFromRemainingArguments)]
+      [ArgumentCompleter({
+          [OutputType([System.Management.Automation.CompletionResult])]
+          param (
+            [string]$commandName,
+            [string]$parameterName,
+            [string]$wordToComplete,
+            [System.Management.Automation.Language.CommandAst]$commandAst,
+            [System.Collections.IDictionary]$fakeBoundParameters
+          )
+          $astList = $commandAst.CommandElements | Select-Object -Skip 1 |
+            Where-Object { $_ -isnot [System.Management.Automation.Language.ParameterAst] }
+          $commandName = Split-Path -LeafBase $astList[0].Value
+          if (!$_completionFuncMap.Contains($commandName)) {
+            try {
+              . ${env:SHUTILS_ROOT}/ps1/completions/$commandName.ps1
+              if (!$_completionFuncMap.Contains($commandName)) {
+                throw 'not found'
+              }
+            }
+            catch {
+              return Write-Debug "no completions found for $commandName in ${env:SHUTILS_ROOT}/ps1/completions"
+            }
+          }
+          $line = "$astList"
+          $cursorPosition = $line.Length
+          [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$cursorPosition)
+          $cursorPosition -= $astList[0].Extent.StartOffset
+          $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput($line, $cursorPosition)
+          $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
+          & $_completionFuncMap.$commandName $wordToComplete $commandAst $cursorPosition
+        })]
       [string[]]
       $ArgumentList
     )
@@ -474,12 +516,54 @@ elseif ($IsWindows) {
       [scriptblock]
       $ScriptBlock,
       [Parameter(Position = 0, Mandatory, ParameterSetName = 'Command')]
+      [ArgumentCompleter({
+          [OutputType([System.Management.Automation.CompletionResult])]
+          param (
+            [string]$commandName,
+            [string]$parameterName,
+            [string]$wordToComplete,
+            [System.Management.Automation.Language.CommandAst]$commandAst,
+            [System.Collections.IDictionary]$fakeBoundParameters
+          )
+          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+        })]
       [string]
       $Command,
       [Parameter(ValueFromPipeline)]
       [System.Object]
       $InputObject,
       [Parameter(Position = 1, ValueFromRemainingArguments)]
+      [ArgumentCompleter({
+          [OutputType([System.Management.Automation.CompletionResult])]
+          param (
+            [string]$commandName,
+            [string]$parameterName,
+            [string]$wordToComplete,
+            [System.Management.Automation.Language.CommandAst]$commandAst,
+            [System.Collections.IDictionary]$fakeBoundParameters
+          )
+          $astList = $commandAst.CommandElements | Select-Object -Skip 1 |
+            Where-Object { $_ -isnot [System.Management.Automation.Language.ParameterAst] }
+          $commandName = Split-Path -LeafBase $astList[0].Value
+          if (!$_completionFuncMap.Contains($commandName)) {
+            try {
+              . ${env:SHUTILS_ROOT}/ps1/completions/$commandName.ps1
+              if (!$_completionFuncMap.Contains($commandName)) {
+                throw 'not found'
+              }
+            }
+            catch {
+              return Write-Debug "no completions found for $commandName in ${env:SHUTILS_ROOT}/ps1/completions"
+            }
+          }
+          $line = "$astList"
+          $cursorPosition = $line.Length
+          [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$cursorPosition)
+          $cursorPosition -= $astList[0].Extent.StartOffset
+          $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput($line, $cursorPosition)
+          $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
+          & $_completionFuncMap.$commandName $wordToComplete $commandAst $cursorPosition
+        })]
       [string[]]
       $ArgumentList,
       [Parameter()]
@@ -520,5 +604,3 @@ elseif ($IsWindows) {
 }
 
 Set-Alias ia Invoke-Application
-Set-Alias less Invoke-Less
-Set-Alias sudo Invoke-Sudo

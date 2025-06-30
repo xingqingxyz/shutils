@@ -3,7 +3,7 @@ using namespace System.Management.Automation.Language
 Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
-      if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
+      if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {
         continue
       }
       if ($i -isnot [StringConstantExpressionAst] -or
@@ -20,6 +20,28 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
     'rm' { 'remove'; break }
     Default { $command }
   }
+  if ($command -eq 'x') {
+    return (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -Like $wordToComplete* | Select-Object -Unique).BaseName
+  }
+  elseif ($command -like 'x;*') {
+    $astList = $commandAst.CommandElements | Select-Object -Skip 2
+    $commandName = Split-Path -LeafBase $astList[0].Value
+    if (!$_completionFuncMap.Contains($commandName)) {
+      try {
+        . ${env:SHUTILS_ROOT}/ps1/completions/$commandName.ps1
+        if (!$_completionFuncMap.Contains($commandName)) {
+          throw 'not found'
+        }
+      }
+      catch {
+        return Write-Debug "no completions found for $commandName in ${env:SHUTILS_ROOT}/ps1/completions"
+      }
+    }
+    $cursorPosition -= $astList[0].Extent.StartOffset
+    $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput("$astList", $cursorPosition)
+    $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
+    return & $_completionFuncMap.$commandName $wordToComplete $commandAst $cursorPosition
+  }
 
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
@@ -28,7 +50,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($command) {
       '' {
@@ -150,15 +172,6 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
       'upgrade' {
         if ($wordToComplete.StartsWith('-')) {
           @('--canary')
-        }
-        break
-      }
-      'x' {
-        if ($wordToComplete.StartsWith('-')) {
-          @('--bun')
-        }
-        else {
-          (Get-ChildItem node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
         }
         break
       }

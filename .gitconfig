@@ -1,0 +1,16 @@
+[init]
+	defaultBranch = main
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+[credential "https://github.com"]
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = !/usr/bin/gh auth git-credential
+[url "https://github.com"]
+	insteadOf = gh:
+	insteadOf = github:
+[user]
+	name = xingqingxyz
+	email = cm.email@qq.com
+[pull]
+	rebase = false

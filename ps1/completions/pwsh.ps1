@@ -7,7 +7,7 @@ Register-ArgumentCompleter -Native -CommandName pwsh -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev.ToString()
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
   $prev = switch ($prev) {
     '-w' { '-WindowStyle'; break }
     '-ex' { '-ExecutionPolicy'; break }
