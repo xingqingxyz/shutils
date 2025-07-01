@@ -1,13 +1,17 @@
-declare LAST_CMD_TIME=$EPOCHREALTIME
+declare LAST_CMD_TIME=$EPOCHREALTIME LAST_CMD_DUR=0
 
 _on_invoke() {
   LAST_CMD_TIME=$EPOCHREALTIME
 }
 
 _prompt() {
-  local code=$? path=$PWD items color dur
-  dur=$(awk "{printf \"%017.6f\", ($EPOCHREALTIME - $LAST_CMD_TIME)}" <<< '')
+  LAST_CMD_DUR=$(awk "{printf \"%017.6f\", ($EPOCHREALTIME - $LAST_CMD_TIME)}" <<< '')
+}
 
+_format_excution() {
+  local code=$? dur=$LAST_CMD_DUR color
+  color=$((31 + !$?))
+  echo -ne "\e[${color}m$code\e[0m:"
   # colors: green, cyan, blue, yellow, magenta, red
   if [ ${dur:0:-3} = 0000000000.000 ]; then
     color=32
@@ -33,31 +37,22 @@ _prompt() {
       dur=${left}d${right}h
     fi
   fi
-
-  case "$OSTYPE" in
-    msys | cygwin)
-      path=$(cygpath -w "$path")
-      ;;
-    linux-gnu | darwin)
-      if [ -v WSLENV ]; then
-        path=$(wslpath -w "$path")
-      fi
-      ;;
-  esac
-  # FIXME: ${val@P} expansion bugs
-  path=${path//\\/'\\\\'}
-
-  items=(
-    '\!'
-    '(\e['"${color}m$dur"'\e[0m)'
-    '\e]8;;file://'"$path"'\e\\\w\e]8;;\e\\'
-    '\n$ '
-  )
-  if [ $code != 0 ]; then
-    items[0]='\e[31m'$code'\e[0m:\!'
-  fi
-  PS1=${items[*]}
+  echo -ne "\e[${color}m$dur\e[0m"
 }
+
+path='$PWD'
+case "$OSTYPE" in
+  msys | cygwin)
+    path='$(cygpath -w "$PWD")'
+    ;;
+  linux-gnu)
+    if [ -v WSL_DISTRO_NAME ]; then
+      path='$(wslpath -w "$PWD")'
+    fi
+    ;;
+esac
+PS1='\!:$(_format_excution):\e]8;;file://'"$path"'\e\\\\\w\e]8;;\e\\\\$(__git_ps1) $ '
+unset path
 
 _idefault_complete() {
   mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
@@ -66,8 +61,8 @@ _idefault_complete() {
 
 if [[ $PROMPT_COMMAND != '_prompt;'* ]]; then
   PROMPT_COMMAND[0]='_prompt;'
-  bind -x '"\C-x\C-i": _on_invoke'
-  bind '"\C-m": "\C-x\C-i\C-j"'
+  bind -x '"\C-x\C-o": _on_invoke'
+  bind '"\C-m": "\C-x\C-o\C-j"'
 fi
 
 complete -o bashdefault -F _idefault_complete -I
