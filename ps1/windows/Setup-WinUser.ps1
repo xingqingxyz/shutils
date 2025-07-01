@@ -1,3 +1,9 @@
+# SHUTILS_ROOT
+$env:SHUTILS_ROOT = $PWD.Path
+[System.Environment]::SetEnvironmentVariable('SHUTILS_ROOT', $env:SHUTILS_ROOT, 'User')
+# LESSOPEN
+$env:LESSOPEN = "||'${env:SHUTILS_ROOT}/scripts/lesspipe.sh' %s"
+[System.Environment]::SetEnvironmentVariable('LESSOPEN', $env:LESSOPEN, 'User')
 # pip source
 pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 # go proxy

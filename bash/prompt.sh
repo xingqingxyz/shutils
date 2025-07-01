@@ -40,6 +40,26 @@ _format_excution() {
   echo -ne "\e[${color}m$dur\e[0m"
 }
 
+_idefault_complete() {
+  mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
+  [ ${#COMPREPLY[@]} != 0 ] && compopt -o nospace
+}
+
+complete -o bashdefault -F _idefault_complete -I
+
+if ! declare -Fp _completion_loader &> /dev/null; then
+  _completion_loader() {
+    local name
+    name=$(basename -- "$1")
+    if [ -f "$SHUTILS_ROOT/bash/completions/$name.sh" ]; then
+      . "$SHUTILS_ROOT/bash/completions/$name.sh"
+      return 124
+    fi
+    return 1
+  }
+  complete -o bashdefault -o default -F _completion_loader -D
+fi
+
 path='$PWD'
 case "$OSTYPE" in
   msys | cygwin)
@@ -54,15 +74,8 @@ esac
 PS1='\!:$(_format_excution):\e]8;;file://'"$path"'\e\\\\\w\e]8;;\e\\\\$(__git_ps1) $ '
 unset path
 
-_idefault_complete() {
-  mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
-  [ ${#COMPREPLY[@]} != 0 ] && compopt -o nospace
-}
-
-if [[ $PROMPT_COMMAND != '_prompt;'* ]]; then
-  PROMPT_COMMAND[0]='_prompt;'
-  bind -x '"\C-x\C-o": _on_invoke'
-  bind '"\C-m": "\C-x\C-o\C-j"'
+if [[ $PROMPT_COMMAND != *'_prompt;'* ]]; then
+  PROMPT_COMMAND[0]="_prompt;${PROMPT_COMMAND[0]}"
+  bind -x '"\eo": _on_invoke'
+  bind '"\C-m": "\eo\C-j"'
 fi
-
-complete -o bashdefault -F _idefault_complete -I

@@ -1,3 +1,5 @@
+declare _ZOLDPWD
+
 _z() {
   local out
   out=$(py "${BASH_SOURCE[0]%/*}/z.py" "$@")
@@ -8,13 +10,14 @@ _z() {
   fi
 }
 
-declare _ZOLDPWD=$PWD
-alias z=_z
+_z_prompt() {
+  if [[ $_ZOLDPWD != $PWD ]]; then
+    _ZOLDPWD=$PWD
+    (_z -a . &)
+  fi
+}
 
-if [[ $PROMPT_COMMAND != *'(_z '* ]]; then
-  PROMPT_COMMAND+=('
-[[ $_ZOLDPWD != $PWD ]] && {
-  _ZOLDPWD=$PWD
-  (_z -a . &)
-}')
+if [[ $PROMPT_COMMAND != *'_z_prompt;'* ]]; then
+  PROMPT_COMMAND[0]="_z_prompt;${PROMPT_COMMAND[0]}"
+  alias z=_z
 fi
