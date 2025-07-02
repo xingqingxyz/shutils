@@ -18,6 +18,6 @@ _z_prompt() {
 }
 
 if [[ $PROMPT_COMMAND != *'_z_prompt;'* ]]; then
-  PROMPT_COMMAND[0]="_z_prompt;${PROMPT_COMMAND[0]}"
+  PROMPT_COMMAND+=$'\n''_z_prompt;'
   alias z=_z
 fi

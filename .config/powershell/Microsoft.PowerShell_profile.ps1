@@ -14,4 +14,5 @@ else {
 Set-Alias less Invoke-Less
 Set-Alias sudo Invoke-Sudo
 Set-Alias which Invoke-Which
-
+# completion loader
+Import-Module ${env:SHUTILS_ROOT}/ps1/modules/Complete.psm1

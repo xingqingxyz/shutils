@@ -52,6 +52,10 @@ _fzf_compgen_alias() {
   compgen -a
 }
 
+_fzf_compgen_command() {
+  compgen -abckv -A function -- "$2" | uniq
+}
+
 _fzf_compgen_proc() {
   ps -eo user,pid,ppid,start,time,command
 }
@@ -62,7 +66,7 @@ _fzf_compgen_proc_post() {
 }
 
 _fzf_complete() {
-  local typ=${FZF_COMP_CMDTYPE[$1]-path} query=$2
+  local typ=${FZF_COMP_CMDTYPE[$1]-file} query=$2
   case "$typ" in
     file | dir)
       if [[ $2 != *"${FZF_COMP_TRIGGER:-*}" ]]; then
@@ -110,6 +114,7 @@ _fzf_completion_loader() {
 
 _fzf_setup_completion() {
   local -A commands=(
+    [command]='vw sudo npx pnpx vlx vlrx bunx env'
     [dir]='cd pushd rmdir mkdir tree z'
     [file]='vim vi nvim nano code bat less grep cat cp rm'
     [alias]='alias unalias'
@@ -119,6 +124,7 @@ _fzf_setup_completion() {
     [proc]='kill'
   )
   declare -gA FZF_COMP_CMDTYPE _FZF_COMP_BACKUP FZF_COMP_FZFOPTS=(
+    [command]='-m'
     [dir]='-m --scheme=path --preview="tree -C {} | head -200"'
     [file]='-m --scheme=path --preview="bat -p --color=always {}"'
     [alias]='-m'
@@ -127,6 +133,7 @@ _fzf_setup_completion() {
     [host]='+m'
     [proc]='-m --header-lines=1 --preview="echo {}" --preview-window=down:3:wrap --min-height=15'
   ) FZF_COMP_BASHOPTS=(
+    [command]='-o bashdefault -o default'
     [dir]='-o bashdefault -o default'
     [file]='-o bashdefault -o default'
     [alias]='-o bashdefault -o default -o nospace'

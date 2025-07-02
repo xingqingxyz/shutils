@@ -103,6 +103,7 @@ class Z:
         *,
         echo=False,
         list_=False,
+        list_path=False,
         rank=False,
         time_=False,
         cwd=False,
@@ -130,6 +131,9 @@ class Z:
             )
         if list_:
             print("\n".join(map(str, items)))
+            return
+        elif list_path:
+            print("\n".join(i.path for i in items))
             return
         elif echo:
             print(items[-1])
@@ -173,6 +177,9 @@ def main():
     group.add_argument("-e", "--echo", action="store_true", help="echo it, not cd")
     group.add_argument(
         "-l", "--list", dest="list_", action="store_true", help="list all matches"
+    )
+    group.add_argument(
+        "-L", dest="list_path", action="store_true", help="list all matches path"
     )
     group.add_argument("queries", nargs="*", help="z queries")
 

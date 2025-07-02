@@ -17,7 +17,7 @@ fi
 
 if [ -d "$1" ]; then
   ls -alF -- "$1"
-  exit $?
+  exit
 fi
 
 manfilter() {
@@ -49,93 +49,93 @@ case "$1" in
       *.br) DECOMPRESSOR="brotli -dc" ;;
       *.xz | *.lzma) DECOMPRESSOR="xz -dc" ;;
     esac
-    if [ -n "$DECOMPRESSOR" ] && $DECOMPRESSOR -- "$1" | file - | grep -q troff; then
+    if [ -n "$DECOMPRESSOR" ] && $DECOMPRESSOR -- "$1" | file -L - | grep -q troff; then
       $DECOMPRESSOR -- "$1" | manfilter -
-      exit $?
+      exit
     fi
     ;;
 esac
 case "$1" in
   *.[1-9n] | *.[1-9]x | *.man)
-    if file "$1" | grep -q troff; then
+    if file -L "$1" | grep -q troff; then
       manfilter "$1"
-      exit $?
+      exit
     fi
     ;;
 esac
 case "$1" in
   *.tar)
     tar tvvf "$1"
-    exit $?
+    exit
     ;;
   *.tgz | *.tar.gz | *.tar.[zZ])
     tar tzvvf "$1"
-    exit $?
+    exit
     ;;
   *.tar.xz)
     tar Jtvvf "$1"
-    exit $?
+    exit
     ;;
   *.xz | *.lzma)
-    xz -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
-    exit $?
+    xz -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    exit
     ;;
   *.tar.lz)
     tar --lzip -tvvf "$1"
-    exit $?
+    exit
     ;;
   *.lz)
-    lzip -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
-    exit $?
+    lzip -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    exit
     ;;
   *.tar.zst)
     tar --zstd -tvvf "$1"
-    exit $?
+    exit
     ;;
   *.zst)
-    zstd -dcq -- "$1" | bat -p --color=always --file-name="${1%.*}"
-    exit $?
+    zstd -dcq -- "$1" | bat --color=always --file-name="${1%.*}"
+    exit
     ;;
   *.tar.br)
     brotli -dc -- "$1" | tar tvvf -
-    exit $?
+    exit
     ;;
   *.br)
-    brotli -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
-    exit $?
+    brotli -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    exit
     ;;
   *.tar.bz2 | *.tbz2)
     bzip2 -dc -- "$1" | tar tvvf -
-    exit $?
+    exit
     ;;
   *.[zZ] | *.gz)
-    gzip -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
-    exit $?
+    gzip -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    exit
     ;;
   *.bz2)
-    bzip2 -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
-    exit $?
+    bzip2 -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    exit
     ;;
   *.zip | *.jar | *.nbm)
     zipinfo -- "$1"
-    exit $?
+    exit
     ;;
   # --nomanifest -> rhbz#1450277
   *.rpm)
     rpm -qpivl --changelog --nomanifest -- "$1"
-    exit $?
+    exit
     ;;
   *.cpi | *.cpio)
     cpio -itv < "$1"
-    exit $?
+    exit
     ;;
   *.gpg)
     if [ -x /usr/bin/gpg2 ]; then
       gpg2 -d "$1"
-      exit $?
+      exit
     elif [ -x /usr/bin/gpg ]; then
       gpg -d "$1"
-      exit $?
+      exit
     else
       echo "No GnuPG available."
       echo "Install gnupg2 or gnupg to show encrypted files."
@@ -143,16 +143,9 @@ case "$1" in
     fi
     ;;
   *.gif | *.jpeg | *.jpg | *.pcd | *.png | *.tga | *.tiff | *.tif)
-    if command -v magick &> /dev/null; then
-      size=$(stty size | cut '-d ' -f1)
-      ((size *= 20))
-      magick -density 3000 -background transparent "$1" -resize "${size}x" -define sixel:diffuse=true sixel:- 2> /dev/null
-      exit 0
-    fi
-
-    if command -v identify &> /dev/null; then
+    if type -aP identify > /dev/null; then
       identify "$1"
-      exit $?
+      exit
     else
       echo "No identify available"
       echo "Install ImageMagick to browse images"
@@ -160,20 +153,20 @@ case "$1" in
     fi
     ;;
   *)
-    bat -p --color=always "$1"
-    exit $?
-
-    if [ -x /usr/bin/file ] && [ -x /usr/bin/iconv ] && [ -x /usr/bin/cut ]; then
-      case $(file -b --mime-encoding "$1") in
-        utf-16) conv='UTF-16' ;;
-        utf-32) conv='UTF-32' ;;
-      esac
-      if [ -n "$conv" ]; then
-        env=$(echo $LANG | cut -d. -f2)
-        if [ -n "$env" -a "$conv" != "$env" ]; then
-          iconv -f $conv -t $env "$1"
-          exit $?
-        fi
+    type -aP file iconv > /dev/null || exit
+    case $(file -Lb --mime-encoding "$1") in
+      utf-16) conv='utf-16' ;;
+      utf-32) conv='utf-32' ;;
+      *)
+        bat --color=always "$1"
+        exit
+        ;;
+    esac
+    if [ -n "$conv" ]; then
+      env=$(echo $LANG | cut -d. -f2)
+      if [ -n "$env" -a "$conv" != "$env" ]; then
+        iconv -f $conv -t $env "$1" | bat --color=always --file-name="$1"
+        exit
       fi
     fi
     exit 1

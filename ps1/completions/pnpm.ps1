@@ -24,7 +24,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
     't' { 'test'; break }
     'ln' { 'link'; break }
     'rb' { 'rebuild'; break }
-    Default { $command }
+    default { $command }
   }
   @(switch ($command) {
       '' {
@@ -48,7 +48,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
           @('--color', '--no-color', '--aggregate-output', '--parallel', '--reporter', '-C', '--dir', '-h', '--help', '--loglevel', '--no-reporter-hide-prefix', '--parallel', '-r', '--recursive', '--report-summary', '--resume-from', '-c', '--shell-mode', '--stream', '--use-stderr', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--filter', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern', '--test-pattern')
         }
         else {
-          (Get-ChildItem node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
+          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
         }
       }
       'licenses' {

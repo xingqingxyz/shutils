@@ -1,29 +1,30 @@
-declare LAST_CMD_TIME=$EPOCHREALTIME LAST_CMD_DUR=0
+declare LAST_CMD_TIME=$EPOCHREALTIME LAST_CMD_DUR_C LAST_CMD_DUR_T
 
 _on_invoke() {
   LAST_CMD_TIME=$EPOCHREALTIME
 }
 
 _prompt() {
-  LAST_CMD_DUR=$(awk "{printf \"%017.6f\", ($EPOCHREALTIME - $LAST_CMD_TIME)}" <<< '')
-}
-
-_format_excution() {
-  local code=$? dur=$LAST_CMD_DUR color
-  color=$((31 + !$?))
-  echo -ne "\e[${color}m$code\e[0m:"
+  local a1 a2 b1 b2
+  IFS=. read -r a1 a2 <<< "$EPOCHREALTIME"
+  IFS=. read -r b1 b2 <<< "$LAST_CMD_TIME"
+  ((a1 -= b1))
+  ((a2 = "1${a2}" - "1${b2}"))
+  local dur=$1 color
   # colors: green, cyan, blue, yellow, magenta, red
-  if [ ${dur:0:-3} = 0000000000.000 ]; then
-    color=32
-    dur=$(("1${dur: -3}" - 1000))μs
-  elif [ ${dur:0:10} = 0000000000 ]; then
-    color=36
-    dur=$(("1${dur: -6:3}" - 1000)).${dur: -3}ms
-  elif [ ${dur:0:7} = 0000000 ]; then
+  if ((a1 == 0)); then
+    if ((a2 < 1000)); then
+      color=32
+      dur=${a2}μs
+    else
+      color=36
+      dur=$((a2 / 1000)).$((a2 % 1000))ms
+    fi
+  elif ((a1 < 1000)); then
     color=34
-    dur=$(("1${dur:7:3}" - 1000)).${dur: -6:3}s
+    dur=$a1.$((a2 / 1000))s
   else
-    local left=$(("1${dur:0:10}" - 10000000000)) right
+    local left=$a1 right
     if ((right = left % 60)) && (((left /= 60) < 60)); then
       color=33
       dur=${left}m${right}s
@@ -37,15 +38,15 @@ _format_excution() {
       dur=${left}d${right}h
     fi
   fi
-  echo -ne "\e[${color}m$dur\e[0m"
+  LAST_CMD_DUR_C=$color
+  LAST_CMD_DUR_T=$dur
 }
 
 _idefault_complete() {
   mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
-  [ ${#COMPREPLY[@]} != 0 ] && compopt -o nospace
 }
 
-complete -o bashdefault -F _idefault_complete -I
+complete -o bashdefault -o default -o nospace -F _idefault_complete -I
 
 if ! declare -Fp _completion_loader &> /dev/null; then
   _completion_loader() {
@@ -60,22 +61,30 @@ if ! declare -Fp _completion_loader &> /dev/null; then
   complete -o bashdefault -o default -F _completion_loader -D
 fi
 
-path='$PWD'
+declare -a items=(
+  '\!:\[\e[$((31 + !$?))m\]$?\[\e[0m\]:'
+  '\[\e[${LAST_CMD_DUR_C}m\]$LAST_CMD_DUR_T\[\e[0m\]:'
+  '\[\e]8;;file://$PWD\e\\\\\]\w\[\e]8;;\e\\\\\]'
+  ' $ '
+)
 case "$OSTYPE" in
   msys | cygwin)
-    path='$(cygpath -w "$PWD")'
+    items[2]=${items[2]/'$PWD'/'$(cygpath -w "$PWD")'}
     ;;
   linux-gnu)
-    if [ -v WSL_DISTRO_NAME ]; then
-      path='$(wslpath -w "$PWD")'
+    if declare -xp WSL_DISTRO_NAME &> /dev/null; then
+      items[2]=${items[2]/'$PWD'/'$(wslpath -w "$PWD")'}
     fi
     ;;
 esac
-PS1='\!:$(_format_excution):\e]8;;file://'"$path"'\e\\\\\w\e]8;;\e\\\\$(__git_ps1) $ '
-unset path
+if declare -Fp __git_ps1 &> /dev/null; then
+  items[3]='$(__git_ps1)'${items[3]}
+fi
+PS1=$(printf '%s' "${items[@]}")
+unset items
 
 if [[ $PROMPT_COMMAND != *'_prompt;'* ]]; then
-  PROMPT_COMMAND[0]="_prompt;${PROMPT_COMMAND[0]}"
+  PROMPT_COMMAND="_prompt;$PROMPT_COMMAND"
   bind -x '"\eo": _on_invoke'
   bind '"\C-m": "\eo\C-j"'
 fi

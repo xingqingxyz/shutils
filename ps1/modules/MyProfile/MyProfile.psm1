@@ -118,7 +118,7 @@ function sortJSON {
       'yml' {
         'yaml'; break
       }
-      Default {
+      default {
         $_
       }
     }
@@ -333,7 +333,7 @@ function Update-Env {
       }
       break
     }
-    Default {
+    default {
       throw 'not implemented'
     }
   }
@@ -390,8 +390,15 @@ function Invoke-Application {
   }
 }
 
-function Invoke-Which([string]$Name) {
-  (Get-Item (Get-Command -Type Application -TotalCount 1 $Name).Path).ResolvedTarget
+function Invoke-Which {
+  param(
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [switch]
+    $All
+  )
+  (Get-Item (Get-Command -Type Application -All:$All $Name).Path).ResolvedTarget
 }
 
 function Invoke-Less {

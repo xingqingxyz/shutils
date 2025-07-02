@@ -7,19 +7,8 @@ Register-ArgumentCompleter -Native -CommandName npx, pnpx, bunx -ScriptBlock {
   }
   $astList = $commandAst.CommandElements | Select-Object -Skip 1
   $commandName = Split-Path -LeafBase $astList[0].Value
-  if (!$_completionFuncMap.Contains($commandName)) {
-    try {
-      . ${env:SHUTILS_ROOT}/ps1/completions/$commandName.ps1
-      if (!$_completionFuncMap.Contains($commandName)) {
-        throw 'not found'
-      }
-    }
-    catch {
-      return Write-Debug "no completions found for $commandName in ${env:SHUTILS_ROOT}/ps1/completions"
-    }
-  }
   $cursorPosition -= $astList[0].Extent.StartOffset
   $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput("$astList", $cursorPosition)
   $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
-  & $_completionFuncMap.$commandName $wordToComplete $commandAst $cursorPosition
+  & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
 }
