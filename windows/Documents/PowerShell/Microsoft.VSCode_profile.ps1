@@ -1,0 +1,1 @@
+../../../.config/powershell/Microsoft.VSCode_profile.ps1

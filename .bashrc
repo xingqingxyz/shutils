@@ -31,13 +31,13 @@ if [[ $TERM_PROGRAM != vscode* ]]; then
 fi
 
 # fzf
-# export FZF_DEFAUT_OPTS=
+# export FZF_DEFAUT_OPTS='--bind=ctrl-w:'
 # export FZF_DEFAUT_COMMAND=
 
-FZF_CTRL_T_OPTS='--preview="bat --color=always -p {}"'
-FZF_CTRL_R_OPTS='--preview=echo {}'
+FZF_CTRL_T_OPTS='--preview="bat -p --color=always {}"'
+FZF_CTRL_R_OPTS=''
 FZF_CTRL_O_OPTS=''
-FZF_ALT_C_OPTS='--preview="tree -C --hyperlink {}"'
+FZF_ALT_C_OPTS='--preview="tree -C {}"'
 # FZF_COMP_OPTS=
 # FZF_COMP_TRIGGER='*'
 

@@ -10,14 +10,15 @@ function winget {
 }
 
 function Invoke-ExecutableAlias {
-  $cmd, $ags = $_executableAliasMap[$MyInvocation.InvocationName]
+  $cmd, [string[]]$arguments = $_executableAliasMap[$MyInvocation.InvocationName]
   $cmd = (Get-Command -Type Application -TotalCount 1 -ea Stop $cmd).Path
-  Write-Debug "$cmd $ags $args"
+  $arguments += $args
+  Write-Debug "$cmd $arguments"
   if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd @ags @args
+    $input | & $cmd @arguments
   }
   else {
-    & $cmd @ags @args
+    & $cmd @arguments
   }
 }
 

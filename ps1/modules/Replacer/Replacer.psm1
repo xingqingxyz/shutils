@@ -42,7 +42,7 @@ function Invoke-Npm {
 }
 
 function Invoke-Npx {
-  if (Get-ChildItem node_modules/.bin -ea Ignore | Where-Object BaseName -EQ $args[0]) {
+  if (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -EQ $args[0]) {
     if ($MyInvocation.ExpectingInput) {
       $input | & "node_modules/.bin/$($args[0])" $args[1..($args.Length)]
     }
@@ -85,8 +85,6 @@ $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventAr
 $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
 $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction =
 $action ? [Delegate]::Combine($action, $hook) : $hook
-Set-Alias npm Invoke-Npm
-Set-Alias npx Invoke-Npx
 
 $ExecutionContext.SessionState.Module.OnRemove = {
   $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction

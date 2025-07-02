@@ -1,20 +1,16 @@
-# begin: hist_cnt
 /^[0-9]+\t \S/ {
   if (NR >= 2) {
-    # collect line(s)
-    seen[line] = hist_cnt - $1
+    items[i++] = item
   }
-  # hist start
-  line = $0
-  sub(/^[0-9]+\t [ *]*/, "", line)
+  item = $0
   next
 }
 {
-  # proc multi line hist
-  line = line RS $0
+  item = item RS $0
 }
 END {
-  for (line in seen) {
-    printf "%d\t%s\0", seen[line], line
+  items[i] = item
+  for (i in items) {
+    printf "%s\0", items[i]
   }
 }
