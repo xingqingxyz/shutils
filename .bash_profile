@@ -24,9 +24,9 @@ $HOME/.cargo/bin
 $HOME/.local/share/JetBrains/Toolbox/scripts
 $HOME/.local/share/dscV3
 EOF
-MAPFILE=$(printf %s: "${MAPFILE[@]}")
-if [[ :$PATH: != *":$MAPFILE"* ]]; then
-  export PATH="$MAPFILE$PATH"
+IFS=: MAPFILE=${MAPFILE[*]}
+if [[ :$PATH: != *":$MAPFILE:"* ]]; then
+  export PATH="$MAPFILE:$PATH"
 fi
 
 # Get the aliases and functions

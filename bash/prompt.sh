@@ -1,15 +1,22 @@
-declare LAST_CMD_TIME=$EPOCHREALTIME LAST_CMD_DUR_C LAST_CMD_DUR_T
+declare LAST_CMD_DUR_C LAST_CMD_DUR_T
 
-_on_invoke() {
-  LAST_CMD_TIME=$EPOCHREALTIME
+coproc COPROC_PS0 {
+  cat
 }
+
+PS0='$(echo "$EPOCHREALTIME" >&"${COPROC_PS0[1]}")'
+: "${PS0@P}"
 
 _prompt() {
   local a1 a2 b1 b2
   IFS=. read -r a1 a2 <<< "$EPOCHREALTIME"
-  IFS=. read -r b1 b2 <<< "$LAST_CMD_TIME"
+  IFS=. read -ru "${COPROC_PS0[0]}" b1 b2
   ((a1 -= b1))
   ((a2 = "1${a2}" - "1${b2}"))
+  if ((a2 < 0)); then
+    ((a2 += 1000000))
+    ((a1--))
+  fi
   local dur=$1 color
   # colors: green, cyan, blue, yellow, magenta, red
   if ((a1 == 0)); then
@@ -18,11 +25,11 @@ _prompt() {
       dur=${a2}μs
     else
       color=36
-      dur=$((a2 / 1000)).$((a2 % 1000))ms
+      printf -v dur $((a2 / 1000)).%03dms $((a2 % 1000))
     fi
   elif ((a1 < 1000)); then
     color=34
-    dur=$a1.$((a2 / 1000))s
+    printf -v dur $a1.%03ds $((a2 / 1000))
   else
     local left=$a1 right
     if ((right = left % 60)) && (((left /= 60) < 60)); then
@@ -42,26 +49,16 @@ _prompt() {
   LAST_CMD_DUR_T=$dur
 }
 
-_idefault_complete() {
-  mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
-}
-
-complete -o bashdefault -o default -o nospace -F _idefault_complete -I
-
-if ! declare -Fp _completion_loader &> /dev/null; then
-  _completion_loader() {
-    local name
-    name=$(basename -- "$1")
-    if [ -f "$SHUTILS_ROOT/bash/completions/$name.sh" ]; then
-      . "$SHUTILS_ROOT/bash/completions/$name.sh"
-      return 124
-    fi
-    return 1
-  }
-  complete -o bashdefault -o default -F _completion_loader -D
+name=PROMPT_COMMAND
+if [ -v __vsc_original_prompt_command ]; then
+  name=__vsc_original_prompt_command
+fi
+if [[ ${!name} != *'_prompt;'* ]]; then
+  printf -v "$name" '_prompt;%s' "${!name}"
+  unset name
 fi
 
-declare -a items=(
+items=(
   '\!:\[\e[$((31 + !$?))m\]$?\[\e[0m\]:'
   '\[\e[${LAST_CMD_DUR_C}m\]$LAST_CMD_DUR_T\[\e[0m\]:'
   '\[\e]8;;file://$PWD\e\\\\\]\w\[\e]8;;\e\\\\\]'
@@ -80,11 +77,24 @@ esac
 if declare -Fp __git_ps1 &> /dev/null; then
   items[3]='$(__git_ps1)'${items[3]}
 fi
-PS1=$(printf '%s' "${items[@]}")
+IFS= PS1=${items[*]}
 unset items
 
-if [[ $PROMPT_COMMAND != *'_prompt;'* ]]; then
-  PROMPT_COMMAND="_prompt;$PROMPT_COMMAND"
-  bind -x '"\eo": _on_invoke'
-  bind '"\C-m": "\eo\C-j"'
+_idefault_complete() {
+  mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
+}
+
+complete -o bashdefault -o default -o nospace -F _idefault_complete -I
+
+if ! declare -Fp _completion_loader &> /dev/null; then
+  _completion_loader() {
+    local name
+    name=$(basename -- "$1")
+    if [ -f "$SHUTILS_ROOT/bash/completions/$name.sh" ]; then
+      . "$SHUTILS_ROOT/bash/completions/$name.sh"
+      return 124
+    fi
+    return 1
+  }
+  complete -o bashdefault -o default -F _completion_loader -D
 fi

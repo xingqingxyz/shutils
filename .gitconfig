@@ -14,3 +14,5 @@
 	email = cm.email@qq.com
 [pull]
 	rebase = false
+[gui]
+	recentrepo = /home/uv/p/mvext

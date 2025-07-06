@@ -41,7 +41,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
     $IsLinux { "${env:HOME}/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
     default { throw 'not implemented' }
   }
-  $history = Get-Content $history | Select-Object -Unique | fzf --scheme=history --wrap
+  $history = Get-Content -Raw $history | fzf --tac --scheme=history
   if (!$history) {
     return
   }
@@ -50,7 +50,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $history)
 }
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
-  $path = Invoke-Z -List | fzf --scheme=path
+  $path = (Invoke-Z -List).Path | fzf --scheme=path
   if ($LASTEXITCODE -eq 0) {
     Set-Location -LiteralPath $path
     [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()

@@ -1,29 +1,48 @@
 _fzf_file_widget() {
-  local query items out
+  local query items out args=(
+    -m
+    --reverse
+    '--scheme=path'
+    "--query=$query"
+    "--height=${FZF_CTRL_T_HEIGHT:-40%}"
+    '--bind=ctrl-z:ignore'
+  )
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
-  mapfile -t items < <(eval "${FZF_CTRL_T_COMMAND:-rg -H --files}" \
-    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_T_OPTS --height=${FZF_CTRL_T_HEIGHT:-40%} -m --reverse --scheme=path --bind=ctrl-z:ignore" \
-      fzf -q "$query") || return
+  mapfile -t items < <(eval "${FZF_CTRL_T_COMMAND:-rg --files}" \
+    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_T_OPTS" fzf "${args[@]}") || return
   out=${items[*]@Q}' '
   READLINE_LINE=${READLINE_LINE:0:READLINE_POINT}$out${READLINE_LINE:READLINE_POINT}
   ((READLINE_POINT += ${#out}))
 }
 
 _fzf_history() {
-  local out
-  out=$(
-    fc -lr | awk -f "${BASH_SOURCE[0]%/*}/fzf-hist.awk" \
-      | FZF_DEFAULT_OPTS+=" ${FZF_CTRL_R_OPTS} --height=${FZF_CTRL_R_HEIGHT:-40%} +m --reverse --wrap --read0 --scheme=history --bind=ctrl-r:toggle-sort --bind=ctrl-z:ignore" \
-        fzf -q "${READLINE_LINE:0:READLINE_POINT}"
-  ) || return
+  local out args=(
+    +m
+    --read0
+    --wrap
+    --reverse
+    '--scheme=history'
+    "--query=${READLINE_LINE:0:READLINE_POINT}"
+    "--height=${FZF_CTRL_R_HEIGHT:-40%}"
+    '--bind=ctrl-r:toggle-sort'
+    '--bind=ctrl-z:ignore'
+  )
+  out=$(fc -lr | awk -f "${BASH_SOURCE[0]%/*}/fzf-hist.awk" \
+    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_R_OPTS" fzf "${args[@]}") || return
   out=${out#*$'\t'}
   READLINE_LINE=$out${READLINE_LINE:READLINE_POINT}
   READLINE_POINT=${#out}
 }
 
 _fzf_ident() {
-  local query out start
+  local query out start args=(
+    -m
+    --reverse
+    "--query=^$query"
+    "--height=${FZF_BIND_HEIGHT:-40%}"
+    '--bind=ctrl-z:ignore'
+  )
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
   start=$((READLINE_POINT - ${#query}))
@@ -33,30 +52,40 @@ _fzf_ident() {
     return 1
   fi
   # alias builtin command keyword variable
-  out=$(compgen -abckv -A function -- "$query" \
-    | uniq \
-    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_O_OPTS --height=${FZF_BIND_HEIGHT:-40%} -m --reverse --bind=ctrl-z:ignore" \
-      fzf -q "^$query") || return
+  out=$(compgen -abckv -A function -- "$query" | uniq \
+    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_O_OPTS" fzf "${args[@]}") || return
   READLINE_LINE=${READLINE_LINE:0:start}$out${READLINE_LINE:READLINE_POINT}
   ((READLINE_POINT = start + ${#out}))
 }
 
 _fzf_cd() {
-  local query out
+  local query out args=(
+    +m
+    --reverse
+    '--walker=dir,hidden'
+    '--scheme=path'
+    "--query=$query"
+    "--height=${FZF_BIND_HEIGHT:-40%}"
+    '--bind=ctrl-z:ignore'
+  )
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
-  out=$(eval "${FZF_ALT_C_COMMAND:-fd -Htd}" \
-    | FZF_DEFAULT_OPTS+=" ${FZF_ALT_C_OPTS} --height=${FZF_BIND_HEIGHT:-40%} +m --reverse --scheme=path --bind=ctrl-z:ignore" \
-      fzf -q "$query") || return
+  out=$(FZF_DEFAULT_OPTS+=" $FZF_ALT_C_OPTS" fzf "${args[@]}") || return
   cd -- "$out"
 }
 
 _fzf_z() {
-  local query out
+  local query out args=(
+    +m
+    --reverse
+    '--scheme=path'
+    "--query=$query"
+    "--height=${FZF_BIND_HEIGHT:-40%}"
+    '--bind=ctrl-z:ignore'
+  )
   query=${READLINE_LINE:0:READLINE_POINT}
   query=${query##* }
-  out=$(_z -L | FZF_DEFAULT_OPTS+=" ${FZF_ALT_Z_OPTS} --height=${FZF_BIND_HEIGHT:-40%} +m --reverse --scheme=path --bind=ctrl-z:ignore" \
-    fzf -q "$query") || return
+  out=$(_z -L | FZF_DEFAULT_OPTS+=" $FZF_ALT_Z_OPTS" fzf "${args[@]}") || return
   cd -- "$out"
 }
 

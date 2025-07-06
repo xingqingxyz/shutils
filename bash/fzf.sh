@@ -143,7 +143,7 @@ _fzf_setup_completion() {
     [proc]='-o bashdefault -o default'
   )
   eval "FZF_COMP_CMDTYPE=($(for t in "${!commands[@]}"; do
-    printf "%s $t " ${commands[$t]}
+    echo -n "${commands[$t]} $t "
   done))"
   if declare -Fp _completion_loader &> /dev/null; then
     complete -o bashdefault -o default -F _fzf_completion_loader -D
