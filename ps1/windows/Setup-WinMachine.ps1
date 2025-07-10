@@ -13,3 +13,9 @@ winget.exe upgrade -r --accept-package-agreements
 winget.exe configure --enable
 winget.exe configure --accept-package-agreements --accept-configuration-agreements -f $PSScriptRoot/../configurations/win11-apps.dsc.yml
 winget.exe configure --accept-package-agreements --accept-configuration-agreements -f $PSScriptRoot/../configurations/win11-configs.dsc.yml
+# DSC v2
+Install-Module PSDesiredStateConfiguration
+# PATHEXT
+if (!$env:PATHEXT.Split(';').Contains('.JAR')) {
+  [System.Environment]::SetEnvironmentVariable('PATHEXT', $env:PATHEXT + ';.JAR', 'Machine')
+}

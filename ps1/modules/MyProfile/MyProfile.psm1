@@ -46,327 +46,22 @@ function vw {
   }
 }
 
-function yq {
-  param(
-    [Parameter(ParameterSetName = 'Path')]
-    [string]
-    $Path,
-    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string]
-    $InputObject = (Get-Content -Raw $Path),
-    [Parameter(Position = 0, ValueFromRemainingArguments)]
-    [string[]]
-    $Query
-  )
-  ConvertFrom-Yaml -InputObject $InputObject | ConvertTo-Json -Depth 99 | jq $Query
-}
-
-function tq {
-  param(
-    [Parameter(ParameterSetName = 'Path')]
-    [string]
-    $Path,
-    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string]
-    $InputObject = (Get-Content -Raw $Path),
-    [Parameter(Position = 0, ValueFromRemainingArguments)]
-    [string[]]
-    $Query
-  )
-  ConvertFrom-Toml -InputObject $InputObject | ConvertTo-Json -Depth 99 | jq $Query
-}
-
-function packageJSON {
-  $dir = Get-Item $ExecutionContext.SessionState.Path.CurrentFileSystemLocation
-  $rootName = $dir.Root.Name
-  while (!(Test-Path "$dir/package.json")) {
-    if ($dir.Name -eq $rootName) {
-      throw 'package.json not found'
-    }
-    $dir = $dir.Parent
-  }
-  Get-Content -Raw "$dir/package.json" | ConvertFrom-Json -AsHashtable
-}
-
-<#
-.PARAMETER Filter
-A sequence of 'Query/Key' pairs.
-#>
-function sortJSON {
-  [CmdletBinding()]
-  [OutputType([string])]
-  param(
-    [Parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
-    [string[]]
-    $Path,
-    [Parameter(Position = 1, Mandatory)]
-    [string[]]
-    $Filter,
-    [Parameter()]
-    [System.Text.Encoding]
-    $Encoding = [System.Text.Encoding]::UTF8,
-    [switch]
-    $WhatIf
-  )
-
-  Get-ChildItem $Path -File | ForEach-Object {
-    $cur = $_
-    $ext = switch ($cur.Extension.ToLower().Substring(1)) {
-      'jsonc' {
-        'json'; break
-      }
-      'yml' {
-        'yaml'; break
-      }
-      default {
-        $_
-      }
-    }
-    $content = Get-Content -Raw -Encoding $Encoding $cur
-    $content = switch ($ext) {
-      'json' {
-        $Query = ($Filter.ForEach{
-            $Query, $Key = $_.Split('/', 2)
-            $Key ??= '.'
-            "$Query |= sort_by($Key)"
-          }) -join '|empty,'
-        Write-Debug "jq $Query"
-        $content | jq $Query
-        break
-      }
-      'yaml' {
-        $content = $content | ConvertFrom-Yaml
-        $Command = $Filter.ForEach{
-          $Query, $Key = $_.Split('/', 2)
-          $Key ??= '.'
-          "`$content$Query = `$content$Query | Sort-Object { `$_$Key } -CaseSensitive"
-        } | Out-String
-        Write-Debug "sort yaml using expression: $Command"
-        Invoke-Expression $Command
-        $content | ConvertTo-Yaml -Depth 99
-        break
-      }
-      'toml' {
-        $content = $content | ConvertFrom-Toml
-        $Command = $Filter.ForEach{
-          $Query, $Key = $_.Split('/', 2)
-          $Key ??= '.'
-          "`$content$Query = `$content$Query | Sort-Object { `$_$Key } -CaseSensitive"
-        } | Out-String
-        Write-Debug "sort toml using expression: $Command"
-        Invoke-Expression $Command
-        $content | ConvertTo-Toml -Depth 99
-        break
-      }
-    }
-    if ($WhatIf) {
-      $content | bat -l $ext
-    }
-    else {
-      $content | Out-File -Encoding $Encoding $cur
-    }
-  }
-}
-
-<#
-.SYNOPSIS
-Strip ANSI escape codes from input or all args text.
- #>
-function stripAnsi {
-  ($MyInvocation.ExpectingInput ? $input : $args) |
-    bat --strip-ansi=always --plain
-}
-
-function icat {
-  [CmdletBinding(DefaultParameterSetName = 'Path')]
-  param(
-    [Parameter(Position = 0, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
-    [string[]]
-    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation,
-    [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [System.Object]
-    $InputObject,
-    [Parameter(Mandatory, ParameterSetName = 'Stdin')]
-    [string]
-    $Format,
-    [Parameter()]
-    [string]
-    $Size = [System.Console]::WindowHeight * 20,
-    [Parameter(Position = 1, ValueFromRemainingArguments)]
-    [string[]]
-    $ArgumentList
-  )
-  if ($InputObject) {
-    if (!$IsWindows) {
-      Write-Warning 'icat from stdin pipe is unsupported on unix due to pwsh pipe restrictions'
-    }
-    return $InputObject | magick -density 3000 -background transparent "${Format}:-" -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
-  }
-  (Get-Item $Path).FullName.ForEach{
-    magick -density 3000 -background transparent $_ -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
-    $_
-  }
-}
-
-function Set-Region {
-  [CmdletBinding()]
-  [OutputType([string])]
-  param(
-    [Parameter(Mandatory, Position = 0)]
-    [string]
-    $Name,
-    [Parameter(Mandatory, Position = 1)]
-    [string[]]
-    $Content,
-    [Parameter(Position = 2, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
-    [string]
-    $Path,
-    [Parameter(ParameterSetName = 'Path')]
-    [switch]
-    $Inplace,
-    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string[]]
-    $InputObject = (Get-Content $Path)
-  )
-
-  $found = 0
-  $InputObject = $InputObject.ForEach{
-    if ($found -eq 0 -and $_.TrimStart().StartsWith('#region ' + $Name)) {
-      $found = 1
-      $_
-      return
-    }
-    elseif ($found -eq 1) {
-      if ($_.Trim() -eq '#endregion') {
-        $found = 2
-        $Content
-        $_
-      }
-      return
-    }
-    $_
-  }
-  if ($found -eq 0) {
-    $InputObject += @("#region $Name", $Content, '#endregion')
-  }
-  if ($Inplace) {
-    try {
-      $InputObject > $Path
-    }
-    catch {
-      $InputObject
-    }
-  }
-  else {
-    $InputObject
-  }
-}
-
-function Enable-Env {
-  param(
-    [string]
-    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation + '/.env'
-  )
-  Get-Content $Path | ForEach-Object {
-    $name, $value = $_.Split('=', 2)
-    Set-Item Env:$name $value
-  }
-}
-
-function Update-Env {
-  param(
-    [Parameter(Position = 0, Mandatory)]
-    [scriptblock]
-    $ScriptBlock,
-    [System.EnvironmentVariableTarget]
-    $Scope = 'User',
-    [string]
-    $Description = (Get-Date).ToString()
-  )
-  if ($Scope -eq [System.EnvironmentVariableTarget]::Process) {
-    return & $ScriptBlock
-  }
-
-  $prevEnv = [System.Environment]::GetEnvironmentVariables()
-  & $ScriptBlock
-  $processEnv = [System.Environment]::GetEnvironmentVariables()
-
-  switch ($true) {
-    $IsWindows {
-      foreach ($key in $processEnv.Keys) {
-        if ($prevEnv.$key -ne $processEnv.$key) {
-          if ($key -eq 'Path') {
-            Write-Information "overwriting $Scope Path by all process env updates"
-            $processEnv.Path = [System.Collections.Generic.HashSet[string]]::new(
-              $processEnv.Path.Split(';')).ExceptWith(
-              [System.Environment]::GetEnvironmentVariable('Path', $Scope -eq 'User' ? 'Machine' : 'User').Split(';')
-            ) -join ';'
-          }
-          [System.Environment]::SetEnvironmentVariable($key, $processEnv.$key, $Scope)
-        }
-      }
-      break
-    }
-    $IsLinux {
-      $Description = $Description.Replace("`n", ' ')
-      $cmd = $processEnv.GetEnumerator().ForEach{
-        # Cannot handle PATH change on Linux
-        if ($_.Name -eq 'PATH') {
-          return
-        }
-        if ($prevEnv.($_.Name) -ne $_.Value) {
-          $_.Name + '=' + $_.Value
-        }
-      } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
-      switch ($Scope) {
-        ([System.EnvironmentVariableTarget]::User) {
-          return Set-Region UserEnv $cmd $(if (Test-Path ~/.bash_profile) {
-              "$HOME/.bash_profile"
-            }
-            else {
-              "$HOME/.profile"
-            })
-        }
-        ([System.EnvironmentVariableTarget]::Machine) {
-          return Invoke-Sudo Set-Region SysEnv $cmd /etc/profile.d/sh.local
-        }
-      }
-      break
-    }
-    default {
-      throw 'not implemented'
-    }
-  }
-}
-
 function Invoke-Application {
-  [CmdletBinding()]
-  param(
-    [Parameter(Mandatory, Position = 0)]
-    [string]
-    $Command,
-    [Parameter(Position = 1, ValueFromRemainingArguments)]
-    [string[]]
-    $ArgumentList,
-    [Parameter()]
-    [string]
-    $WorkingDirectory,
-    [Parameter()]
-    [hashtable]
-    $Environment = @{},
-    [Parameter(ValueFromPipeline)]
-    [System.Object]
-    $InputObject
-  )
-  $Command = (Get-Command -Type Application -TotalCount 1 -ea Stop $Command).Path
-  Push-Location -StackName 'Invoke-Application' -LiteralPath $WorkingDirectory
-  $saveEnvironment = @{}
-  $Environment.GetEnumerator().ForEach{
-    try {
-      $saveEnvironment.($_.Key) = (Get-Item -LiteralPath env:$($_.Key) -ea Stop).Value
+  $environment = @{}
+  for ($i = 0; $i -lt $args.Length; $i++) {
+    $name, $value = $args[$i].Split('=', 2)
+    if ($null -eq $value) {
+      break
     }
-    catch { }
-    Set-Item -LiteralPath env:$($_.Key) $_.Value -ea Stop
+    $environment.$name = $value
+  }
+  $Command = (Get-Command -Type Application -TotalCount 1 -ea Stop $args[$i]).Path
+  $ArgumentList = $args[($i + 1)..($args.Length)]
+  $saveEnvironment = @{}
+  $environment.GetEnumerator().ForEach{
+    # ignore non exist
+    $saveEnvironment[$_.Key] = (Get-Item -LiteralPath Env:$($_.Key)).Value
+    Set-Item -LiteralPath Env:$($_.Key) $_.Value
   }
   try {
     Write-Debug "$Command $ArgumentList"
@@ -378,27 +73,15 @@ function Invoke-Application {
     }
   }
   finally {
-    Pop-Location -StackName 'Invoke-Application'
-    foreach ($key in $Environment.Keys) {
+    foreach ($key in $environment.Keys) {
       if ($saveEnvironment.Contains($key)) {
-        Set-Item -LiteralPath env:$($key) $saveEnvironment.$key
+        Set-Item -LiteralPath Env:$key $saveEnvironment.$key
       }
       else {
-        Remove-Item -LiteralPath env:$key -ea Ignore
+        Remove-Item -LiteralPath Env:$key -ea Ignore
       }
     }
   }
-}
-
-function Invoke-Which {
-  param(
-    [Parameter(Mandatory, Position = 0)]
-    [string]
-    $Name,
-    [switch]
-    $All
-  )
-  (Get-Item (Get-Command -Type Application -All:$All $Name).Path).ResolvedTarget
 }
 
 function Invoke-Less {
@@ -414,6 +97,85 @@ function Invoke-Less {
   }
 }
 
+function Invoke-Npm {
+  $npm = switch ($true) {
+    ($MyInvocation.PipelineLength -ne 1) { 'npm'; break }
+    (Test-Path bun.lock?) { 'bun' ; break }
+    (Test-Path deno.json) { 'deno'; break }
+    (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
+    (Test-Path yarn.lock) { 'yarn'; break }
+    default { 'npm'; break }
+  }
+  if ((Get-Alias -Definition Invoke-Npm).Name.Contains($npm)) {
+    $npm = (Get-Command $npm -Type Application, ExternalScript -TotalCount 1 -ea Stop).Path
+  }
+  if ($MyInvocation.PipelineLength -ne 1) {
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $npm @args
+    }
+    else {
+      & $npm @args
+    }
+    return
+  }
+  if ($args.Contains('--help')) {
+    return & $npm @args | bat -lhelp
+  }
+  $command, $rest = $args
+  if (@('i', 'install', 'a', 'add').Contains($command) -and !$rest.Contains('-D')) {
+    $types = @()
+    $noTypes = @()
+    foreach ($arg in $rest) {
+      if ($arg.StartsWith('-')) {
+        continue
+      }
+      if ($arg.StartsWith('@types/')) {
+        $types += $arg
+      }
+      else {
+        $noTypes += $arg
+      }
+    }
+    if ($types.Length) {
+      & $npm $command @types
+    }
+    if ($noTypes.Length) {
+      & $npm $command @noTypes
+    }
+    return
+  }
+  & $npm @args
+}
+
+function Invoke-Npx {
+  if (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -EQ $args[0]) {
+    if ($MyInvocation.ExpectingInput) {
+      $input | & "node_modules/.bin/$($args[0])" $args[1..($args.Length)]
+    }
+    else {
+      & "node_modules/.bin/$($args[0])" $args[1..($args.Length)]
+    }
+    return
+  }
+  $npx, $arguments = switch ($true) {
+    (Test-Path bun.lockb) { 'bun', 'x' + $args; break }
+    (Test-Path deno.json) { 'deno', 'run' + $args; break }
+    (Test-Path pnpm-lock.yaml) { 'pnpx', $args; break }
+    (Test-Path yarn.lock) { 'yarn', 'dlx' + $args; break }
+    default { 'npx', $args; break }
+  }
+  if ((Get-Alias -Definition Invoke-Npx).Name.Contains($npx)) {
+    $npx = (Get-Command $npx -Type Application, ExternalScript -TotalCount 1 -ea Stop).Path
+  }
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $npx @arguments
+  }
+  else {
+    & $npx @arguments
+  }
+}
+
+#region sudo
 $sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ea Ignore).Path
 $pwshExe = [System.Environment]::ProcessPath
 if ((Split-Path -LeafBase $pwshExe) -ne 'pwsh') {
@@ -456,24 +218,13 @@ if ($sudoExe) {
           $astList = $commandAst.CommandElements | Select-Object -Skip 1 |
             Where-Object { $_ -isnot [System.Management.Automation.Language.ParameterAst] }
           $commandName = Split-Path -LeafBase $astList[0].Value
-          if (!$_completionFuncMap.Contains($commandName)) {
-            try {
-              . ${env:SHUTILS_ROOT}/ps1/completions/$commandName.ps1
-              if (!$_completionFuncMap.Contains($commandName)) {
-                throw 'not found'
-              }
-            }
-            catch {
-              return Write-Debug "no completions found for $commandName in ${env:SHUTILS_ROOT}/ps1/completions"
-            }
-          }
           $line = "$astList"
           $cursorPosition = $line.Length
           [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$cursorPosition)
           $cursorPosition -= $astList[0].Extent.StartOffset
           $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput($line, $cursorPosition)
           $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
-          & $_completionFuncMap.$commandName $wordToComplete $commandAst $cursorPosition
+          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
         })]
       [string[]]
       $ArgumentList
@@ -552,24 +303,13 @@ elseif ($IsWindows) {
           $astList = $commandAst.CommandElements | Select-Object -Skip 1 |
             Where-Object { $_ -isnot [System.Management.Automation.Language.ParameterAst] }
           $commandName = Split-Path -LeafBase $astList[0].Value
-          if (!$_completionFuncMap.Contains($commandName)) {
-            try {
-              . ${env:SHUTILS_ROOT}/ps1/completions/$commandName.ps1
-              if (!$_completionFuncMap.Contains($commandName)) {
-                throw 'not found'
-              }
-            }
-            catch {
-              return Write-Debug "no completions found for $commandName in ${env:SHUTILS_ROOT}/ps1/completions"
-            }
-          }
           $line = "$astList"
           $cursorPosition = $line.Length
           [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$cursorPosition)
           $cursorPosition -= $astList[0].Extent.StartOffset
           $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput($line, $cursorPosition)
           $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
-          & $_completionFuncMap.$commandName $wordToComplete $commandAst $cursorPosition
+          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
         })]
       [string[]]
       $ArgumentList,
@@ -608,6 +348,18 @@ elseif ($IsWindows) {
     Write-Debug "$Command $ArgumentList"
     Start-Process -FilePath $Command -ArgumentList $ArgumentList -Verb RunAs -WorkingDirectory $WorkingDirectory
   }
+}
+#endregion
+
+function Invoke-Which {
+  param(
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [switch]
+    $All
+  )
+  (Get-Item (Get-Command -Type Application -All:$All $Name).Path).ResolvedTarget
 }
 
 Set-Alias ia Invoke-Application

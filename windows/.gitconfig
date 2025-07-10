@@ -10,3 +10,5 @@
 	email = cm.email@qq.com
 [pull]
 	rebase = false
+[core]
+	editor = \"C:\\Users\\cmema\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code\" --wait

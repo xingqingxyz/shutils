@@ -1,20 +1,295 @@
-function getParser([string]$extension) {
-  foreach ($pair in $parserMap.GetEnumerator()) {
-    if ($pair.Value.Contains($extension)) {
-      return $parserCommandMap.($pair.Key)
+function yq {
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(ParameterSetName = 'Path')]
+    [string]
+    $Path,
+    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [string]
+    $InputObject = (Get-Content -Raw $Path),
+    [Parameter(Position = 0, ValueFromRemainingArguments)]
+    [string[]]
+    $Query
+  )
+  ConvertFrom-Yaml -InputObject $InputObject | ConvertTo-Json -Depth 99 | jq $Query
+}
+
+function tq {
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(ParameterSetName = 'Path')]
+    [string]
+    $Path,
+    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [string]
+    $InputObject = (Get-Content -Raw $Path),
+    [Parameter(Position = 0, ValueFromRemainingArguments)]
+    [string[]]
+    $Query
+  )
+  ConvertFrom-Toml -InputObject $InputObject | ConvertTo-Json -Depth 99 | jq $Query
+}
+
+function packageJSON {
+  $dir = Get-Item $ExecutionContext.SessionState.Path.CurrentFileSystemLocation
+  $rootName = $dir.Root.Name
+  while (!(Test-Path "$dir/package.json")) {
+    if ($dir.Name -eq $rootName) {
+      throw 'package.json not found'
+    }
+    $dir = $dir.Parent
+  }
+  Get-Content -Raw "$dir/package.json" | ConvertFrom-Json -AsHashtable
+}
+
+<#
+.PARAMETER Filter
+A sequence of 'Query/Key' pairs.
+#>
+function sortJSON {
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
+    [string[]]
+    $Path,
+    [Parameter(Position = 1, Mandatory)]
+    [string[]]
+    $Filter,
+    [Parameter()]
+    [System.Text.Encoding]
+    $Encoding = [System.Text.Encoding]::UTF8,
+    [switch]
+    $WhatIf
+  )
+  Get-ChildItem $Path -File | ForEach-Object {
+    $cur = $_
+    $ext = switch ($cur.Extension.ToLower().Substring(1)) {
+      'jsonc' {
+        'json'; break
+      }
+      'yml' {
+        'yaml'; break
+      }
+      default {
+        $_
+      }
+    }
+    $content = Get-Content -Raw -Encoding $Encoding $cur
+    $content = switch ($ext) {
+      'json' {
+        $Query = ($Filter.ForEach{
+            $Query, $Key = $_.Split('/', 2)
+            $Key ??= '.'
+            "$Query |= sort_by($Key)"
+          }) -join '|empty,'
+        Write-Debug "jq $Query"
+        $content | jq $Query
+        break
+      }
+      'yaml' {
+        $content = $content | ConvertFrom-Yaml
+        $Command = $Filter.ForEach{
+          $Query, $Key = $_.Split('/', 2)
+          $Key ??= '.'
+          "`$content$Query = `$content$Query | Sort-Object { `$_$Key } -CaseSensitive"
+        } | Out-String
+        Write-Debug "sort yaml using expression: $Command"
+        Invoke-Expression $Command
+        $content | ConvertTo-Yaml -Depth 99
+        break
+      }
+      'toml' {
+        $content = $content | ConvertFrom-Toml
+        $Command = $Filter.ForEach{
+          $Query, $Key = $_.Split('/', 2)
+          $Key ??= '.'
+          "`$content$Query = `$content$Query | Sort-Object { `$_$Key } -CaseSensitive"
+        } | Out-String
+        Write-Debug "sort toml using expression: $Command"
+        Invoke-Expression $Command
+        $content | ConvertTo-Toml -Depth 99
+        break
+      }
+    }
+    if ($WhatIf) {
+      $content | bat -l $ext
+    }
+    else {
+      $content | Out-File -Encoding $Encoding $cur
     }
   }
-  return { Get-Content -Raw -LiteralPath $args[0] }
+}
+
+function icat {
+  [CmdletBinding(DefaultParameterSetName = 'Path')]
+  param(
+    [Parameter(Position = 0, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
+    [string[]]
+    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation,
+    [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [System.Object]
+    $InputObject,
+    [Parameter(Mandatory, ParameterSetName = 'Stdin')]
+    [string]
+    $Format,
+    [Parameter()]
+    [string]
+    $Size = [System.Console]::WindowHeight * 20,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $ArgumentList
+  )
+  if ($InputObject) {
+    if (!$IsWindows) {
+      Write-Warning 'icat from stdin pipe is unsupported on unix due to pwsh pipe restrictions'
+    }
+    return $InputObject | magick -density 3000 -background transparent "${Format}:-" -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
+  }
+  (Get-Item $Path).FullName.ForEach{
+    magick -density 3000 -background transparent $_ -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
+    $_
+  }
+}
+
+function Set-Region {
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [Parameter(Mandatory, Position = 1)]
+    [string[]]
+    $Content,
+    [Parameter(Position = 2, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
+    [string]
+    $Path,
+    [Parameter(ParameterSetName = 'Path')]
+    [switch]
+    $Inplace,
+    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [string[]]
+    $InputObject = (Get-Content $Path)
+  )
+  $found = 0
+  $InputObject = $InputObject.ForEach{
+    if ($found -eq 0 -and $_.TrimStart().StartsWith('#region ' + $Name)) {
+      $found = 1
+      $_
+      return
+    }
+    elseif ($found -eq 1) {
+      if ($_.Trim() -eq '#endregion') {
+        $found = 2
+        $Content
+        $_
+      }
+      return
+    }
+    $_
+  }
+  if ($found -eq 0) {
+    $InputObject += @("#region $Name", $Content, '#endregion')
+  }
+  if ($Inplace) {
+    try {
+      $InputObject > $Path
+    }
+    catch {
+      $InputObject
+    }
+  }
+  else {
+    $InputObject
+  }
+}
+
+function Enable-EnvironmentFile {
+  param(
+    [string]
+    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation + '/.env'
+  )
+  Get-Content $Path | ForEach-Object {
+    $name, $value = $_.Split('=', 2)
+    Set-Item -LiteralPath Env:$name $value
+  }
+}
+
+function Update-Environment {
+  [CmdletBinding()]
+  param(
+    [Parameter(Position = 0, Mandatory)]
+    [hashtable]
+    $Environment,
+    [System.EnvironmentVariableTarget]
+    $Scope = 'User',
+    [string]
+    $Description = (Get-Date).ToString()
+  )
+  if (!$IsLinux -and $Scope -eq 'Machine') {
+    $code = $Environment.GetEnumerator().ForEach{
+      "[System.Environment]::SetEnvironmentVariable($($_.Key), $($_.Value), 'Machine')"
+    }
+    return sudo pwsh -nop -c $code
+  }
+  if (!$IsLinux -or $Scope -eq 'Process') {
+    return $Environment.GetEnumerator().ForEach{
+      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+    }
+  }
+  $Description = $Description.Replace("`n", ' ')
+  $code = $Environment.GetEnumerator().ForEach{
+    "$($_.Key)='$($_.Value.Replace("'", "'\''"))'"
+  } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
+  switch ($Scope) {
+    ([System.EnvironmentVariableTarget]::User) {
+      return Set-Region UserEnv $code $(if (Test-Path ~/.bash_profile) {
+          "$HOME/.bash_profile"
+        }
+        else {
+          "$HOME/.profile"
+        })
+    }
+    ([System.EnvironmentVariableTarget]::Machine) {
+      return Invoke-Sudo Set-Region SysEnv $code /etc/profile.d/sh.local
+    }
+  }
+}
+
+function getParserName ([System.IO.FileSystemInfo]$Info) {
+  $extension = $Info.Extension.Substring(1)
+  foreach ($pair in $parserMap.GetEnumerator()) {
+    if ($pair.Value.Contains($extension)) {
+      return $pair.Key
+    }
+  }
+  return 'none'
+}
+
+function Invoke-CodeFormatter {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string[]]
+    $Path
+  )
+  Get-Item $Path | ForEach-Object {
+    & $parserWriteCommandMap.(getParserName $_) $_.FullName
+  }
 }
 
 function pbat {
+  [CmdletBinding()]
   param(
     [Parameter(Mandatory, Position = 0)]
     [string[]]
     $Path
   )
   Get-Item $Path | ForEach-Object {
-    & (getParser $_.Extension.Substring(1)) $_.FullName | bat --color=always --file-name $_.FullName
+    & $parserCommandMap.(getParserName $_) $_.FullName | bat --color=always --file-name $_.Name
   } | less
 }
 
@@ -32,6 +307,9 @@ $parserMap = @{
   stylua           = 'lua'
   zig              = 'zig'
 }
+@($parserMap.Keys).ForEach{
+  $parserMap.$_ = ",$($parserMap.$_),"
+}
 $parserCommandMap = @{
   'clang-format'   = { clang-format --style=LLVM $args[0] }
   dart             = { dart format -o show --show none --summary none $args[0] }
@@ -45,7 +323,20 @@ $parserCommandMap = @{
   shfmt            = { Get-Content -Raw -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
   # stylua         = {}
   # zig            = {}
+  none             = { Get-Content -Raw -LiteralPath $args[0] }
 }
-$exe = $IsWindows ? '.exe' : ''
-Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff$exe
-Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format$exe
+$parserWriteCommandMap = @{
+  'clang-format'   = { clang-format -i --style=LLVM $args[0] }
+  dart             = { dart format $args[0] }
+  dotnet           = { dotnet format }
+  gofmt            = { gofmt -w $args[0] }
+  # java           = {}
+  prettier         = { npx prettier -w --ignore-path= $args[0] }
+  PSScriptAnalyzer = { Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 > $args[0] }
+  ruff             = { ruff format -n $args[0] }
+  rustfmt          = { rustfmt $args[0] }
+  shfmt            = { shfmt -i 2 -bn -ci -sr $args[0] }
+  stylua           = { stylua $args[0] }
+  # zig            = {}
+  none             = {}
+}

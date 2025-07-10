@@ -23,10 +23,15 @@ $PNPM_HOME
 $HOME/.cargo/bin
 $HOME/.local/share/JetBrains/Toolbox/scripts
 $HOME/.local/share/dscV3
+$SHUTILS_ROOT/scripts
 EOF
 IFS=: MAPFILE=${MAPFILE[*]}
 if [[ :$PATH: != *":$MAPFILE:"* ]]; then
-  export PATH="$MAPFILE:$PATH"
+  export PATH=$MAPFILE:$PATH
+fi
+
+if [[ :$PSModulePath: != *":$SHUTILS_ROOT/ps1/modules:"* ]]; then
+  export PSModulePath=$PSModulePath${PSModulePath+:}$SHUTILS_ROOT/ps1/modules
 fi
 
 # Get the aliases and functions
