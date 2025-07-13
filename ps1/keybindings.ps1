@@ -8,6 +8,28 @@ Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardWord
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
 Set-PSReadLineKeyHandler -Chord Ctrl+Z -Function Redo
 # custom
+Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -ScriptBlock {
+  [int]$cursor = 0
+  [System.Management.Automation.Language.Token[]]$tokens = $null
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
+  $name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
+  $info = Get-Command $name -ea Ignore
+  if ($info.CommandType -eq 'Alias') {
+    $info = $info.ResolvedCommand
+  }
+  # quiet paging cancel error prompt
+  try {
+    $(if ($info.CommandType -eq 'Application') {
+        & $name --help | bat -plhelp --color=always
+      }
+      else {
+        Get-Help $name | bat -plman --color=always
+      }) | Out-Host -Paging
+  }
+  catch { }
+  [Microsoft.PowerShell.PSConsoleReadLine]::ClearScreen()
+  [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+}
 Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell docs in browser about the command' -ScriptBlock {
   [int]$cursor = 0
   [System.Management.Automation.Language.Token[]]$tokens = $null

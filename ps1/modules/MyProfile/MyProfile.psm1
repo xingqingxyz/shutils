@@ -99,6 +99,7 @@ function Invoke-Less {
 
 function Invoke-Npm {
   $npm = switch ($true) {
+    # use npm as a cli, pipe output
     ($MyInvocation.PipelineLength -ne 1) { 'npm'; break }
     (Test-Path bun.lock?) { 'bun' ; break }
     (Test-Path deno.json) { 'deno'; break }
@@ -107,44 +108,14 @@ function Invoke-Npm {
     default { 'npm'; break }
   }
   if ((Get-Alias -Definition Invoke-Npm).Name.Contains($npm)) {
-    $npm = (Get-Command $npm -Type Application, ExternalScript -TotalCount 1 -ea Stop).Path
+    $npm = (Get-Command $npm -Type Application -TotalCount 1 -ea Stop).Path
   }
-  if ($MyInvocation.PipelineLength -ne 1) {
-    if ($MyInvocation.ExpectingInput) {
-      $input | & $npm @args
-    }
-    else {
-      & $npm @args
-    }
-    return
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $npm @args
   }
-  if ($args.Contains('--help')) {
-    return & $npm @args | bat -lhelp
+  else {
+    & $npm @args
   }
-  $command, $rest = $args
-  if (@('i', 'install', 'a', 'add').Contains($command) -and !$rest.Contains('-D')) {
-    $types = @()
-    $noTypes = @()
-    foreach ($arg in $rest) {
-      if ($arg.StartsWith('-')) {
-        continue
-      }
-      if ($arg.StartsWith('@types/')) {
-        $types += $arg
-      }
-      else {
-        $noTypes += $arg
-      }
-    }
-    if ($types.Length) {
-      & $npm $command @types
-    }
-    if ($noTypes.Length) {
-      & $npm $command @noTypes
-    }
-    return
-  }
-  & $npm @args
 }
 
 function Invoke-Npx {
@@ -165,7 +136,7 @@ function Invoke-Npx {
     default { 'npx', $args; break }
   }
   if ((Get-Alias -Definition Invoke-Npx).Name.Contains($npx)) {
-    $npx = (Get-Command $npx -Type Application, ExternalScript -TotalCount 1 -ea Stop).Path
+    $npx = (Get-Command $npx -Type Application -TotalCount 1 -ea Stop).Path
   }
   if ($MyInvocation.ExpectingInput) {
     $input | & $npx @arguments
@@ -183,58 +154,12 @@ if ((Split-Path -LeafBase $pwshExe) -ne 'pwsh') {
 }
 if ($sudoExe) {
   function Invoke-Sudo {
-    [CmdletBinding()]
-    param(
-      [Parameter(Position = 0, Mandatory, ParameterSetName = 'ScriptBlock')]
-      [scriptblock]
-      $ScriptBlock,
-      [Parameter(Position = 0, Mandatory, ParameterSetName = 'Command')]
-      [ArgumentCompleter({
-          [OutputType([System.Management.Automation.CompletionResult])]
-          param (
-            [string]$commandName,
-            [string]$parameterName,
-            [string]$wordToComplete,
-            [System.Management.Automation.Language.CommandAst]$commandAst,
-            [System.Collections.IDictionary]$fakeBoundParameters
-          )
-          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
-        })]
-      [string]
-      $Command,
-      [Parameter(ValueFromPipeline)]
-      [System.Object]
-      $InputObject,
-      [Parameter(Position = 1, ValueFromRemainingArguments)]
-      [ArgumentCompleter({
-          [OutputType([System.Management.Automation.CompletionResult])]
-          param (
-            [string]$commandName,
-            [string]$parameterName,
-            [string]$wordToComplete,
-            [System.Management.Automation.Language.CommandAst]$commandAst,
-            [System.Collections.IDictionary]$fakeBoundParameters
-          )
-          $astList = $commandAst.CommandElements | Select-Object -Skip 1 |
-            Where-Object { $_ -isnot [System.Management.Automation.Language.ParameterAst] }
-          $commandName = Split-Path -LeafBase $astList[0].Value
-          $line = "$astList"
-          $cursorPosition = $line.Length
-          [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$cursorPosition)
-          $cursorPosition -= $astList[0].Extent.StartOffset
-          $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput($line, $cursorPosition)
-          $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
-          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
-        })]
-      [string[]]
-      $ArgumentList
-    )
-    [string[]]$extraArgs = if ($ScriptBlock) {
-      $Command = $ScriptBlock.ToString()
+    [string[]]$extraArgs = if ($args[0] -is [scriptblock]) {
+      $args[0] = $args[0].ToString()
       @($pwshExe, '-nop', '-cwa')
     }
     else {
-      $info = Get-Command $Command -TotalCount 1 -ea Ignore
+      $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
       if ($info.CommandType -eq 'Alias') {
         $info = $info.ResolvedCommand
       }
@@ -256,73 +181,24 @@ if ($sudoExe) {
         @($pwshExe, '-nop', '-c')
       }
     }
-    $ArgumentList = $extraArgs + @($Command) + $ArgumentList
-    Write-Debug "$sudoExe -- $ArgumentList"
+    $ags = $extraArgs + $args
+    Write-Debug "$sudoExe -- $ags"
     if ($InputObject) {
-      $InputObject | & $sudoExe -- @ArgumentList
+      $InputObject | & $sudoExe -- @ags
     }
     else {
-      & $sudoExe -- @ArgumentList
+      & $sudoExe -- @ags
     }
   }
 }
 elseif ($IsWindows) {
   function Invoke-Sudo {
-    [CmdletBinding()]
-    param(
-      [Parameter(Position = 0, Mandatory, ParameterSetName = 'ScriptBlock')]
-      [scriptblock]
-      $ScriptBlock,
-      [Parameter(Position = 0, Mandatory, ParameterSetName = 'Command')]
-      [ArgumentCompleter({
-          [OutputType([System.Management.Automation.CompletionResult])]
-          param (
-            [string]$commandName,
-            [string]$parameterName,
-            [string]$wordToComplete,
-            [System.Management.Automation.Language.CommandAst]$commandAst,
-            [System.Collections.IDictionary]$fakeBoundParameters
-          )
-          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
-        })]
-      [string]
-      $Command,
-      [Parameter(ValueFromPipeline)]
-      [System.Object]
-      $InputObject,
-      [Parameter(Position = 1, ValueFromRemainingArguments)]
-      [ArgumentCompleter({
-          [OutputType([System.Management.Automation.CompletionResult])]
-          param (
-            [string]$commandName,
-            [string]$parameterName,
-            [string]$wordToComplete,
-            [System.Management.Automation.Language.CommandAst]$commandAst,
-            [System.Collections.IDictionary]$fakeBoundParameters
-          )
-          $astList = $commandAst.CommandElements | Select-Object -Skip 1 |
-            Where-Object { $_ -isnot [System.Management.Automation.Language.ParameterAst] }
-          $commandName = Split-Path -LeafBase $astList[0].Value
-          $line = "$astList"
-          $cursorPosition = $line.Length
-          [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$cursorPosition)
-          $cursorPosition -= $astList[0].Extent.StartOffset
-          $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput($line, $cursorPosition)
-          $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
-          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
-        })]
-      [string[]]
-      $ArgumentList,
-      [Parameter()]
-      [string]
-      $WorkingDirectory = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation
-    )
-    [string[]]$extraArgs = if ($ScriptBlock) {
-      $Command = $ScriptBlock.ToString()
+    [string[]]$extraArgs = if ($args[0] -is [scriptblock]) {
+      $args[0] = $args[0].ToString()
       @($pwshExe, '-nop', '-cwa')
     }
     else {
-      $info = Get-Command $Command -TotalCount 1 -ea Ignore
+      $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
       if ($info.CommandType -eq 'Alias') {
         $info = $info.ResolvedCommand
       }
@@ -344,9 +220,9 @@ elseif ($IsWindows) {
         @($pwshExe, '-nop', '-c')
       }
     }
-    $Command, $ArgumentList = $extraArgs + @($Command) + $ArgumentList
-    Write-Debug "$Command $ArgumentList"
-    Start-Process -FilePath $Command -ArgumentList $ArgumentList -Verb RunAs -WorkingDirectory $WorkingDirectory
+    $command, $ags = $extraArgs + $args
+    Write-Debug "$command $ags"
+    Start-Process -FilePath $command -ArgumentList $ags -Verb RunAs -WorkingDirectory $WorkingDirectory
   }
 }
 #endregion

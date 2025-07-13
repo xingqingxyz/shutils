@@ -76,7 +76,7 @@ function Invoke-Z {
       $items = @(switch ($true) {
           $Rank { $items | Sort-Object Rank; break }
           $Time { $items | Sort-Object Time; break }
-          Default {
+          default {
             [double]$now = Get-Date -UFormat '%s'
             $items | Sort-Object { 10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25)) }
             break
