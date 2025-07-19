@@ -11,9 +11,7 @@
 # after the first one in the LESSOPEN environment variable:
 # export LESSOPEN="||lesspipe.sh %s"
 
-if [ ! -e "$1" ]; then
-  exit 1
-fi
+[ -e "$1" ] || exit 1
 
 if [ -d "$1" ]; then
   ls -alF -- "$1"
@@ -25,19 +23,17 @@ manfilter() {
     # See rhbz#1241543 for more info.  Well, actually we firstly
     # used 'man -l', then we switched to groff, and then we again
     # switched back to 'man -l'.
-    /usr/bin/man -P /usr/bin/cat -l "$1"
+    MAN_KEEP_FORMATTING=1 /usr/bin/man -P /usr/bin/cat -l "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
   elif test -x /usr/bin/groff; then
     # This is from pre-rhbz#1241543-time.
-    groff -Tascii -mandoc "$1" | cat -s
+    groff -Tascii -mandoc "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
   else
     echo "WARNING:"
     echo "WARNING: to better show manual pages, install 'man-db' package"
     echo "WARNING:"
-    cat "$1"
+    bat -pltroff --color=always "$1"
   fi
 }
-
-export MAN_KEEP_FORMATTING=1
 
 case "$1" in
   *.[1-9n].bz2 | *.[1-9]x.bz2 | *.man.bz2 | *.[1-9n].[glx]z | *.[1-9]x.[glx]z | *.man.[glx]z | *.[1-9n].lzma | *.[1-9]x.lzma | *.man.lzma | *.[1-9n].zst | *.[1-9]x.zst | *.man.zst | *.[1-9n].br | *.[1-9]x.br | *.man.br)
@@ -49,7 +45,7 @@ case "$1" in
       *.br) DECOMPRESSOR="brotli -dc" ;;
       *.xz | *.lzma) DECOMPRESSOR="xz -dc" ;;
     esac
-    if [ -n "$DECOMPRESSOR" ] && $DECOMPRESSOR -- "$1" | file -L - | grep -q troff; then
+    if [ "$DECOMPRESSOR" ] && $DECOMPRESSOR -- "$1" | file -L - | grep -q troff; then
       $DECOMPRESSOR -- "$1" | manfilter -
       exit
     fi
@@ -153,7 +149,7 @@ case "$1" in
     fi
     ;;
   *)
-    type -aP file iconv > /dev/null || exit
+    type -aP file iconv > /dev/null || exit 1
     case $(file -Lb --mime-encoding "$1") in
       utf-16) conv='utf-16' ;;
       utf-32) conv='utf-32' ;;
@@ -163,8 +159,8 @@ case "$1" in
         ;;
     esac
     if [ -n "$conv" ]; then
-      env=$(echo $LANG | cut -d. -f2)
-      if [ -n "$env" -a "$conv" != "$env" ]; then
+      env=$(cut -d. -f2 <<< $LANG)
+      if [ "$env" -a "$conv" != "$env" ]; then
         iconv -f $conv -t $env "$1" | bat --color=always --file-name="$1"
         exit
       fi

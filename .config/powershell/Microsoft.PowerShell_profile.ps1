@@ -1,4 +1,6 @@
 #Requires -PSEdition Core
+# let user select dotnet tools path order while pwsh run as a dotnet tool
+$env:PATH = $env:PATH.Replace("$HOME/.dotnet/tools$([System.IO.Path]::PathSeparator)", '')
 # init scripts
 Get-ChildItem -LiteralPath ${env:SHUTILS_ROOT}/ps1 -File -ea Ignore | ForEach-Object { . $_.FullName }
 # platform code

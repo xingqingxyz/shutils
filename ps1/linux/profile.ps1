@@ -1,10 +1,14 @@
 function Invoke-ExecutableAlias {
-  Write-Debug "/usr/bin/env -- $($_executableAliasMap[$MyInvocation.InvocationName]) $args"
+  $command = $MyInvocation.InvocationName
+  if ($command -eq '&') {
+    $command = ($MyInvocation.Statement -split '\s+', 3)[1]
+  }
+  Write-Debug "/usr/bin/env -- $($_executableAliasMap.$command) $args"
   if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env -- $_executableAliasMap[$MyInvocation.InvocationName] @args
+    $input | /usr/bin/env -- $_executableAliasMap.$command @args
   }
   else {
-    /usr/bin/env -- $_executableAliasMap[$MyInvocation.InvocationName] @args
+    /usr/bin/env -- $_executableAliasMap.$command @args
   }
 }
 

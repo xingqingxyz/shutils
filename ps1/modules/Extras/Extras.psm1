@@ -263,7 +263,10 @@ function getParserName ([System.IO.FileSystemInfo]$Info) {
   $extension = $Info.Extension.Substring(1)
   foreach ($pair in $parserMap.GetEnumerator()) {
     if ($pair.Value.Contains($extension)) {
-      return $pair.Key
+      if (Get-Command -TotalCount 1 -ea Ignore ($parserRequiresMap[$pair.Key] ?? $pair.Key)) {
+        return $pair.Key
+      }
+      break
     }
   }
   return 'none'
@@ -276,19 +279,18 @@ function Invoke-CodeFormatter {
     [string[]]
     $Path
   )
-  Get-Item $Path | ForEach-Object {
+  Get-Item -Force $Path | ForEach-Object {
     & $parserWriteCommandMap.(getParserName $_) $_.FullName
   }
 }
 
 function pbat {
-  [CmdletBinding()]
-  param(
-    [Parameter(Mandatory, Position = 0)]
-    [string[]]
-    $Path
-  )
-  Get-Item $Path | ForEach-Object {
+  if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
+    return Get-Item -Force $args | ForEach-Object {
+      & $parserCommandMap.(getParserName $_) $_.FullName
+    }
+  }
+  Get-Item -Force $args | ForEach-Object {
     & $parserCommandMap.(getParserName $_) $_.FullName | bat --color=always --file-name $_.Name
   } | less
 }
@@ -310,13 +312,17 @@ $parserMap = @{
 @($parserMap.Keys).ForEach{
   $parserMap.$_ = ",$($parserMap.$_),"
 }
+$parserRequiresMap = @{
+  prettier         = 'bun'
+  PSScriptAnalyzer = 'Invoke-Formatter'
+}
 $parserCommandMap = @{
   'clang-format'   = { clang-format --style=LLVM $args[0] }
   dart             = { dart format -o show --show none --summary none $args[0] }
   dotnet           = { <# dotnet format; #> Get-Content -Raw -LiteralPath $args[0] }
   gofmt            = { gofmt $args[0] }
   # java           = {}
-  prettier         = { npx prettier --ignore-path= $args[0] }
+  prettier         = { bun x prettier --ignore-path= $args[0] }
   PSScriptAnalyzer = { Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 }
   ruff             = { Get-Content -Raw -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
   rustfmt          = { rustfmt --emit stdout $args[0] }
@@ -331,7 +337,7 @@ $parserWriteCommandMap = @{
   dotnet           = { dotnet format }
   gofmt            = { gofmt -w $args[0] }
   # java           = {}
-  prettier         = { npx prettier -w --ignore-path= $args[0] }
+  prettier         = { bun x prettier -w --ignore-path= $args[0] }
   PSScriptAnalyzer = { Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 > $args[0] }
   ruff             = { ruff format -n $args[0] }
   rustfmt          = { rustfmt $args[0] }

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec -a pwsh /usr/lib64/dotnet/dotnet /home/uv/.dotnet/tools/.store/powershell/7.5.2/powershell/7.5.2/tools/net9.0/any/unix/pwsh.dll "$@"

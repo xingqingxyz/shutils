@@ -6,13 +6,20 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # shutils
-eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
+if ((BASH_VERSINFO[0] >= 5 && BASH_VERSINFO[1] >= 3)); then
+  eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
+fi
 
-# shopt -s histappend
+# shutils options
+FZF_CTRL_T_OPTS='--preview="bat -p --color=always {}"'
+FZF_ALT_C_OPTS='--preview="tree -C {}"'
+
+# shell options
 shopt -s globstar
 HISTCONTROL=ignoreboth
 HISTSIZE=9000
 HISTFILESIZE=120000
+TIMEFORMAT=$'\nreal\t%6lR\nuser\t%6lU\nsys\t%6lS\ncpu\t%P'
 
 # aliases
 alias cls=clear \
@@ -29,18 +36,3 @@ if [[ $TERM_PROGRAM != vscode* ]]; then
     alias rg='rg --hyperlink-format=default'
   fi
 fi
-
-# fzf
-# export FZF_DEFAUT_OPTS='--bind=ctrl-w:'
-# export FZF_DEFAUT_COMMAND=
-
-FZF_CTRL_T_OPTS='--preview="bat -p --color=always {}"'
-# FZF_CTRL_R_OPTS=''
-# FZF_CTRL_O_OPTS=''
-FZF_ALT_C_OPTS='--preview="tree -C {}"'
-# FZF_ALT_Z_OPTS=''
-# FZF_COMP_OPTS=
-# FZF_COMP_TRIGGER='*'
-
-# Uncomment the following line if you don't like systemctl's auto-paging feature:
-# export SYSTEMD_PAGER=

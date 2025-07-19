@@ -1,15 +1,19 @@
 using namespace System.Security.Principal
 
 function Invoke-ExecutableAlias {
-  $cmd, [string[]]$arguments = $_executableAliasMap[$MyInvocation.InvocationName]
-  $cmd = (Get-Command -Type Application -TotalCount 1 -ea Stop $cmd).Path
+  $command = $MyInvocation.InvocationName
+  if ($command -eq '&') {
+    $command = ($MyInvocation.Statement -split '\s+', 3)[1]
+  }
+  $command, [string[]]$arguments = $_executableAliasMap.$command
+  $command = (Get-Command -Type Application -TotalCount 1 -ea Stop $command).Path
   $arguments += $args
-  Write-Debug "$cmd $arguments"
+  Write-Debug "$command $arguments"
   if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd @arguments
+    $input | & $command @arguments
   }
   else {
-    & $cmd @arguments
+    & $command @arguments
   }
 }
 

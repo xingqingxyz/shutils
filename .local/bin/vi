@@ -1,0 +1,3 @@
+#!/bin/sh
+/usr/bin/nvim -u NORC "$@"
+echo -ne '\e[0 q'
