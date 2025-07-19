@@ -1,15 +1,15 @@
 declare LAST_CMD_DUR_C LAST_CMD_DUR_T
 
-coproc COPROC_PS0 {
-  cat
-}
+if [ ! -v COPROC_PS0 ]; then
+  coproc COPROC_PS0 { cat; }
+fi
 
-PS0='$(echo "$EPOCHREALTIME" >&"${COPROC_PS0[1]}")'
+PS0='$(echo $EPOCHREALTIME >&${COPROC_PS0[1]})'
 : "${PS0@P}"
 
 _prompt() {
   local a1 a2 b1 b2
-  IFS=. read -r a1 a2 <<< "$EPOCHREALTIME"
+  IFS=. read -r a1 a2 <<< $EPOCHREALTIME
   IFS=. read -ru "${COPROC_PS0[0]}" b1 b2
   ((a1 -= b1))
   ((a2 = "1${a2}" - "1${b2}"))
@@ -49,20 +49,21 @@ _prompt() {
   LAST_CMD_DUR_T=$dur
 }
 
-name=PROMPT_COMMAND
 if [ -v __vsc_original_prompt_command ]; then
-  name=__vsc_original_prompt_command
+  declare -n name=__vsc_original_prompt_command
+else
+  declare -n name=PROMPT_COMMAND
 fi
-if [[ ${!name} != *'_prompt;'* ]]; then
-  printf -v "$name" '_prompt;%s' "${!name}"
-  unset name
+if [[ $name != *$'\n_prompt;'* ]]; then
+  name=$'\n_prompt;'$name
+  unset -n name
 fi
 
 items=(
-  '\!:\[\e[$((31 + !$?))m\]$?\[\e[0m\]:'
-  '\[\e[${LAST_CMD_DUR_C}m\]$LAST_CMD_DUR_T\[\e[0m\]:'
+  '\[\e[$((31 + !$?))m\]$?\[\e[0m\]'
+  '(\!:\[\e[${LAST_CMD_DUR_C}m\]$LAST_CMD_DUR_T\[\e[0m\])'
   '\[\e]8;;file://$PWD\e\\\\\]\w\[\e]8;;\e\\\\\]'
-  ' $ '
+  '$'
 )
 case "$OSTYPE" in
   msys | cygwin)
@@ -77,7 +78,7 @@ esac
 if declare -Fp __git_ps1 &> /dev/null; then
   items[3]='$(__git_ps1)'${items[3]}
 fi
-IFS= PS1=${items[*]}
+printf -v PS1 '%s ' "${items[@]}"
 unset items
 
 _idefault_complete() {

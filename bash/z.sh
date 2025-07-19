@@ -17,12 +17,13 @@ _z_prompt() {
   fi
 }
 
-name=PROMPT_COMMAND
 if [ -v __vsc_original_prompt_command ]; then
-  name=__vsc_original_prompt_command
+  declare -n name=__vsc_original_prompt_command
+else
+  declare -n name=PROMPT_COMMAND
 fi
-if [[ ${!name} != *'_z_prompt;'* ]]; then
-  printf -v "$name" '%s\n_z_prompt;' "${!name}"
-  unset name
+if [[ $name != *$'\n_z_prompt;'* ]]; then
+  name+=$'\n_z_prompt;'
+  unset -n name
   alias z=_z
 fi

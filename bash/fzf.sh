@@ -53,7 +53,7 @@ _fzf_compgen_alias() {
 }
 
 _fzf_compgen_command() {
-  compgen -abckv -A function -- "$2" | uniq
+  compgen -abckv -A function -- "$2" | sort -u
 }
 
 _fzf_compgen_proc() {
@@ -67,28 +67,18 @@ _fzf_compgen_proc_post() {
 
 _fzf_complete() {
   local typ=${FZF_COMP_CMDTYPE[$1]-file} query=$2
-  case "$typ" in
-    file | dir)
-      if [[ $2 != *"${FZF_COMP_TRIGGER:-*}" ]]; then
-        "${_FZF_COMP_BACKUP[$1]-:}" "$@"
-        return
-      fi
-      query=${query%"${FZF_COMP_TRIGGER:-*}"}
-      ;;
-  esac
-  if ! {
-    mapfile -t COMPREPLY < <(
-      "_fzf_compgen_$typ" "$@" \
-        | FZF_DEFAULT_OPTS+=" --reverse ${FZF_COMP_FZFOPTS[$typ]}" fzf -q "$query"
-    )
-    # some completer need set compopt, must not be subshell
-    if declare -Fp "_fzf_compgen_${typ}_post" &> /dev/null; then
-      "_fzf_compgen_${typ}_post" "$@"
-    else
-      COMPREPLY=("${COMPREPLY[*]}")
-    fi
-  }; then
-    "${_FZF_COMP_BACKUP[$1]-:}" "$@"
+  if [[ $2 != *"${FZF_COMP_TRIGGER:-*}" ]]; then
+    ${_FZF_COMP_BACKUP[$1]-:} "$@"
+    return
+  fi
+  query=${query%"${FZF_COMP_TRIGGER:-*}"}
+  mapfile -t COMPREPLY < <("_fzf_compgen_$typ" "$@" \
+    | FZF_DEFAULT_OPTS+=" --reverse ${FZF_COMP_OPTS[$typ]}" fzf -q "$query")
+  # some completer need set compopt, must not be subshell
+  if declare -Fp "_fzf_compgen_${typ}_post" &> /dev/null; then
+    _fzf_compgen_${typ}_post "$@"
+  else
+    COMPREPLY=("${COMPREPLY[*]}")
   fi
 }
 
@@ -123,7 +113,7 @@ _fzf_setup_completion() {
     [ssh]='ssh'
     [proc]='kill'
   )
-  declare -gA FZF_COMP_CMDTYPE _FZF_COMP_BACKUP FZF_COMP_FZFOPTS=(
+  declare -gA FZF_COMP_CMDTYPE _FZF_COMP_BACKUP FZF_COMP_OPTS=(
     [command]='-m'
     [dir]='-m --scheme=path --preview="tree -C {} | head -200"'
     [file]='-m --scheme=path --preview="bat -p --color=always {}"'
@@ -143,7 +133,7 @@ _fzf_setup_completion() {
     [proc]='-o bashdefault -o default'
   )
   eval "FZF_COMP_CMDTYPE=($(for t in "${!commands[@]}"; do
-    echo -n "${commands[$t]} $t "
+    printf "[%s]=$t " ${commands[$t]}
   done))"
   if declare -Fp _completion_loader &> /dev/null; then
     complete -o bashdefault -o default -F _fzf_completion_loader -D
