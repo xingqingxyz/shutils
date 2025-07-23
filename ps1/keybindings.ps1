@@ -17,18 +17,8 @@ Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -
   if ($info.CommandType -eq 'Alias') {
     $info = $info.ResolvedCommand
   }
-  # quiet paging cancel error prompt
-  try {
-    $(if ($info.CommandType -eq 'Application') {
-        & $name --help | bat -plhelp --color=always
-      }
-      else {
-        Get-Help $name | bat -plman --color=always
-      }) | Out-Host -Paging
-  }
-  catch { }
-  [Microsoft.PowerShell.PSConsoleReadLine]::ClearScreen()
-  [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, 0, "vw $($info.Name) # ")
+  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell docs in browser about the command' -ScriptBlock {
   [int]$cursor = 0

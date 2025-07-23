@@ -4,7 +4,8 @@ export SHUTILS_ROOT=$(dirname -- "$(realpath -- "$BASH_SOURCE")")
 export \
   LANG='zh_CN.UTF-8' \
   PAGER='less' \
-  EDITOR='nano' \
+  SYSTEMD_PAGER= \
+  EDITOR='msedit' \
   LESS='-R --quit-if-one-screen --use-color --wordwrap --ignore-case --incsearch --search-options=W' \
   LESSOPEN="||'$SHUTILS_ROOT/scripts/lesspipe.sh' %s 2>/dev/null" \
   MANROFFOPT='-c' \

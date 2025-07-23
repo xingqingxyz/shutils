@@ -21,9 +21,6 @@ function vw {
     $Command = 'vw'
   )
   if ($MyInvocation.ExpectingInput) {
-    if ($input[0] -is [System.IO.FileInfo]) {
-      return bat @input
-    }
     return $input | bat -plhelp
   }
   $info = Get-Command $Command -TotalCount 1
@@ -41,7 +38,7 @@ function vw {
       return $info.Definition | bat -plps1
     }
     { ([CommandTypes]::Application + [CommandTypes]::Script + [CommandTypes]::ExternalScript).HasFlag($_) } {
-      return bat $info.Path
+      return bat -p $info.Path
     }
   }
 }

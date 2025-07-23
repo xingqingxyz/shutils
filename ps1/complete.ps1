@@ -40,7 +40,7 @@ function Get-ArgumentCompleter ([string]$CommandName) {
   $completionFuncMap.$CommandName ?? {}
 }
 
-$completionFuncMap = @{}
+Set-Variable -Option ReadOnly completionFuncMap @{}
 Microsoft.PowerShell.Core\Register-ArgumentCompleter -CommandName (Get-ChildItem -LiteralPath ${env:SHUTILS_ROOT}/ps1/completions).BaseName -Native -ScriptBlock {
   param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $commandName = Split-Path -LeafBase $commandAst.GetCommandName()

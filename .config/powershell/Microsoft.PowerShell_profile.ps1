@@ -20,5 +20,3 @@ $exe = $IsWindows ? '.exe' : ''
 Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff$exe
 Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format$exe
 Remove-Variable exe
-# completion loader
-Import-Module ${env:SHUTILS_ROOT}/ps1/modules/Complete.psm1, ${env:SHUTILS_ROOT}/ps1/modules/Z.psm1
