@@ -1,5 +1,3 @@
-using namespace System.Management.Automation
-
 function vw {
   param(
     [ArgumentCompleter({
@@ -27,17 +25,17 @@ function vw {
   if ($info.CommandType -eq 'Alias') {
     $info = $info.ResolvedCommand
   }
-  switch ($info.CommandType) {
-    ([CommandTypes]::Cmdlet) {
+  switch ([string]$info.CommandType) {
+    Cmdlet {
       return help $Command -Category Cmdlet
     }
-    ([CommandTypes]::Configuration) {
+    Configuration {
       return $Command
     }
-    { ([CommandTypes]::Filter + [CommandTypes]::Function).HasFlag($_) } {
+    { 'Filter,Function'.Contains($_) } {
       return $info.Definition | bat -plps1
     }
-    { ([CommandTypes]::Application + [CommandTypes]::Script + [CommandTypes]::ExternalScript).HasFlag($_) } {
+    { 'Application,ExternalScript'.Contains($_) } {
       return bat -p $info.Path
     }
   }
@@ -127,13 +125,13 @@ if ($sudoExe) {
       }
       elseif ($info.CommandType -eq 'Application') {
       }
-      elseif (([CommandTypes]::Function + [CommandTypes]::Filter).HasFlag($info.CommandType)) {
+      elseif ('Function,Filter'.Contains([string]$info.CommandType)) {
         if ($null -eq $info.Module) {
           return
         }
         @($pwshExe, '-nop')
       }
-      elseif (([CommandTypes]::Script + [CommandTypes]::ExternalScript).HasFlag($info.CommandType)) {
+      elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
         @($pwshExe, '-nop')
       }
       else {
@@ -166,13 +164,13 @@ elseif ($IsWindows) {
       }
       elseif ($info.CommandType -eq 'Application') {
       }
-      elseif (([CommandTypes]::Function + [CommandTypes]::Filter).HasFlag($info.CommandType)) {
+      elseif ('Function,Filter'.Contains([string]$info.CommandType)) {
         if ($null -eq $info.Module) {
           return
         }
         @($pwshExe, '-nop')
       }
-      elseif (([CommandTypes]::Script + [CommandTypes]::ExternalScript).HasFlag($info.CommandType)) {
+      elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
         @($pwshExe, '-nop')
       }
       else {
@@ -194,5 +192,5 @@ function Invoke-Which {
     [switch]
     $All
   )
-  (Get-Item (Get-Command -Type Application -All:$All $Name).Path).ResolvedTarget
+  (Get-Item (Get-Command -Type Application -TotalCount ($All ? 9999 : 1) $Name).Path).ResolvedTarget
 }

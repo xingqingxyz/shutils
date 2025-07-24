@@ -16,8 +16,11 @@ function env {
   $saveEnvironment = @{}
   $environment.GetEnumerator().ForEach{
     # ignore non exist
-    $saveEnvironment[$_.Key] = (Get-Item -LiteralPath Env:$($_.Key)).Value
-    Set-Item -LiteralPath Env:$($_.Key) $_.Value
+    $item = Get-Item -LiteralPath env:$($_.Key) -ea Ignore
+    if ($item) {
+      $saveEnvironment[$_.Key] = $item.Value
+    }
+    Set-Item -LiteralPath env:$($_.Key) $_.Value
   }
   Write-Debug "$($args[0..($i-1)]) $Command $ArgumentList"
   try {
@@ -31,10 +34,10 @@ function env {
   finally {
     foreach ($key in $environment.Keys) {
       if ($saveEnvironment.Contains($key)) {
-        Set-Item -LiteralPath Env:$key $saveEnvironment.$key
+        Set-Item -LiteralPath env:$key $saveEnvironment.$key
       }
       else {
-        Remove-Item -LiteralPath Env:$key -ea Ignore
+        Remove-Item -LiteralPath env:$key -ea Ignore
       }
     }
   }

@@ -8,6 +8,8 @@ param (
   $ScriptBlock
 )
 
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
 Start-Sleep -Duration ([timespan]::Parse($Delay))
 & $ScriptBlock
 $status = $?

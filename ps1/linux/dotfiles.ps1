@@ -6,8 +6,6 @@ Get-ChildItem ${env:SHUTILS_ROOT}/.config, ${env:SHUTILS_ROOT}/.local -Recurse -
 .bash_profile
 .bashrc
 .gitconfig
-.lessfilter
-.nanorc
 .npmrc
 .prettierrc
 '@.Split("`n").ForEach{ $files."${env:SHUTILS_ROOT}\$_" = "$HOME\$_" }

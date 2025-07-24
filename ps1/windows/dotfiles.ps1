@@ -4,8 +4,6 @@ Get-ChildItem ${env:SHUTILS_ROOT}\windows -Recurse -File -Force -ea Ignore | For
 }
 @'
 .bashrc
-.lessfilter
-.nanorc
 .npmrc
 .prettierrc
 '@.Split("`r`n").ForEach{ $files."${env:SHUTILS_ROOT}\$_" = "$HOME\$_" }

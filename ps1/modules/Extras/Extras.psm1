@@ -1,3 +1,73 @@
+<#
+.SYNOPSIS
+Edit command source.
+ #>
+function edc {
+  param(
+    [ArgumentCompleter({
+        # note: using namespace not effects, this executed likes background job
+        [OutputType([System.Management.Automation.CompletionResult])]
+        param(
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete,
+          [System.Management.Automation.Language.CommandAst]$CommandAst,
+          [System.Collections.IDictionary]$FakeBoundParameters
+        )
+        $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
+        if ($results.Length) { $results } else {
+          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+        }
+      })]
+    [string]
+    $Command = 'edc'
+  )
+  if ($MyInvocation.ExpectingInput) {
+    return $input | edit
+  }
+  $info = Get-Command $Command -TotalCount 1
+  if ($info.CommandType -eq 'Alias') {
+    $info = $info.ResolvedCommand
+  }
+  if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
+    if ($info.Module) {
+      edit $info.Module.Path
+    }
+    else {
+      vw $info.Name
+    }
+  }
+  elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
+    edit $info.Path
+  }
+  elseif ($info.CommandType -eq 'Application') {
+    if (shouldEdit $info.Path) {
+      edit $info.Path
+    }
+  }
+}
+
+function shouldEdit ([string]$LiteralPath) {
+  end {
+    $item = Get-Item -LiteralPath $LiteralPath -Force
+    $s = $item.OpenRead()
+    if ($s.Length -gt 0x300000) {
+      return $false # gt 3M
+    }
+    $buffer = [byte[]]::new(0xff)
+    $Len = $s.Read($buffer, 0, 0xff)
+    for ($i = 0; $i -lt $Len; $i++) {
+      if (!$buffer[$i]) {
+        return $false
+      }
+    }
+    return $true
+  }
+  clean {
+    $s.Close()
+  }
+}
+
 function yq {
   [CmdletBinding()]
   [OutputType([string])]
@@ -260,9 +330,9 @@ function Update-Environment {
 }
 
 function getParserName ([System.IO.FileSystemInfo]$Info) {
-  $extension = $Info.Extension.Substring(1)
+  $query = ",$($Info.Extension.Substring(1)),"
   foreach ($pair in $parserMap.GetEnumerator()) {
-    if ($pair.Value.Contains($extension)) {
+    if ($pair.Value.Contains($query)) {
       if (Get-Command -TotalCount 1 -ea Ignore ($parserRequiresMap[$pair.Key] ?? $pair.Key)) {
         return $pair.Key
       }
