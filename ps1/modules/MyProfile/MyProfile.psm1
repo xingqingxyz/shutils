@@ -58,15 +58,13 @@ function Invoke-Npm {
   $npm = switch ($true) {
     # use npm as a cli, pipe output
     ($MyInvocation.PipelineLength -ne 1) { 'npm'; break }
-    (Test-Path bun.lock?) { 'bun' ; break }
-    (Test-Path deno.json) { 'deno'; break }
     (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
+    (Test-Path bun.lock?) { 'bun' ; break }
     (Test-Path yarn.lock) { 'yarn'; break }
+    (Test-Path deno.json) { 'deno'; break }
     default { 'npm'; break }
   }
-  if ((Get-Alias -Definition Invoke-Npm).Name.Contains($npm)) {
-    $npm = (Get-Command $npm -Type Application -TotalCount 1 -ea Stop).Path
-  }
+  $npm = (Get-Command $npm -Type Application -TotalCount 1 -ea Stop).Path
   if ($MyInvocation.ExpectingInput) {
     $input | & $npm @args
   }
@@ -86,15 +84,12 @@ function Invoke-Npx {
     return
   }
   $npx, $arguments = switch ($true) {
-    (Test-Path bun.lockb) { 'bun', 'x' + $args; break }
-    (Test-Path deno.json) { 'deno', 'run' + $args; break }
-    (Test-Path pnpm-lock.yaml) { 'pnpx', $args; break }
+    (Test-Path bun.lock?) { 'bun', 'x' + $args; break }
+    (Test-Path pnpm-lock.yaml) { 'pnpm', 'dlx' + $args; break }
     (Test-Path yarn.lock) { 'yarn', 'dlx' + $args; break }
-    default { 'npx', $args; break }
+    default { 'npm', 'exec' + $args; break }
   }
-  if ((Get-Alias -Definition Invoke-Npx).Name.Contains($npx)) {
-    $npx = (Get-Command $npx -Type Application -TotalCount 1 -ea Stop).Path
-  }
+  $npx = (Get-Command $npx -Type Application -TotalCount 1 -ea Stop).Path
   if ($MyInvocation.ExpectingInput) {
     $input | & $npx @arguments
   }
@@ -104,11 +99,7 @@ function Invoke-Npx {
 }
 
 #region sudo
-$sudoExe = (Get-Command sudo -CommandType Application -TotalCount 1 -ea Ignore).Path
-$pwshExe = [System.Environment]::ProcessPath
-if ((Split-Path -LeafBase $pwshExe) -ne 'pwsh') {
-  $pwshExe = (Get-Command pwsh -CommandType Application -TotalCount 1 -ea Ignore).Path ?? 'pwsh'
-}
+$sudoExe, $pwshExe = (Get-Command sudo, pwsh -CommandType Application -TotalCount 1 -ea Ignore).Path
 if ($sudoExe) {
   function Invoke-Sudo {
     [string[]]$extraArgs = if ($args[0] -is [scriptblock]) {
@@ -192,5 +183,5 @@ function Invoke-Which {
     [switch]
     $All
   )
-  (Get-Item (Get-Command -Type Application -TotalCount ($All ? 9999 : 1) $Name).Path).ResolvedTarget
+  (Get-Item (Get-Command -Type Application -TotalCount ($All ? 9999 : 1) -ea Stop $Name).Path).ResolvedTarget
 }

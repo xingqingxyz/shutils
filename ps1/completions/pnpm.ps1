@@ -24,7 +24,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
     't' { 'test'; break }
     'ln' { 'link'; break }
     'rb' { 'rebuild'; break }
-    default { $command }
+    default { $command.StartsWith('exec;') ? '#exec' : $command }
   }
   @(switch ($command) {
       '' {
@@ -34,21 +34,42 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         else {
           @('add', 'audit', 'cat-file', 'cat-index', 'exec', 'find-hash', 'help', 'i', 'import', 'install-test', 'install', 'it', 'licenses', 'link', 'list', 'ln', 'ls', 'outdated', 'pack', 'prune', 'publish', 'rb', 'rebuild', 'remove', 'rm', 'root', 'run', 'start', 'store', 't', 'test', 'unlink', 'up', 'update')
         }
+        break
       }
       'add' {
         if ($wordToComplete.StartsWith('-')) {
           @('-E', '--save-exact', '--save-workspace-protocol', '--no-save-exact', '--no-save-workspace-protocol', '--aggregate-output', '--workspace-concurrency', '--reporter', '-C', '--dir', '-g', '--global', '--global-dir', '-h', '--help', '--ignore-scripts', '--loglevel', '--offline', '--prefer-offline', '-r', '--recursive', '-D', '--save-dev', '-O', '--save-optional', '--save-peer', '-P', '--save-prod', '--store-dir', '--stream', '--use-stderr', '--virtual-store-dir', '--workspace', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--filter', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern', '--test-pattern')
         }
+        break
       }
       'audit' {
         @('--audit-level', '-D', '--dev', '--fix', '--ignore-registry-errors', '--json', '--no-optional', '-P', '--prod')
+        break
       }
       'exec' {
         if ($wordToComplete.StartsWith('-')) {
           @('--color', '--no-color', '--aggregate-output', '--parallel', '--reporter', '-C', '--dir', '-h', '--help', '--loglevel', '--no-reporter-hide-prefix', '--parallel', '-r', '--recursive', '--report-summary', '--resume-from', '-c', '--shell-mode', '--stream', '--use-stderr', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--filter', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern', '--test-pattern')
         }
-        else {
+        break
+      }
+      '#exec' {
+        for ($i = 0; $i -lt $commandAst.CommandElements.Count; $i++) {
+          if ($commandAst.CommandElements[$i].ToString().Contains('exec')) {
+            $i++
+            break
+          }
+        }
+        if ($commandAst.CommandElements.Count -eq $i -or
+          ($commandAst.CommandElements.Count -eq ($i + 1) -and
+          $cursorPosition -le $commandAst.CommandElements[$i].Extent.EndOffset)) {
           (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
+        }
+        else {
+          $astList = $commandAst.CommandElements | Select-Object -Skip 2
+          $commandName = Split-Path -LeafBase $astList[0].Value
+          $cursorPosition -= $astList[0].Extent.StartOffset
+          $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
         }
       }
       'licenses' {

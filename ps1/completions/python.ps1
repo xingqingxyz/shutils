@@ -11,12 +11,12 @@ Register-ArgumentCompleter -Native -CommandName python, py -ScriptBlock {
 
   @(switch ($prev) {
       '-m' {
-        pip list | Select-Object -Skip 2 | ForEach-Object { $_.Split(' ')[0] }
+        pip list | Select-Object -Skip 2 | ForEach-Object { $_.Split(' ',2)[0] }
         break
       }
       Default {
         if ($wordToComplete.StartsWith('-')) {
-          if (!$commandAst.CommandElements[0].Value.StartsWith('python')) {
+          if (!$commandAst.GetCommandName().StartsWith('python')) {
             @('-0', '-2', '-3', '-V:', '--list', '-0p', '--list-paths')
           }
           @('--check-hash-based-pycs', '--help-env', '--help-xoptions', '--help-all', '-X', '-b', '-B', '-c', '-d', '-E', '-h', '-i', '-I', '-m', '-O', '-OO', '-P', '-q', '-s', '-S', '-u', '-v', '-V', '-W', '-x', '-X', '--check-hash-based-pycs', '--help-env', '--help-xoptions', '--help-all')

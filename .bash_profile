@@ -43,6 +43,7 @@ $HOME/.local/bin
 $HOME/.bun/bin
 $PNPM_HOME
 $HOME/.cargo/bin
+$HOME/.deno/bin
 $HOME/.local/share/JetBrains/Toolbox/scripts
 $HOME/.local/share/dscV3
 $SHUTILS_ROOT/scripts

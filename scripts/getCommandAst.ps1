@@ -1,4 +1,3 @@
-using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
 param(
@@ -6,5 +5,10 @@ param(
   [string]
   $InputObject
 )
-$tuple = [CommandCompletion]::MapStringInputToParsedInput($InputObject, $InputObject.Length)
-$tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
+[Token[]]$tokens = $null
+[ParseError[]]$errors = $null
+[ScriptBlockAst]$scriptBlockAst = [Parser]::ParseInput($InputObject, [ref]$tokens, [ref]$errors)
+[PipelineAst]$pipeLineAst = $scriptBlockAst.EndBlock.Statements[0]
+[CommandAst]$commandAst = $pipeLineAst.PipelineElements[0]
+$commandAst.GetCommandName()
+$commandAst.CommandElements.ForEach{ $_.ToString() }

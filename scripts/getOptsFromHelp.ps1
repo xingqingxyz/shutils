@@ -1,23 +1,18 @@
-param([switch]$bareWord)
+function o {
+  [regex]$reOption = [regex]::new('--[\w:=-]+')
+  [string[]]$options = Get-Content test.log | ForEach-Object { $reOption.Match($_).Value } | Where-Object Length -GT 0
+  $optionsSet = [System.Collections.Generic.HashSet[string]]::new($options)
+  $optionsSet | Join-String -OutputPrefix "'" -OutputSuffix "'" -Separator "', '" -OutVariable GLobal:a
+}
 
-[regex]$reOpts = [regex]::new('^\s*(-\w+)?\W+(--[\w-]+)')
-$input | Tee-Object .\help.log | ForEach-Object { $reOpts.Match($_).Groups.Values | Select-Object -Skip 1 } | & {
-  begin { $list = @() }
-  process {
-    if (!$_.Success) { return }
-    $list += if ($bareWord) {
-      $_.Value
-    }
-    else {
-      "[CompletionResult]::new('$_', '$_', [CompletionResultType]::ParameterName, 'unknown')"
-    }
-  }
-  end {
-    if ($bareWord) {
-      $list | Join-String -Separator ', ' -SingleQuote
-    }
-    else {
-      $list
-    }
-  }
-} | Set-Clipboard
+function jo {
+  $input | Join-String -OutputPrefix "'" -OutputSuffix "'," -Separator "', '" -OutVariable GLobal:b
+}
+
+function a {
+  $a
+}
+
+function b {
+  $b
+}

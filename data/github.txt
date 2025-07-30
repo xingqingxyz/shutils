@@ -4,3 +4,4 @@ aria2c https://github.com/PowerShell/DSC/releases/download/v3.1.0/DSC-3.1.0-x86_
 aria2c https://github.com/junegunn/fzf/releases/download/0.63.0/fzf-0.63.0-linux_amd64.tar.gz
 curl -f https://zed.dev/install.sh | sh
 curl -fsSL https://bun.sh/install | bash
+curl -fsSL https://deno.land/install.sh | sh

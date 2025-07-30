@@ -27,18 +27,27 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
   }
   $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
-  $commands[0] = switch ($commands[0]) {
-    'c' { 'config'; break }
-    'ln' { 'link'; break }
-    { @('add', 'i', 'in', 'ins', 'inst', 'insta', 'instal', 'isnt', 'isnta', 'isntal', 'isntall', 'up', 'update', 'upgrade').Contains($_) } { 'install'; break }
-    { @('rm', 'r', 'un', 'unlink', 'remove').Contains($_) } { 'uninstall'; break }
-    Default { $_ }
+  if ($commands.Length) {
+    $commands[0] = switch ($commands[0]) {
+      'c' { 'config'; break }
+      'ln' { 'link'; break }
+      { @('add', 'i', 'in', 'ins', 'inst', 'insta', 'instal', 'isnt', 'isnta', 'isntal', 'isntall', 'up', 'update', 'upgrade').Contains($_) ? $_ : '' } { 'install'; break }
+      { @('rm', 'r', 'un', 'unlink', 'remove').Contains($_) ? $_ : '' } { 'uninstall'; break }
+      default { $_ }
+    }
   }
   switch ($commands[0]) {
     'config' {
-      $commands[1] = switch ($commands[1]) {
-        'ls' { 'list'; break }
-        Default { $_ }
+      if ($commands.Length -gt 1) {
+        $commands[1] = switch ($commands[1]) {
+          'ls' { 'list'; break }
+          default { $_ }
+        }
+      }
+    }
+    'exec' {
+      if ($commands.Length -gt 1) {
+        $commands = @('#exec')
       }
     }
   }
@@ -52,6 +61,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
         else {
           @('access', 'adduser', 'audit', 'bugs', 'cache', 'ci', 'completion', 'config', 'dedupe', 'deprecate', 'diff', 'dist-tag', 'docs', 'doctor', 'edit', 'exec', 'explain', 'explore', 'find-dupes', 'fund', 'get', 'help-search', 'help,', 'hook', 'init', 'install', 'install-ci-test', 'install-test', 'link', 'll', 'login', 'logout', 'ls', 'org', 'outdated', 'owner', 'pack', 'ping', 'pkg', 'prefix', 'profile', 'prune', 'publish', 'query', 'rebuild', 'repo', 'restart', 'root', 'run-script', 'sbom,', 'search', 'set', 'shrinkwrap', 'star', 'stars', 'start', 'stop', 'team', 'test', 'token', 'uninstall', 'unpublish', 'unstar', 'update', 'version,', 'view', 'whoami')
         }
+        break
       }
       'install' {
         if ($wordToComplete.StartsWith('-')) {
@@ -70,7 +80,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
             '-E' { '--save-exact'; break }
             '-E' { '--save-bundle'; break }
             '--include' { '--omit'; break }
-            Default { $prev }
+            default { $prev }
           }
           switch ($prev) {
             '--cpu' { @('arm', 'arm64', 'ia32', 'loong64', 'mips', 'mipsel', 'ppc', 'ppc64', 'riscv64', 's390', 's390x', 'x64'); break }
@@ -139,7 +149,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
             '-w' { '--workspace'; break }
             '--ws' { '--workspaces'; break }
             '-y' { '--yes'; break }
-            Default { $prev }
+            default { $prev }
           }
           switch ($prev) {
             '--loglevel' { @('silent', 'warn', 'error', 'info', 'verbose', 'silly') }
@@ -151,42 +161,71 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
       'config;get' {
         if ($wordToComplete.StartsWith('-')) {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
-          break
         }
-        npmConfigKeys
+        else {
+          npmConfigKeys
+        }
+        break
       }
       'config;set' {
         if ($wordToComplete.StartsWith('-')) {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
-          break
         }
         elseif ($wordToComplete.Contains('=')) {
           ''
-          break
         }
-        npmConfigKeys
+        else {
+          npmConfigKeys
+        }
+        break
       }
       'config;delete' {
         if ($wordToComplete.StartsWith('-')) {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
-          break
         }
-        npmConfigKeys
+        else {
+          npmConfigKeys
+        }
+        break
       }
       'config;list' {
         if ($wordToComplete.StartsWith('-')) {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
         }
+        break
       }
       'config;edit' {
         if ($wordToComplete.StartsWith('-')) {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
         }
+        break
       }
       'config;fix' {
         if ($wordToComplete.StartsWith('-')) {
           @('-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor')
         }
+        break
+      }
+      '#exec' {
+        for ($i = 0; $i -lt $commandAst.CommandElements.Count; $i++) {
+          if ($commandAst.CommandElements[$i].ToString().Contains('exec')) {
+            $i++
+            break
+          }
+        }
+        if ($commandAst.CommandElements.Count -eq $i -or
+          ($commandAst.CommandElements.Count -eq ($i + 1) -and
+          $cursorPosition -le $commandAst.CommandElements[$i].Extent.EndOffset)) {
+          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
+        }
+        else {
+          $astList = $commandAst.CommandElements | Select-Object -Skip $i
+          $commandName = Split-Path -LeafBase $astList[0].Value
+          $cursorPosition -= $astList[0].Extent.StartOffset
+          $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
+        }
+        break
       }
     }).Where{ $_ -like "$wordToComplete*" }
 }
