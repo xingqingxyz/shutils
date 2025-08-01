@@ -8,16 +8,14 @@ param (
   $ScriptBlock
 )
 
-$ErrorActionPreference = 'Stop'
-$PSNativeCommandUseErrorActionPreference = $true
 Start-Sleep -Duration ([timespan]::Parse($Delay))
-& $ScriptBlock
-$status = $?
+$PSNativeCommandUseErrorActionPreference = $true
+Invoke-Command $ScriptBlock -ErrorVariable err
 Add-Type -AssemblyName System.Windows.Forms
 $notify = [System.Windows.Forms.NotifyIcon]::new()
-$notify.BalloonTipIcon = $status ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]::Warning
+$notify.BalloonTipIcon = !$err ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]::Warning
 $notify.BalloonTipText = "code: $ScriptBlock"
-$notify.BalloonTipTitle = $status ? 'completed' : 'failed'
+$notify.BalloonTipTitle = !$err ? 'completed' : 'failed'
 $notify.Icon = [System.Drawing.SystemIcons]::Application
 $notify.Text = 'delayCheck'
 $notify.Visible = $true

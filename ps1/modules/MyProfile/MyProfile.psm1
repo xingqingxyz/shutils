@@ -84,10 +84,10 @@ function Invoke-Npx {
     return
   }
   $npx, $arguments = switch ($true) {
-    (Test-Path bun.lock?) { 'bun', 'x' + $args; break }
-    (Test-Path pnpm-lock.yaml) { 'pnpm', 'dlx' + $args; break }
-    (Test-Path yarn.lock) { 'yarn', 'dlx' + $args; break }
-    default { 'npm', 'exec' + $args; break }
+    (Test-Path bun.lock?) { @('bun', 'x') + $args; break }
+    (Test-Path pnpm-lock.yaml) { @('pnpm', 'dlx') + $args; break }
+    (Test-Path yarn.lock) { @('yarn', 'dlx') + $args; break }
+    default { @('npm', 'exec') + $args; break }
   }
   $npx = (Get-Command $npx -Type Application -TotalCount 1 -ea Stop).Path
   if ($MyInvocation.ExpectingInput) {
