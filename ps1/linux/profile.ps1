@@ -5,14 +5,14 @@ function Invoke-ExecutableAlias {
   }
   Write-Debug "/usr/bin/env -- $($_executableAliasMap.$command) $args"
   if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env -- $_executableAliasMap.$command @args
+    $input | /usr/bin/env -- $_executableAliasMap.$command $args
   }
   else {
-    /usr/bin/env -- $_executableAliasMap.$command @args
+    /usr/bin/env -- $_executableAliasMap.$command $args
   }
 }
 
-$_executableAliasMap = @{
+Set-Variable -Option ReadOnly _executableAliasMap @{
   egrep   = 'egrep', '--color=auto'
   grep    = 'grep', '--color=auto'
   xzegrep = 'xzegrep', '--color=auto'
@@ -26,9 +26,7 @@ $_executableAliasMap = @{
   tree    = 'tree', '-C', '--hyperlink', '--gitignore'
 }
 if ($env:TERM_PROGRAM -notlike 'vscode*') {
-  $_executableAliasMap += @{
-    fd = 'fd', '--hyperlink=auto'
-    rg = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=file://${wslprefix}${path}' : '--hyperlink-format=default')
-  }
+  $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
+  $_executableAliasMap.rg = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=file://${wslprefix}${path}' : '--hyperlink-format=default')
 }
 $_executableAliasMap.Keys.ForEach{ Set-Alias $_ Invoke-ExecutableAlias }

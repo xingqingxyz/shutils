@@ -53,16 +53,7 @@ _fzf_compgen_alias() {
 }
 
 _fzf_compgen_command() {
-  compgen -abckv -A function -- "$2" | sort -u
-}
-
-_fzf_compgen_proc() {
-  ps -eo user,pid,ppid,start,time,command
-}
-
-_fzf_compgen_proc_post() {
-  COMPREPLY=("${COMPREPLY[@]#* }")
-  COMPREPLY=("${COMPREPLY[*]%% *}")
+  compgen -abckv -A function -- "${2%"${FZF_COMP_TRIGGER:-*}"}" | sort -u
 }
 
 _fzf_complete() {
@@ -104,14 +95,13 @@ _fzf_completion_loader() {
 
 _fzf_setup_completion() {
   local -A commands=(
-    [command]='vw sudo npx pnpx vlx vlrx bunx env'
+    [command]='vw sudo npx pnpx env'
     [dir]='cd pushd rmdir mkdir tree z'
-    [file]='vim vi nvim nano code bat less grep cat cp rm'
+    [file]='vim vi code bat less grep cat cp rm'
     [alias]='alias unalias'
     [variable]='export unset let declare readonly local'
     [host]='telnet'
     [ssh]='ssh'
-    [proc]='kill'
   )
   declare -gA FZF_COMP_CMDTYPE _FZF_COMP_BACKUP FZF_COMP_OPTS=(
     [command]='-m'
@@ -121,7 +111,6 @@ _fzf_setup_completion() {
     [variable]='-m'
     [ssh]='+m'
     [host]='+m'
-    [proc]='-m --header-lines=1 --preview="echo {}" --preview-window=down:3:wrap --min-height=15'
   ) FZF_COMP_BASHOPTS=(
     [command]='-o bashdefault -o default'
     [dir]='-o bashdefault -o default'
@@ -130,7 +119,6 @@ _fzf_setup_completion() {
     [variable]='-o bashdefault -o default -o nospace'
     [ssh]='-o bashdefault -o default'
     [host]='-o bashdefault -o default'
-    [proc]='-o bashdefault -o default'
   )
   eval "FZF_COMP_CMDTYPE=($(for t in "${!commands[@]}"; do
     printf "[%s]=$t " ${commands[$t]}

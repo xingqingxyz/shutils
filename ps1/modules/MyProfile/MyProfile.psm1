@@ -18,8 +18,9 @@ function vw {
     [string]
     $Command = 'vw'
   )
+  $extraArgs = $args[1..($args.Length - 1)]
   if ($MyInvocation.ExpectingInput) {
-    return $input | bat -plhelp
+    return $input | bat -plhelp $extraArgs
   }
   $info = Get-Command $Command -TotalCount 1
   if ($info.CommandType -eq 'Alias') {
@@ -27,30 +28,30 @@ function vw {
   }
   switch ([string]$info.CommandType) {
     Cmdlet {
-      return help $Command -Category Cmdlet
+      return help $Command -Category Cmdlet @extraArgs
     }
     Configuration {
       return $Command
     }
     { 'Filter,Function'.Contains($_) } {
-      return $info.Definition | bat -plps1
+      return $info.Definition | bat -plps1 $extraArgs
     }
     { 'Application,ExternalScript'.Contains($_) } {
-      return bat -p $info.Path
+      return bat $info.Path -p $extraArgs
     }
   }
 }
 
 function Invoke-Less {
   if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
-    return $input | bat -plman
+    return $input | bat -plman $args
   }
   $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
   if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd @args
+    $input | & $cmd $args
   }
   else {
-    & $cmd @args
+    & $cmd $args
   }
 }
 
@@ -66,35 +67,31 @@ function Invoke-Npm {
   }
   $npm = (Get-Command $npm -Type Application -TotalCount 1 -ea Stop).Path
   if ($MyInvocation.ExpectingInput) {
-    $input | & $npm @args
+    $input | & $npm $args
   }
   else {
-    & $npm @args
+    & $npm $args
   }
 }
 
 function Invoke-Npx {
-  if (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -EQ $args[0]) {
-    if ($MyInvocation.ExpectingInput) {
-      $input | & "node_modules/.bin/$($args[0])" $args[1..($args.Length)]
+  $cmd, $ags = $args
+  $cmd = (Get-Command ./node_modules/.bin/$cmd -Type Application -TotalCount 1 -ea Ignore).Path
+  if (!$cmd) {
+    $cmd, $ags = switch ($true) {
+      (Test-Path pnpm-lock.yaml) { @('pnpm', 'dlx', '--') + $args; break }
+      (Test-Path yarn.lock) { @('yarn', 'dlx', '--') + $args; break }
+      (Test-Path bun.lock?) { @('bun', 'x') + $args; break }
+      default { @('npx') + $args; break }
     }
-    else {
-      & "node_modules/.bin/$($args[0])" $args[1..($args.Length)]
-    }
-    return
+    $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Path
   }
-  $npx, $arguments = switch ($true) {
-    (Test-Path bun.lock?) { @('bun', 'x') + $args; break }
-    (Test-Path pnpm-lock.yaml) { @('pnpm', 'dlx') + $args; break }
-    (Test-Path yarn.lock) { @('yarn', 'dlx') + $args; break }
-    default { @('npm', 'exec') + $args; break }
-  }
-  $npx = (Get-Command $npx -Type Application -TotalCount 1 -ea Stop).Path
+  Write-Debug "$cmd $ags"
   if ($MyInvocation.ExpectingInput) {
-    $input | & $npx @arguments
+    $input | & $cmd $ags
   }
   else {
-    & $npx @arguments
+    & $cmd $ags
   }
 }
 
@@ -132,10 +129,10 @@ if ($sudoExe) {
     $ags = $extraArgs + $args
     Write-Debug "$sudoExe -- $ags"
     if ($InputObject) {
-      $InputObject | & $sudoExe -- @ags
+      $InputObject | & $sudoExe -- $ags
     }
     else {
-      & $sudoExe -- @ags
+      & $sudoExe -- $ags
     }
   }
 }

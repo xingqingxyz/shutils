@@ -22,8 +22,9 @@ function edc {
     [string]
     $Command = 'edc'
   )
+  $extraArgs = $args[1..($args.Length - 1)]
   if ($MyInvocation.ExpectingInput) {
-    return $input | edit
+    return $input | edit $extraArgs
   }
   $info = Get-Command $Command -TotalCount 1
   if ($info.CommandType -eq 'Alias') {
@@ -31,18 +32,18 @@ function edc {
   }
   if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
     if ($info.Module) {
-      edit $info.Module.Path
+      edit $info.Module.Path $extraArgs
     }
     else {
-      vw $info.Name
+      vw $info.Name $extraArgs
     }
   }
   elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
-    edit $info.Path
+    edit $info.Path $extraArgs
   }
   elseif ($info.CommandType -eq 'Application') {
     if (shouldEdit $info.Path) {
-      edit $info.Path
+      edit $info.Path $extraArgs
     }
   }
 }
