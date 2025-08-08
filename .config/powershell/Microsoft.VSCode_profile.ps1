@@ -12,4 +12,5 @@ else {
 
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
+$VerbosePreference = 'Continue'
 $DebugPreference = 'Continue'

@@ -58,41 +58,6 @@ Register-ArgumentCompleter -Native -CommandName go -ScriptBlock {
         [CompletionResult]::new('vcs', 'vcs', [CompletionResultType]::ParameterValue, 'controlling version control with GOVCS')
       }
       'build' {
-        [CompletionResult]::new('re', 'e', [CompletionResultType]::ParameterValue, @'
-        usage: go build [-o output] [build flags] [packages]
-
-        Build compiles the packages named by the import paths,
-        along with their dependencies, but it does not install the results.
-
-        If the arguments to build are a list of .go files from a single directory,
-        build treats them as a list of source files specifying a single package.
-
-        When compiling packages, build ignores files that end in '_test.go'.
-
-        When compiling a single main package, build writes the resulting
-        executable to an output file named after the last non-major-version
-        component of the package import path. The '.exe' suffix is added
-        when writing a Windows executable.
-        So 'go build example/sam' writes 'sam' or 'sam.exe'.
-        'go build example.com/foo/v2' writes 'foo' or 'foo.exe', not 'v2.exe'.
-
-        When compiling a package from a list of .go files, the executable
-        is named after the first source file.
-        'go build ed.go rx.go' writes 'ed' or 'ed.exe'.
-
-        When compiling multiple packages or a single non-main package,
-        build compiles the packages but discards the resulting object,
-        serving only as a check that the packages can be built.
-
-        The -o flag forces build to write the resulting executable or object
-        to the named output file or directory, instead of the default behavior described
-        in the last two paragraphs. If the named output is an existing directory or
-        ends with a slash or backslash, then any resulting executables
-        will be written to that directory.
-
-        The build flags are shared by the build, clean, get, install, list, run,
-        and test commands:
-'@)
         [CompletionResult]::new('-C', 'C', [CompletionResultType]::ParameterValue, 'Change to dir before running the command.
         Any files named on the command line are interpreted after
         changing directories.

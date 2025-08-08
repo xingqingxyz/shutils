@@ -1,6 +1,6 @@
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName code -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName code, code-insiders -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
@@ -42,7 +42,7 @@ Register-ArgumentCompleter -Native -CommandName code -ScriptBlock {
             code --list-extensions
             break
           }
-          Default {
+          default {
             if ($commandAst.CommandElements.Count -le 2) {
               @('tunnel', 'serve-web')
             }

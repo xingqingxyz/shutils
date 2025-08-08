@@ -20,11 +20,23 @@ function edc {
         }
       })]
     [string]
-    $Command = 'edc'
+    $Command = 'edc',
+    [ArgumentCompleter({
+        param(
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+      })]
+    [string]
+    $Editor = $env:EDITOR,
+    [Parameter(ValueFromRemainingArguments)]
+    [string[]]
+    $ExtraArgs
   )
-  $extraArgs = $args[1..($args.Length - 1)]
   if ($MyInvocation.ExpectingInput) {
-    return $input | edit $extraArgs
+    return $input | & $Editor $ExtraArgs
   }
   $info = Get-Command $Command -TotalCount 1
   if ($info.CommandType -eq 'Alias') {
@@ -32,18 +44,21 @@ function edc {
   }
   if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
     if ($info.Module) {
-      edit $info.Module.Path $extraArgs
+      & $Editor $info.Module.Path $ExtraArgs
     }
     else {
-      vw $info.Name $extraArgs
+      vw $info.Name $ExtraArgs
     }
   }
   elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
-    edit $info.Path $extraArgs
+    & $Editor $info.Path $ExtraArgs
   }
   elseif ($info.CommandType -eq 'Application') {
     if (shouldEdit $info.Path) {
-      edit $info.Path $extraArgs
+      & $Editor $info.Path $ExtraArgs
+    }
+    else {
+      Write-Warning "skip to edit binary $($info.Path)"
     }
   }
 }

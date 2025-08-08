@@ -8,6 +8,12 @@ Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardWord
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
 Set-PSReadLineKeyHandler -Chord Ctrl+Z -Function Redo
 # custom
+Set-PSReadLineKeyHandler -Chord Ctrl+o -Description 'Comment inputs and accept' -ScriptBlock {
+  [string]$text = $null
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, ($text.Split("`n").ForEach{ "# $_" } -join "`n"))
+  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+}
 Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -ScriptBlock {
   [int]$cursor = 0
   [System.Management.Automation.Language.Token[]]$tokens = $null

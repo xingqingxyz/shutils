@@ -44,7 +44,7 @@ function vw {
 
 function Invoke-Less {
   if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
-    return $input | bat -plman $args
+    return $input | bat -plman
   }
   $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
   if ($MyInvocation.ExpectingInput) {
@@ -95,82 +95,54 @@ function Invoke-Npx {
   }
 }
 
-#region sudo
-$sudoExe, $pwshExe = (Get-Command sudo, pwsh -CommandType Application -TotalCount 1 -ea Ignore).Path
-if ($sudoExe) {
-  function Invoke-Sudo {
-    [string[]]$extraArgs = if ($args[0] -is [scriptblock]) {
-      $args[0] = $args[0].ToString()
-      @($pwshExe, '-nop', '-cwa')
+$pwshExe, $sudoExe = (Get-Command pwsh, sudo -CommandType Application -TotalCount 1 -ea Ignore).Path
+function Invoke-Sudo {
+  [string[]]$extraArgs = if ($args[0] -is [scriptblock]) {
+    $args[0] = $args[0].ToString()
+    @($pwshExe, '-nop', '-cwa')
+  }
+  else {
+    $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
+    if ($info.CommandType -eq 'Alias') {
+      $info = $info.ResolvedCommand
     }
-    else {
-      $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
-      if ($info.CommandType -eq 'Alias') {
-        $info = $info.ResolvedCommand
-      }
-      if ($null -eq $info) {
+    if ($null -eq $info) {
+      return
+    }
+    elseif ($info.CommandType -eq 'Application') {
+    }
+    elseif ('Function,Filter'.Contains([string]$info.CommandType)) {
+      if ($null -eq $info.Module) {
         return
       }
-      elseif ($info.CommandType -eq 'Application') {
-      }
-      elseif ('Function,Filter'.Contains([string]$info.CommandType)) {
-        if ($null -eq $info.Module) {
-          return
-        }
-        @($pwshExe, '-nop')
-      }
-      elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
-        @($pwshExe, '-nop')
-      }
-      else {
-        @($pwshExe, '-nop', '-c')
-      }
+      @($pwshExe, '-nop')
     }
+    elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
+      @($pwshExe, '-nop')
+    }
+    else {
+      @($pwshExe, '-nop', '-c')
+    }
+  }
+  if ($sudoExe) {
     $ags = $extraArgs + $args
     Write-Debug "$sudoExe -- $ags"
-    if ($InputObject) {
-      $InputObject | & $sudoExe -- $ags
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $sudoExe -- $ags
     }
     else {
       & $sudoExe -- $ags
     }
   }
-}
-elseif ($IsWindows) {
-  function Invoke-Sudo {
-    [string[]]$extraArgs = if ($args[0] -is [scriptblock]) {
-      $args[0] = $args[0].ToString()
-      @($pwshExe, '-nop', '-cwa')
+  else {
+    $cmd, $ags = $extraArgs + $args
+    Write-Debug "$cmd $ags"
+    if ($MyInvocation.ExpectingInput) {
+      Write-Warning 'ignored stdin'
     }
-    else {
-      $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
-      if ($info.CommandType -eq 'Alias') {
-        $info = $info.ResolvedCommand
-      }
-      if ($null -eq $info) {
-        return
-      }
-      elseif ($info.CommandType -eq 'Application') {
-      }
-      elseif ('Function,Filter'.Contains([string]$info.CommandType)) {
-        if ($null -eq $info.Module) {
-          return
-        }
-        @($pwshExe, '-nop')
-      }
-      elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
-        @($pwshExe, '-nop')
-      }
-      else {
-        @($pwshExe, '-nop', '-c')
-      }
-    }
-    $command, $ags = $extraArgs + $args
-    Write-Debug "$command $ags"
-    Start-Process -FilePath $command -ArgumentList $ags -Verb RunAs -WorkingDirectory $WorkingDirectory
+    Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory $PWD.Path
   }
 }
-#endregion
 
 function Invoke-Which {
   param(
@@ -180,5 +152,5 @@ function Invoke-Which {
     [switch]
     $All
   )
-  (Get-Item (Get-Command -Type Application -TotalCount ($All ? 9999 : 1) -ea Stop $Name).Path).ResolvedTarget
+  (Get-Item (Get-Command $Name -Type Application -TotalCount ($All ? 9999 : 1) -ea Stop).Path).ResolvedTarget
 }
