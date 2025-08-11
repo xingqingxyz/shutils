@@ -26,18 +26,13 @@ function Register-ArgumentCompleter {
     }
     else {
       $CommandName.ForEach{ $_completionFuncMap.$_ = $ScriptBlock }
+      $ScriptBlock
     }
   }
 }
 
 function Get-ArgumentCompleter ([string]$CommandName) {
-  if (!$_completionFuncMap.Contains($CommandName)) {
-    try {
-      . ${env:SHUTILS_ROOT}/ps1/completions/$CommandName.ps1
-    }
-    catch { }
-  }
-  $_completionFuncMap.$CommandName ?? {}
+  $_completionFuncMap.$CommandName ?? (. $PSScriptRoot/completions/$CommandName.ps1)
 }
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}

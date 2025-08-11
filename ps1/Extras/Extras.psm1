@@ -1,12 +1,10 @@
-<#
-.SYNOPSIS
-Edit command source.
- #>
-function edc {
+function Get-TypeMember {
+  [CmdletBinding()]
   param(
+    [Parameter(Mandatory, ValueFromPipeline)]
+    [type]
+    $InputObject,
     [ArgumentCompleter({
-        # note: using namespace not effects, this executed likes background job
-        [OutputType([System.Management.Automation.CompletionResult])]
         param(
           [string]$CommandName,
           [string]$ParameterName,
@@ -14,75 +12,22 @@ function edc {
           [System.Management.Automation.Language.CommandAst]$CommandAst,
           [System.Collections.IDictionary]$FakeBoundParameters
         )
-        $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
-        if ($results.Length) { $results } else {
-          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
-        }
+        (([type]$FakeBoundParameters.InputObject).GetMembers() | Where-Object Name -Like "$WordToComplete*").Name
       })]
-    [string]
-    $Command = 'edc',
-    [ArgumentCompleter({
-        param(
-          [string]$CommandName,
-          [string]$ParameterName,
-          [string]$WordToComplete
-        )
-        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
-      })]
-    [string]
-    $Editor = $env:EDITOR,
-    [Parameter(ValueFromRemainingArguments)]
+    [Parameter(Position = 0)]
     [string[]]
-    $ExtraArgs
+    $Name = '*',
+    [Alias('Type')]
+    [Parameter()]
+    [System.Reflection.MemberTypes]
+    $MemberType = 'All'
   )
-  if ($MyInvocation.ExpectingInput) {
-    return $input | & $Editor $ExtraArgs
-  }
-  $info = Get-Command $Command -TotalCount 1
-  if ($info.CommandType -eq 'Alias') {
-    $info = $info.ResolvedCommand
-  }
-  if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
-    if ($info.Module) {
-      & $Editor $info.Module.Path $ExtraArgs
-    }
-    else {
-      vw $info.Name $ExtraArgs
-    }
-  }
-  elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
-    & $Editor $info.Path $ExtraArgs
-  }
-  elseif ($info.CommandType -eq 'Application') {
-    if (shouldEdit $info.Path) {
-      & $Editor $info.Path $ExtraArgs
-    }
-    else {
-      Write-Warning "skip to edit binary $($info.Path)"
-    }
-  }
+  $InputObject.GetMembers().Where{
+    $MemberType.HasFlag($_.MemberType) -and $_.Name -like $Name
+  } | Select-Object Name, MemberType, @{Name = 'Declaration'; Expression = { $_.ToString() } }
 }
 
-function shouldEdit ([string]$LiteralPath) {
-  end {
-    $item = Get-Item -LiteralPath $LiteralPath -Force
-    $s = $item.OpenRead()
-    if ($s.Length -gt 0x300000) {
-      return $false # gt 3M
-    }
-    $buffer = [byte[]]::new(0xff)
-    $Len = $s.Read($buffer, 0, 0xff)
-    for ($i = 0; $i -lt $Len; $i++) {
-      if (!$buffer[$i]) {
-        return $false
-      }
-    }
-    return $true
-  }
-  clean {
-    $s.Close()
-  }
-}
+Set-Alias gtm Get-TypeMember
 
 function yq {
   [CmdletBinding()]
@@ -296,7 +241,7 @@ function Set-Region {
 function Enable-EnvironmentFile {
   param(
     [string]
-    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation + '/.env'
+    $Path = '.env'
   )
   Get-Content $Path | ForEach-Object {
     $name, $value = $_.Split('=', 2)
@@ -369,6 +314,8 @@ function Invoke-CodeFormatter {
     & $parserWriteCommandMap.(getParserName $_) $_.FullName
   }
 }
+
+Set-Alias icf Invoke-CodeFormatter
 
 function pbat {
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {

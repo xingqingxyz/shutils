@@ -1,7 +1,10 @@
+<#
+.SYNOPSIS
+View command source.
+ #>
 function vw {
   param(
     [ArgumentCompleter({
-        # note: using namespace not effects, this executed likes background job
         [OutputType([System.Management.Automation.CompletionResult])]
         param(
           [string]$CommandName,
@@ -10,6 +13,7 @@ function vw {
           [System.Management.Automation.Language.CommandAst]$CommandAst,
           [System.Collections.IDictionary]$FakeBoundParameters
         )
+        # note: using namespace not effects, this executed likes background job
         $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
         if ($results.Length) { $results } else {
           [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
@@ -39,6 +43,103 @@ function vw {
     { 'Application,ExternalScript'.Contains($_) } {
       return bat $info.Path -p $extraArgs
     }
+  }
+}
+
+<#
+.SYNOPSIS
+Edit command source.
+ #>
+function edc {
+  [CmdletBinding()]
+  param(
+    [ArgumentCompleter({
+        [OutputType([System.Management.Automation.CompletionResult])]
+        param(
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete,
+          [System.Management.Automation.Language.CommandAst]$CommandAst,
+          [System.Collections.IDictionary]$FakeBoundParameters
+        )
+        # note: using namespace not effects, this executed likes background job
+        $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
+        if ($results.Length) { $results } else {
+          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+        }
+      })]
+    [Alias('FullName')]
+    [Parameter(Position = 0, ValueFromPipelineByPropertyName)]
+    [string]
+    $Path,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $ExtraArgs,
+    [ArgumentCompleter({
+        param(
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+      })]
+    [Parameter()]
+    [string]
+    $Editor = $env:EDITOR,
+    [Parameter(ValueFromPipeline)]
+    [string]
+    $InputObject
+  )
+  if ($InputObject) {
+    Write-Debug "| $Editor $Path $ExtraArgs"
+    return $InputObject | & $Editor $Path $ExtraArgs
+  }
+  $info = Get-Command $Path -TotalCount 1 -ea Stop
+  if ($info.CommandType -eq 'Alias') {
+    $info = $info.ResolvedCommand
+  }
+  if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
+    if ($info.Module) {
+      Write-Debug "$Editor $($info.Module.Path) $ExtraArgs"
+      & $Editor $info.Module.Path $ExtraArgs
+    }
+    else {
+      vw $info.Name $ExtraArgs
+    }
+  }
+  elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
+    Write-Debug "$Editor $($info.Path) $ExtraArgs"
+    & $Editor $info.Path $ExtraArgs
+  }
+  elseif ($info.CommandType -eq 'Application') {
+    if (shouldEdit $info.Path) {
+      Write-Debug "$Editor $($info.Path) $ExtraArgs"
+      & $Editor $info.Path $ExtraArgs
+    }
+    else {
+      Write-Warning "skip to edit binary $($info.Path)"
+    }
+  }
+}
+
+function shouldEdit ([string]$LiteralPath) {
+  end {
+    $item = Get-Item -LiteralPath $LiteralPath -Force
+    $s = $item.OpenRead()
+    if ($s.Length -gt 0x300000) {
+      return $false # gt 3M
+    }
+    $buffer = [byte[]]::new(0xff)
+    $Len = $s.Read($buffer, 0, 0xff)
+    for ($i = 0; $i -lt $Len; $i++) {
+      if (!$buffer[$i]) {
+        return $false
+      }
+    }
+    return $true
+  }
+  clean {
+    $s.Close()
   }
 }
 

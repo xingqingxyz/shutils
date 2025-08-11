@@ -28,6 +28,7 @@ size          = 12
 
 [window]
 resize_increments = true
+decorations_theme_variant = "Dark"
 
 [window.dimensions]
 columns = 90

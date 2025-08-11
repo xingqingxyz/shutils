@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param (
-  [Parameter(Mandatory, Position = 0)]
+  [Parameter(Position = 0)]
   [string[]]
-  $Path
+  $Path = '/usr/share/code/resources/app/extensions/theme-defaults/themes/dark_modern.json'
 )
 
 function hex([string]$Color) {

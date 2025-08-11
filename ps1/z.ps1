@@ -112,7 +112,7 @@ function Invoke-Z {
 }
 
 Set-Alias z Invoke-Z
-Set-Variable -Option ReadOnly _z ([pscustomobject]@{
+Set-Variable -Option ReadOnly -Force _z ([pscustomobject]@{
     config   = [pscustomobject]@{
       dataFile        = "$HOME/.z"
       dataSeperator   = '|'

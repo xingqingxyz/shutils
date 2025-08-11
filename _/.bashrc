@@ -6,7 +6,9 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # shutils
-eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
+if [[ $- = *i* ]]; then
+  eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
+fi
 
 # shutils options
 FZF_CTRL_T_OPTS='--preview="bat -p --color=always {}"'
