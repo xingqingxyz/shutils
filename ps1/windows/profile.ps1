@@ -24,9 +24,7 @@ $_executableAliasMap = @{
   grep = 'grep', '--color=auto'
 }
 if ($env:TERM_PROGRAM -notlike 'vscode*') {
-  $_executableAliasMap += @{
-    fd = 'fd', '--hyperlink=auto'
-    rg = 'rg', '--hyperlink-format=default'
-  }
+  $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
+  $_executableAliasMap.rg = 'rg', '--hyperlink-format=default'
 }
 $_executableAliasMap.Keys.ForEach{ Set-Alias $_ Invoke-ExecutableAlias }

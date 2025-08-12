@@ -31,7 +31,7 @@ alias cls=clear \
 if [[ $TERM_PROGRAM != vscode* ]]; then
   alias fd='fd --hyperlink=auto'
   if declare -xp WSL_DISTRO_NAME &> /dev/null; then
-    alias rg='rg --hyperlink-format=file://${wslprefix}${path}'
+    alias rg='rg --hyperlink-format=file://{wslprefix}{path}'
   else
     alias rg='rg --hyperlink-format=default'
   fi

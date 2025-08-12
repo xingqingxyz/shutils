@@ -26,9 +26,7 @@ $_executableAliasMap = @{
   tree    = 'tree', '-C', '--hyperlink', '--gitignore'
 }
 if ($env:TERM_PROGRAM -notlike 'vscode*') {
-  $_executableAliasMap += @{
-    fd = 'fd', '--hyperlink=auto'
-    rg = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=file://${wslprefix}${path}' : '--hyperlink-format=default')
-  }
+  $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
+  $_executableAliasMap.rg = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=file://{wslprefix}{path}' : '--hyperlink-format=default')
 }
 $_executableAliasMap.Keys.ForEach{ Set-Alias $_ Invoke-ExecutableAlias }

@@ -48,7 +48,7 @@ $HOME/.local/share/JetBrains/Toolbox/scripts
 $HOME/.local/share/dscV3
 $SHUTILS_ROOT/scripts
 EOF
-IFS=: MAPFILE=${MAPFILE[*]}
+IFS=: MAPFILE=${MAPFILE[*]} IFS=$' \t\n'
 if [[ :$PATH: != *":$MAPFILE:"* ]]; then
   export PATH=$MAPFILE:$PATH
 fi
