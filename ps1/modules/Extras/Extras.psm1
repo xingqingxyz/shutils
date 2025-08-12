@@ -154,6 +154,40 @@ function sortJSON {
   }
 }
 
+function setenv {
+  $scope = (Test-Administrator) ? 'Machine' : 'User'
+  $args.ForEach{
+    $value = "$_"
+    $index = $value.IndexOf('=')
+    if ($index -eq -1) {
+      $key = $value
+      $value = '1'
+    }
+    elseif ($index -and $value.IndexOf('+') -eq $index - 1) {
+      $key = $value.Substring(0, $index - 1)
+      $value = [System.Environment]::GetEnvironmentVariable($key, $scope) + $value.Substring($index + 1)
+    }
+    else {
+      $key = $value.Substring(0, $index)
+      $value = $value.Substring($index + 1)
+    }
+    if (!$key) {
+      return Write-Error "use empty key to set env value: $value"
+    }
+    if ($value -eq '') {
+      $path = (Test-Administrator) ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
+      Write-Debug "remove $key on $path"
+      Remove-ItemProperty -LiteralPath $path $key
+      Remove-Item -LiteralPath env:$key
+    }
+    else {
+      Write-Debug "$key=$value"
+      [System.Environment]::SetEnvironmentVariable($key, $value, $scope)
+      Set-Item -LiteralPath env:$key $value
+    }
+  }
+}
+
 function icat {
   [CmdletBinding(DefaultParameterSetName = 'Path')]
   param(
@@ -183,6 +217,10 @@ function icat {
     magick -density 3000 -background transparent $_ -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
     $_
   }
+}
+
+function Test-Administrator {
+  [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
 function Set-Region {
@@ -292,10 +330,10 @@ function Update-Environment {
 
 function getParserName ([System.IO.FileSystemInfo]$Info) {
   $query = ",$($Info.Extension.Substring(1)),"
-  foreach ($pair in $parserMap.GetEnumerator()) {
-    if ($pair.Value.Contains($query)) {
-      if (Get-Command -TotalCount 1 -ea Ignore ($parserRequiresMap[$pair.Key] ?? $pair.Key)) {
-        return $pair.Key
+  foreach ($key in $parserMap.Keys) {
+    if ($parserMap.$key.Contains($query)) {
+      if (Get-Command ($parserRequiresMap.$key ?? $key) -TotalCount 1 -ea Ignore) {
+        return $key
       }
       break
     }
@@ -317,15 +355,17 @@ function Invoke-CodeFormatter {
 
 Set-Alias icf Invoke-CodeFormatter
 
-function pbat {
+function batf {
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
     return Get-Item -Force $args | ForEach-Object {
       & $parserCommandMap.(getParserName $_) $_.FullName
     }
   }
   Get-Item -Force $args | ForEach-Object {
-    & $parserCommandMap.(getParserName $_) $_.FullName | bat --color=always --file-name $_.Name
-  } | less
+    & $parserCommandMap.(getParserName $_) $_.FullName |
+      bat --color=always --file-name $_.Name |
+      Out-Default # for impl Windows\bat
+    } | less
 }
 
 $parserMap = @{
@@ -346,7 +386,7 @@ $parserMap = @{
   $parserMap.$_ = ",$($parserMap.$_),"
 }
 $parserRequiresMap = @{
-  prettier         = 'bun'
+  prettier         = 'pnpx'
   PSScriptAnalyzer = 'Invoke-Formatter'
 }
 $parserCommandMap = @{
@@ -355,7 +395,7 @@ $parserCommandMap = @{
   dotnet           = { <# dotnet format; #> Get-Content -Raw -LiteralPath $args[0] }
   gofmt            = { gofmt $args[0] }
   # java           = {}
-  prettier         = { bun x prettier --ignore-path= $args[0] }
+  prettier         = { pnpx prettier --ignore-path= $args[0] }
   PSScriptAnalyzer = { Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 }
   ruff             = { Get-Content -Raw -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
   rustfmt          = { rustfmt --emit stdout $args[0] }
@@ -370,7 +410,7 @@ $parserWriteCommandMap = @{
   dotnet           = { dotnet format }
   gofmt            = { gofmt -w $args[0] }
   # java           = {}
-  prettier         = { bun x prettier -w --ignore-path= $args[0] }
+  prettier         = { pnpx prettier -w --ignore-path= $args[0] }
   PSScriptAnalyzer = { Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 > $args[0] }
   ruff             = { ruff format -n $args[0] }
   rustfmt          = { rustfmt $args[0] }

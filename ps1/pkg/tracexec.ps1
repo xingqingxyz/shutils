@@ -4,7 +4,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 $owner = 'kxxt'
 $name = 'tracexec'
 $version = gh release list -R $owner/$name -L1 -q '.[].name' --json name
-if (Get-Command $name -Type Application -ea Ignore &&
+if ((Get-Command $name -Type Application -ea Ignore) -and
   [version](& $name -V).Split(' ', 3)[1] -ge [version]$version) {
   return Write-Warning "new version $name already installed"
 }

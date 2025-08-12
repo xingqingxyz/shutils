@@ -1,7 +1,7 @@
 using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName bat, pbat -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName bat -ScriptBlock {
   param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
@@ -27,7 +27,7 @@ Register-ArgumentCompleter -Native -CommandName bat, pbat -ScriptBlock {
     '-l' { '--language'; break }
     '--theme-light' { '--theme'; break }
     '--theme-dark' { '--theme'; break }
-    Default { $prev }
+    default { $prev }
   }
 
   @(switch ($command) {
@@ -80,7 +80,7 @@ Register-ArgumentCompleter -Native -CommandName bat, pbat -ScriptBlock {
             @('always', 'never').ForEach{ [CompletionResult]::new($_) }
             break
           }
-          Default {
+          default {
             if ($wordToComplete.StartsWith('-')) {
               [CompletionResult]::new('-l', 'l', [CompletionResultType]::ParameterName, 'Set the language for syntax highlighting.')
               [CompletionResult]::new('--language', 'language', [CompletionResultType]::ParameterName, 'Set the language for syntax highlighting.')

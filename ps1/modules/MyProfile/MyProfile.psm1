@@ -3,6 +3,7 @@
 View command source.
  #>
 function vw {
+  [CmdletBinding()]
   param(
     [ArgumentCompleter({
         [OutputType([System.Management.Automation.CompletionResult])]
@@ -19,29 +20,57 @@ function vw {
           [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
         }
       })]
+    [Alias('Path', 'Name')]
+    [Parameter(Position = 0, ValueFromPipelineByPropertyName)]
     [string]
-    $Command = 'vw'
+    $FullName,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $ExtraArgs,
+    [Parameter(ValueFromPipeline)]
+    [string]
+    $InputObject
   )
-  $extraArgs = $args[1..($args.Length - 1)]
-  if ($MyInvocation.ExpectingInput) {
-    return $input | bat -plhelp $extraArgs
+  begin {
+    $lines = [System.Collections.Generic.List[string]]::new()
   }
-  $info = Get-Command $Command -TotalCount 1
-  if ($info.CommandType -eq 'Alias') {
-    $info = $info.ResolvedCommand
+  process {
+    $lines.Add($InputObject)
   }
-  switch ([string]$info.CommandType) {
-    Cmdlet {
-      return help $Command -Category Cmdlet @extraArgs
+  end {
+    if ($MyInvocation.ExpectingInput) {
+      if (!$FullName) {
+        return $lines | bat -plhelp $ExtraArgs
+      }
+      elseif ($PSBoundParameters.BoundPositionally.Contains('FullName')) {
+        return $lines | bat $FullName $ExtraArgs
+      }
     }
-    Configuration {
-      return $Command
+    if (!$FullName) {
+      $FullName = $MyInvocation.InvocationName
     }
-    { 'Filter,Function'.Contains($_) } {
-      return $info.Definition | bat -plps1 $extraArgs
+    try {
+      $info = Get-Command $FullName -TotalCount 1 -ea Stop
     }
-    { 'Application,ExternalScript'.Contains($_) } {
-      return bat $info.Path -p $extraArgs
+    catch {
+      return less $FullName $ExtraArgs # use LESSOPEN to handle any path, e.g. $PWD
+    }
+    if ($info.CommandType -eq 'Alias') {
+      $info = $info.ResolvedCommand
+    }
+    switch ([string]$info.CommandType) {
+      Cmdlet {
+        return help $info.Name -Category Cmdlet @ExtraArgs
+      }
+      Configuration {
+        return & $info.Name
+      }
+      { 'Filter,Function'.Contains($_) } {
+        return $info.Definition | bat -plps1 $ExtraArgs
+      }
+      { 'Application,ExternalScript'.Contains($_) } {
+        return less $info.Path $ExtraArgs
+      }
     }
   }
 }
@@ -68,10 +97,10 @@ function edc {
           [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
         }
       })]
-    [Alias('FullName')]
+    [Alias('Path', 'Name')]
     [Parameter(Position = 0, ValueFromPipelineByPropertyName)]
     [string]
-    $Path,
+    $FullName,
     [Parameter(Position = 1, ValueFromRemainingArguments)]
     [string[]]
     $ExtraArgs,
@@ -90,34 +119,46 @@ function edc {
     [string]
     $InputObject
   )
-  if ($InputObject) {
-    Write-Debug "| $Editor $Path $ExtraArgs"
-    return $InputObject | & $Editor $Path $ExtraArgs
+  begin {
+    $lines = [System.Collections.Generic.List[string]]::new()
   }
-  $info = Get-Command $Path -TotalCount 1 -ea Stop
-  if ($info.CommandType -eq 'Alias') {
-    $info = $info.ResolvedCommand
+  process {
+    $lines.Add($InputObject)
   }
-  if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
-    if ($info.Module) {
-      Write-Debug "$Editor $($info.Module.Path) $ExtraArgs"
-      & $Editor $info.Module.Path $ExtraArgs
+  end {
+    if ($MyInvocation.ExpectingInput -and (!$FullName -or
+        $PSBoundParameters.BoundPositionally.Contains('FullName'))) {
+      Write-Debug "| $Editor $FullName $ExtraArgs"
+      return $lines | & $Editor $FullName $ExtraArgs
     }
-    else {
-      vw $info.Name $ExtraArgs
+    if (!$FullName) {
+      $FullName = $MyInvocation.InvocationName
     }
-  }
-  elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
-    Write-Debug "$Editor $($info.Path) $ExtraArgs"
-    & $Editor $info.Path $ExtraArgs
-  }
-  elseif ($info.CommandType -eq 'Application') {
-    if (shouldEdit $info.Path) {
+    $info = Get-Command $FullName -TotalCount 1 -ea Stop
+    if ($info.CommandType -eq 'Alias') {
+      $info = $info.ResolvedCommand
+    }
+    if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
+      if ($info.Module) {
+        Write-Debug "$Editor $($info.Module.Path) $ExtraArgs"
+        & $Editor $info.Module.Path $ExtraArgs
+      }
+      else {
+        vw $info.Name $ExtraArgs
+      }
+    }
+    elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
       Write-Debug "$Editor $($info.Path) $ExtraArgs"
       & $Editor $info.Path $ExtraArgs
     }
-    else {
-      Write-Warning "skip to edit binary $($info.Path)"
+    elseif ($info.CommandType -eq 'Application') {
+      if (shouldEdit $info.Path) {
+        Write-Debug "$Editor $($info.Path) $ExtraArgs"
+        & $Editor $info.Path $ExtraArgs
+      }
+      else {
+        Write-Warning "skip to edit binary $($info.Path)"
+      }
     }
   }
 }

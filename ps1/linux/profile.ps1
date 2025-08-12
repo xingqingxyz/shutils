@@ -12,7 +12,7 @@ function Invoke-ExecutableAlias {
   }
 }
 
-Set-Variable -Option ReadOnly _executableAliasMap @{
+Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   egrep   = 'egrep', '--color=auto'
   grep    = 'grep', '--color=auto'
   xzegrep = 'xzegrep', '--color=auto'

@@ -1,5 +1,20 @@
-if (!$IsWindows) {
-  return
+function bat {
+  if ($MyInvocation.PipelinePosition -eq $MyInvocation.PipelineLength) {
+    if ($MyInvocation.ExpectingInput) {
+      $input | bat.exe --color=always $args | & 'C:\Program Files\Git\usr\bin\less.exe'
+    }
+    else {
+      bat.exe --color=always $args | & 'C:\Program Files\Git\usr\bin\less.exe'
+    }
+  }
+  else {
+    if ($MyInvocation.ExpectingInput) {
+      $input | bat.exe $args
+    }
+    else {
+      bat.exe $args
+    }
+  }
 }
 
 function env {
@@ -40,30 +55,5 @@ function env {
         Remove-Item -LiteralPath env:$key -ea Ignore
       }
     }
-  }
-}
-
-function setenv {
-  $args.ForEach{
-    $value = "$_"
-    $index = $value.IndexOf('=')
-    if ($index -eq -1) {
-      $key = $value
-      $value = '1'
-    }
-    elseif ($index -and $value.IndexOf('+') -eq $index - 1) {
-      $key = $value.Substring(0, $index - 1)
-      $value = [System.Environment]::GetEnvironmentVariable($key, 'User') + $value.Substring($index + 1)
-    }
-    else {
-      $key = $value.Substring(0, $index)
-      $value = $value.Substring($index + 1)
-    }
-    if (!$key) {
-      return Write-Error "use empty key to set env value: $value"
-    }
-    Write-Debug "$key=$value"
-    [System.Environment]::SetEnvironmentVariable($key, $value, 'User')
-    Set-Item -LiteralPath env:$key $value
   }
 }

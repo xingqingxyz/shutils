@@ -13,6 +13,9 @@
 
 [ -e "$1" ] || exit 1
 
+# git bash env
+PATH+=:/usr/bin
+
 if [ -d "$1" ]; then
   ls -lah --color=always --hyperlink=always -- "$1"
   exit
@@ -23,7 +26,7 @@ manfilter() {
     # See rhbz#1241543 for more info.  Well, actually we firstly
     # used 'man -l', then we switched to groff, and then we again
     # switched back to 'man -l'.
-    MAN_KEEP_FORMATTING=1 /usr/bin/man -P /usr/bin/cat -l "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
+    MAN_KEEP_FORMATTING=1 man -P /usr/bin/cat -l "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
   elif test -x /usr/bin/groff; then
     # This is from pre-rhbz#1241543-time.
     groff -Tascii -mandoc "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always

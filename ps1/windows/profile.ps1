@@ -19,8 +19,9 @@ function Invoke-ExecutableAlias {
 
 # utf-8 process
 [System.Console]::InputEncoding = [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Set-Alias bat Windows\bat
 Set-Alias rsync 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\rsync\rsync.exe'
-Set-Variable -Option ReadOnly _executableAliasMap @{
+Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   grep = 'grep', '--color=auto'
 }
 if ($env:TERM_PROGRAM -notlike 'vscode*') {

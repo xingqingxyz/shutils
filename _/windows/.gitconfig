@@ -12,5 +12,4 @@
 	rebase = false
 [core]
 	editor = \"C:\\Users\\cmema\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code\" --wait
-[safe]
-	directory = %(prefix)///wsl.localhost/FedoraLinux-42/home/uv/p
+	symlinks = true
