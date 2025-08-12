@@ -6,7 +6,7 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # shutils
-if ((BASH_VERSINFO[0] >= 5 && BASH_VERSINFO[1] >= 3)); then
+if [[ $- = *i* ]]; then
   eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
 fi
 

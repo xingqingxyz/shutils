@@ -26,22 +26,17 @@ function Register-ArgumentCompleter {
     }
     else {
       $CommandName.ForEach{ $_completionFuncMap.$_ = $ScriptBlock }
+      $ScriptBlock
     }
   }
 }
 
 function Get-ArgumentCompleter ([string]$CommandName) {
-  if (!$_completionFuncMap.Contains($CommandName)) {
-    try {
-      . ${env:SHUTILS_ROOT}/ps1/completions/$CommandName.ps1
-    }
-    catch { }
-  }
-  $_completionFuncMap.$CommandName ?? {}
+  $_completionFuncMap.$CommandName ?? (. $PSScriptRoot/completions/$CommandName.ps1)
 }
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}
-Microsoft.PowerShell.Core\Register-ArgumentCompleter -CommandName (Get-ChildItem -LiteralPath ${env:SHUTILS_ROOT}/ps1/completions).BaseName -Native -ScriptBlock {
+Microsoft.PowerShell.Core\Register-ArgumentCompleter -CommandName (Get-ChildItem -LiteralPath $PSScriptRoot/completions).BaseName -Native -ScriptBlock {
   param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $commandName = Split-Path -LeafBase $commandAst.GetCommandName()
   & (Get-ArgumentCompleter $commandName) @PSBoundParameters

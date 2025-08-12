@@ -1,6 +1,7 @@
 # .bash_profile
 
-export SHUTILS_ROOT=$(dirname -- "$(realpath -- "$BASH_SOURCE")")
+export SHUTILS_ROOT="$HOME/p/shutils" \
+  PNPM_HOME="$HOME/.local/share/pnpm"
 export \
   LANG='zh_CN.UTF-8' \
   PAGER='less' \
@@ -13,7 +14,7 @@ export \
   no_proxy='127.0.0.1,localhost,internal.domain,kkgithub.com,raw.githubusercontents.com,mirror.sjtu.edu.cn,mirrors.ustc.edu.cn,mirrors.tuna.tsinghua.edu.cn' \
   RUSTUP_UPDATE_ROOT='https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' \
   RUSTUP_DIST_SERVER='https://mirrors.tuna.tsinghua.edu.cn/rustup' \
-  PNPM_HOME="$HOME/.local/share/pnpm" \
+  NODE_PATH="$PNPM_HOME/global/5/node_modules" \
   XMODIFIERS='@im=fcitx' \
   QT_IM_MODULE='fcitx' \
   GTK_IM_MODULE='fcitx'
@@ -40,12 +41,11 @@ unset items
 
 mapfile -t << EOF
 $HOME/.local/bin
-$HOME/.bun/bin
 $PNPM_HOME
+$HOME/go/bin
 $HOME/.cargo/bin
-$HOME/.deno/bin
+$HOME/.local/share/dsc
 $HOME/.local/share/JetBrains/Toolbox/scripts
-$HOME/.local/share/dscV3
 $SHUTILS_ROOT/scripts
 EOF
 IFS=: MAPFILE=${MAPFILE[*]} IFS=$' \t\n'
@@ -54,8 +54,8 @@ if [[ :$PATH: != *":$MAPFILE:"* ]]; then
 fi
 
 if [[ :$PSModulePath: != *":$SHUTILS_ROOT/ps1/modules:"* ]]; then
-  export PSModulePath=$PSModulePath${PSModulePath+:}$SHUTILS_ROOT/ps1/modules
+  export PSModulePath="$PSModulePath${PSModulePath+:}$SHUTILS_ROOT/ps1/modules"
 fi
 
 # Get the aliases and functions
-. "$SHUTILS_ROOT/.bashrc"
+. "$SHUTILS_ROOT/_/.bashrc"

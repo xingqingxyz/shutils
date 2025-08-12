@@ -14,7 +14,7 @@
 [ -e "$1" ] || exit 1
 
 if [ -d "$1" ]; then
-  ls -alF -- "$1"
+  ls -lah --color=always --hyperlink=always -- "$1"
   exit
 fi
 
@@ -28,9 +28,6 @@ manfilter() {
     # This is from pre-rhbz#1241543-time.
     groff -Tascii -mandoc "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
   else
-    echo "WARNING:"
-    echo "WARNING: to better show manual pages, install 'man-db' package"
-    echo "WARNING:"
     bat -pltroff --color=always "$1"
   fi
 }
@@ -73,7 +70,7 @@ case "$1" in
     exit
     ;;
   *.xz | *.lzma)
-    xz -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    xz -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
     exit
     ;;
   *.tar.lz)
@@ -81,7 +78,7 @@ case "$1" in
     exit
     ;;
   *.lz)
-    lzip -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    lzip -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
     exit
     ;;
   *.tar.zst)
@@ -89,7 +86,7 @@ case "$1" in
     exit
     ;;
   *.zst)
-    zstd -dcq -- "$1" | bat --color=always --file-name="${1%.*}"
+    zstd -dcq -- "$1" | bat -p --color=always --file-name="${1%.*}"
     exit
     ;;
   *.tar.br)
@@ -97,7 +94,7 @@ case "$1" in
     exit
     ;;
   *.br)
-    brotli -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    brotli -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
     exit
     ;;
   *.tar.bz2 | *.tbz2)
@@ -105,11 +102,11 @@ case "$1" in
     exit
     ;;
   *.[zZ] | *.gz)
-    gzip -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    gzip -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
     exit
     ;;
   *.bz2)
-    bzip2 -dc -- "$1" | bat --color=always --file-name="${1%.*}"
+    bzip2 -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
     exit
     ;;
   *.zip | *.jar | *.nbm)
@@ -126,11 +123,8 @@ case "$1" in
     exit
     ;;
   *.gpg)
-    if [ -x /usr/bin/gpg2 ]; then
-      gpg2 -d "$1"
-      exit
-    elif [ -x /usr/bin/gpg ]; then
-      gpg -d "$1"
+    if read -r < <(type -aP gpg2 gpg); then
+      "$REPLY" -d "$1"
       exit
     else
       echo "No GnuPG available."
@@ -154,14 +148,14 @@ case "$1" in
       utf-16) conv='utf-16' ;;
       utf-32) conv='utf-32' ;;
       *)
-        bat --color=always "$1"
+        bat -p --color=always "$1"
         exit
         ;;
     esac
     if [ -n "$conv" ]; then
       env=$(cut -d. -f2 <<< $LANG)
       if [ "$env" -a "$conv" != "$env" ]; then
-        iconv -f $conv -t $env "$1" | bat --color=always --file-name="$1"
+        iconv -f $conv -t $env "$1" | bat -p --color=always --file-name="$1"
         exit
       fi
     fi

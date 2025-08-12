@@ -5,14 +5,14 @@ function Invoke-ExecutableAlias {
   }
   Write-Debug "/usr/bin/env -- $($_executableAliasMap.$command) $args"
   if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env -- $_executableAliasMap.$command @args
+    $input | /usr/bin/env -- $_executableAliasMap.$command $args
   }
   else {
-    /usr/bin/env -- $_executableAliasMap.$command @args
+    /usr/bin/env -- $_executableAliasMap.$command $args
   }
 }
 
-$_executableAliasMap = @{
+Set-Variable -Option ReadOnly _executableAliasMap @{
   egrep   = 'egrep', '--color=auto'
   grep    = 'grep', '--color=auto'
   xzegrep = 'xzegrep', '--color=auto'
