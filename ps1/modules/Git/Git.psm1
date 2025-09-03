@@ -18,3 +18,50 @@ function Repair-GitSymlinks {
     }
   }
 }
+
+<#
+.SYNOPSIS
+Clear outdated modules.
+ #>
+function Clear-Module {
+  [CmdletBinding(SupportsShouldProcess)]
+  param(
+    [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+    $InputObject
+  )
+  begin {
+    # use PSBoundParameters to forward -Confirm and -WhatIf
+    $null = $PSBoundParameters.Remove('InputObject')
+  }
+  process {
+    Get-InstalledModule $InputObject.Name -AllVersions |
+      Where-Object Version -LT $InputObject.Version |
+      ForEach-Object {
+        Uninstall-Module $_.Name -MaximumVersion $_.Version @PSBoundParameters
+      }
+  }
+}
+
+[DscResource()]
+class TestDSC {
+  [DscProperty(Key)]
+  [string]
+  $id = ''
+
+  [DscProperty(Mandatory)]
+  [string]
+  $value = ''
+
+  [TestDSC] Get() {
+    $this.value = Get-Date
+    return $this
+  }
+
+  [void] Set() {
+    $this.value | ConvertTo-Json > ${env:SHUTILS_ROOT}/test.json
+  }
+
+  [bool] Test() {
+    return $true
+  }
+}

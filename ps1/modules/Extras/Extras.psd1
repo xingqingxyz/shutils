@@ -30,7 +30,7 @@
   Copyright            = '(c) Ming Chen. All rights reserved.'
 
   # Description of the functionality provided by this module
-  Description          = 'Enhance clis by these extra commands.'
+  Description          = 'Enhanced cli commands.'
 
   # Minimum version of the PowerShell engine required by this module
   PowerShellVersion    = '7.5.2'
@@ -69,7 +69,7 @@
   # NestedModules = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('yq', 'tq', 'packageJSON', 'sortJSON', 'setenv', 'icat', 'batf', 'Test-Administrator', 'Set-Region', 'Enable-EnvironmentFile', 'Update-Environment', 'Invoke-CodeFormatter')
+  FunctionsToExport    = @('yq', 'tq', 'packageJSON', 'sortJSON', 'setenv', 'icat', 'batf', 'Get-TypeMember', 'Set-GnomeProxy', 'Set-Region', 'Test-Administrator', 'Enable-EnvironmentFile', 'Invoke-CodeFormatter')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -78,7 +78,7 @@
   VariablesToExport    = @()
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-  AliasesToExport      = @('icf')
+  AliasesToExport      = @('gtm', 'icf')
 
   # DSC resources to export from this module
   # DscResourcesToExport = @()

@@ -1,8 +1,16 @@
 function Get-TypeMember {
   [CmdletBinding()]
   param(
+    [ArgumentCompleter({
+        param(
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        [System.Management.Automation.CompletionCompleters]::CompleteType($WordToComplete)
+      })]
     [Parameter(Mandatory, ValueFromPipeline)]
-    [type]
+    [type[]]
     $InputObject,
     [ArgumentCompleter({
         param(
@@ -22,9 +30,14 @@ function Get-TypeMember {
     [System.Reflection.MemberTypes]
     $MemberType = 'All'
   )
-  $InputObject.GetMembers().Where{
-    $MemberType.HasFlag($_.MemberType) -and $_.Name -like $Name
-  } | Select-Object Name, MemberType, @{Name = 'Declaration'; Expression = { $_.ToString() } }
+  process {
+    $InputObject.ForEach{
+      $typeName = $_.FullName
+      $_.GetMembers().Where{
+        $MemberType.HasFlag($_.MemberType) -and $_.Name -like $Name
+      }.ForEach{ [Microsoft.PowerShell.Commands.MemberDefinition]::new($typeName, $_.Name, $_.MemberType, "$_") }
+    }
+  }
 }
 
 Set-Alias gtm Get-TypeMember
@@ -155,8 +168,20 @@ function sortJSON {
 }
 
 function setenv {
-  $scope = (Test-Administrator) ? 'Machine' : 'User'
-  $args.ForEach{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory, Position = 0, ValueFromRemainingArguments)]
+    [string[]]
+    $ExtraArgs,
+    [Parameter()]
+    [System.EnvironmentVariableTarget]
+    $Scope = 'Process'
+  )
+  if ($Scope -eq 'Machine' -and !(Test-Administrator)) {
+    return Invoke-Sudo setenv -Scope $Scope @ExtraArgs
+  }
+  $Environment = @{}
+  $ExtraArgs.ForEach{
     $value = "$_"
     $index = $value.IndexOf('=')
     if ($index -eq -1) {
@@ -165,7 +190,7 @@ function setenv {
     }
     elseif ($index -and $value.IndexOf('+') -eq $index - 1) {
       $key = $value.Substring(0, $index - 1)
-      $value = [System.Environment]::GetEnvironmentVariable($key, $scope) + $value.Substring($index + 1)
+      $value = [System.Environment]::GetEnvironmentVariable($key) + $value.Substring($index + 1)
     }
     else {
       $key = $value.Substring(0, $index)
@@ -174,17 +199,60 @@ function setenv {
     if (!$key) {
       return Write-Error "use empty key to set env value: $value"
     }
-    if ($value -eq '') {
-      $path = (Test-Administrator) ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
-      Write-Debug "remove $key on $path"
-      Remove-ItemProperty -LiteralPath $path $key
-      Remove-Item -LiteralPath env:$key
+    $Environment.$key = $value
+  }
+  $Environment.GetEnumerator().ForEach{
+    if (!$_.Value) {
+      Remove-Item -LiteralPath env:$($_.Key) -ea Ignore
     }
     else {
-      Write-Debug "$key=$value"
-      [System.Environment]::SetEnvironmentVariable($key, $value, $scope)
-      Set-Item -LiteralPath env:$key $value
+      Set-Item -LiteralPath env:$($_.Key) $_.Value
     }
+  }
+  if ($Scope -eq 'Process' -or !$Environment.Count) {
+    return
+  }
+  if ($IsWindows) {
+    $Environment.GetEnumerator().ForEach{
+      if (!$_.Value) {
+        $path = $Scope -eq 'Machine' ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
+        Write-Debug "remove $($_.Key) on $path"
+        Remove-ItemProperty -LiteralPath $path $_.Key
+      }
+      else {
+        Write-Debug "$($_.Key)=$($_.Value)"
+        [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+      }
+    }
+  }
+  elseif ($IsLinux) {
+    $text = $Environment.GetEnumerator().ForEach{
+      "$($_.Key)='$($_.Value.Replace("'", "'\''"))'"
+    } | Join-String -OutputPrefix 'export ' -Separator " \`n"
+    switch ($Scope) {
+      'User' {
+        Set-Region UserEnv $text $(if (Test-Path ~/.bash_profile) {
+            "$HOME/.bash_profile"
+          }
+          else {
+            "$HOME/.profile"
+          }) -Inplace
+        break
+      }
+      'Machine' {
+        Set-Region SysEnv $text /etc/profile.d/sh.local -Inplace
+        break
+      }
+    }
+  }
+  elseif ($IsMacOS) {
+    $Environment.GetEnumerator().ForEach{
+      Write-Debug "$($_.Key)=$($_.Value)"
+      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+    }
+  }
+  else {
+    throw 'not implemented'
   }
 }
 
@@ -219,61 +287,110 @@ function icat {
   }
 }
 
-function Test-Administrator {
-  [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+<#
+.SYNOPSIS
+Simple impl for surfboard localnet network proxy.
+ #>
+function Set-GnomeProxy {
+  [CmdletBinding()]
+  param(
+    [Parameter()]
+    [switch]
+    $On,
+    [Parameter()]
+    [ValidateRange(0, 9)]
+    [int]
+    $MagicDigit = 2
+  )
+  $hostName = '192.168.0.10' + $MagicDigit
+  $mode = $On ? 'manual' : 'none'
+  gsettings set org.gnome.system.proxy mode $mode
+  if ($On -and (gsettings get org.gnome.system.proxy.http host) -ne $hostName) {
+    gsettings set org.gnome.system.proxy.http host $hostName
+    gsettings set org.gnome.system.proxy.http port 1234
+    gsettings set org.gnome.system.proxy.https host $hostName
+    gsettings set org.gnome.system.proxy.https port 1234
+    gsettings set org.gnome.system.proxy.socks host $hostName
+    gsettings set org.gnome.system.proxy.socks port 1235
+    setenv -Scope User http_proxy=https://${hostName}:1234 https_proxy=https://${hostName}:1234 all_proxy=socks5://${hostName}:1235
+  }
+  else {
+    setenv -Scope User http_proxy= https_proxy= all_proxy=
+  }
 }
 
 function Set-Region {
   [CmdletBinding()]
-  [OutputType([string])]
+  [OutputType([string], [void], ParameterSetName = 'Path')]
+  [OutputType([string], ParameterSetName = 'Stdin')]
   param(
     [Parameter(Mandatory, Position = 0)]
     [string]
     $Name,
     [Parameter(Mandatory, Position = 1)]
     [string[]]
-    $Content,
-    [Parameter(Position = 2, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
+    $Value,
+    [Parameter(Mandatory, Position = 2, ParameterSetName = 'Path')]
     [string]
     $Path,
     [Parameter(ParameterSetName = 'Path')]
     [switch]
     $Inplace,
-    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string[]]
-    $InputObject = (Get-Content $Path)
+    [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [string]
+    $InputObject,
+    [Parameter()]
+    [string]
+    $LineComment
   )
-  $found = 0
-  $InputObject = $InputObject.ForEach{
-    if ($found -eq 0 -and $_.TrimStart().StartsWith('#region ' + $Name)) {
-      $found = 1
-      $_
-      return
+  begin {
+    $lines = @()
+  }
+  process {
+    $lines += $InputObject
+  }
+  end {
+    if ($Path) {
+      $lines = Get-Content $Path -ea Stop
     }
-    elseif ($found -eq 1) {
-      if ($_.Trim() -eq '#endregion') {
-        $found = 2
-        $Content
+    $found = 0
+    $newLines = $lines.ForEach{
+      if (!$found -and $_.Trim() -ceq "$LineComment#region $Name") {
+        $found = 1
         $_
       }
-      return
+      elseif ($found -eq 1) {
+        if ($_.Trim() -ceq "$LineComment#endregion") {
+          $found = 2
+          $Value
+          $_
+        }
+      }
+      else {
+        $_
+      }
     }
-    $_
-  }
-  if ($found -eq 0) {
-    $InputObject += @("#region $Name", $Content, '#endregion')
-  }
-  if ($Inplace) {
-    try {
-      $InputObject > $Path
+    if ($found -lt 2) {
+      if ($found -eq 1) {
+        Write-Warning 'not found #endregion mark'
+      }
+      $newLines = $lines + @(
+        "$LineComment#region $Name"
+        $Value
+        "$LineComment#endregion"
+      )
     }
-    catch {
-      $InputObject
+    if ($Inplace) {
+      $newLines > $Path
+    }
+    else {
+      $newLines
     }
   }
-  else {
-    $InputObject
-  }
+}
+
+function Test-Administrator {
+  $IsWindows ? [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) : (id -u).Equals('0')
 }
 
 function Enable-EnvironmentFile {
@@ -283,48 +400,7 @@ function Enable-EnvironmentFile {
   )
   Get-Content $Path | ForEach-Object {
     $name, $value = $_.Split('=', 2)
-    Set-Item -LiteralPath Env:$name $value
-  }
-}
-
-function Update-Environment {
-  [CmdletBinding()]
-  param(
-    [Parameter(Position = 0, Mandatory)]
-    [hashtable]
-    $Environment,
-    [System.EnvironmentVariableTarget]
-    $Scope = 'User',
-    [string]
-    $Description = (Get-Date).ToString()
-  )
-  if (!$IsLinux -and $Scope -eq 'Machine') {
-    $code = $Environment.GetEnumerator().ForEach{
-      "[System.Environment]::SetEnvironmentVariable($($_.Key), $($_.Value), 'Machine')"
-    }
-    return sudo pwsh -nop -c $code
-  }
-  if (!$IsLinux -or $Scope -eq 'Process') {
-    return $Environment.GetEnumerator().ForEach{
-      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
-    }
-  }
-  $Description = $Description.Replace("`n", ' ')
-  $code = $Environment.GetEnumerator().ForEach{
-    "$($_.Key)='$($_.Value.Replace("'", "'\''"))'"
-  } | Join-String -OutputPrefix "`n`# $Description`nexport " -Separator " \`n"
-  switch ($Scope) {
-    ([System.EnvironmentVariableTarget]::User) {
-      return Set-Region UserEnv $code $(if (Test-Path ~/.bash_profile) {
-          "$HOME/.bash_profile"
-        }
-        else {
-          "$HOME/.profile"
-        })
-    }
-    ([System.EnvironmentVariableTarget]::Machine) {
-      return Invoke-Sudo Set-Region SysEnv $code /etc/profile.d/sh.local
-    }
+    Set-Item -LiteralPath env:$name $value
   }
 }
 
@@ -396,7 +472,7 @@ $parserCommandMap = @{
   gofmt            = { gofmt $args[0] }
   # java           = {}
   prettier         = { pnpx prettier --ignore-path= $args[0] }
-  PSScriptAnalyzer = { Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 }
+  PSScriptAnalyzer = { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 }
   ruff             = { Get-Content -Raw -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
   rustfmt          = { rustfmt --emit stdout $args[0] }
   shfmt            = { Get-Content -Raw -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
@@ -411,7 +487,7 @@ $parserWriteCommandMap = @{
   gofmt            = { gofmt -w $args[0] }
   # java           = {}
   prettier         = { pnpx prettier -w --ignore-path= $args[0] }
-  PSScriptAnalyzer = { Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 > $args[0] }
+  PSScriptAnalyzer = { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 > $args[0] }
   ruff             = { ruff format -n $args[0] }
   rustfmt          = { rustfmt $args[0] }
   shfmt            = { shfmt -i 2 -bn -ci -sr $args[0] }

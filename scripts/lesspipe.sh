@@ -17,7 +17,12 @@
 PATH+=:/usr/bin
 
 if [ -d "$1" ]; then
-  ls -lah --color=always --hyperlink=always -- "$1"
+  out=$(ls -xA --color=always --hyperlink=always -- "$1")
+  if [ -z "$out" ]; then
+    ls -lahd --color=always --hyperlink=always -- "$1"
+  else
+    echo -n "$out"
+  fi
   exit
 fi
 

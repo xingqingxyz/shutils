@@ -1,0 +1,11 @@
+$schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.vscode.json
+resources:
+  - type: Microsoft.DSC.Transitional/RunCommandOnSet
+    name: gsettings system proxy
+    properties:
+      executable: gsettings
+      arguments:
+        - set
+        - org.gnome.system.proxy
+        - ignore-hosts
+        - "[['localhost', '127.0.0.0/8', '::1', 'internal.domain', 'kkgithub.com', 'raw.githubusercontents.com', 'mirror.sjtu.edu.cn', 'mirrors.ustc.edu.cn', 'mirrors.tuna.tsinghua.edu.cn']"

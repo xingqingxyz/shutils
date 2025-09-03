@@ -5,7 +5,7 @@ function Format-Duration {
     $Duration
   )
   # colors: green, cyan, blue, yellow, magenta, red
-  "`e[{0}m{1}`e[0m" -f $(switch ($true) {
+  "`e[{0}m{1}`e[0m" -f @(switch ($true) {
       { $Duration.TotalMicroseconds -lt 1000 } {
         32
         [string]($Duration.Microseconds + $Duration.Nanoseconds / 1000) + 'μs'
@@ -40,26 +40,34 @@ function Format-Duration {
 }
 
 function prompt {
-  $status = if ($?) {
-    "`e[32mPS`e[0m"
-  }
-  elseif ($Error -and $MyInvocation.HistoryId - 1 -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
-    "`e[31mPS`e[0m"
-  }
-  else {
-    "`e[$(32 - [bool]$LASTEXITCODE)m$LASTEXITCODE`e[0m"
-  }
-  $cwd = if ($PWD.Provider.Name -eq 'FileSystem') {
-    if ($env:WSL_DISTRO_NAME) {
-      "`e]8;;file://$(wslpath -w $PWD.ProviderPath)`e\$PWD`e]8;;`e\"
+  '{0} ({1}:{2}) {3}{4} ' -f @(
+    # status
+    if ($?) {
+      "`e[32mPS`e[0m"
+    }
+    elseif ($Error -and $MyInvocation.HistoryId - 1 -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
+      "`e[31mPS`e[0m"
     }
     else {
-      "`e]8;;file://$($PWD.ProviderPath)`e\$PWD`e]8;;`e\"
+      "`e[$(32 - [bool]$LASTEXITCODE)m$LASTEXITCODE`e[0m"
     }
-  }
-  else {
-    $PWD.Path
-  }
-  $dur = Format-Duration ($MyInvocation.HistoryId -eq 1 ? 0 : (Get-History -Count 1).Duration)
-  '{0} ({1}:{2}) {3}{4} ' -f $status, $MyInvocation.HistoryId, $dur, $cwd, ('>' * ($NestedPromptLevel + 1))
+    # historyId
+    $MyInvocation.HistoryId
+    # duration
+    Format-Duration ($MyInvocation.HistoryId -eq 1 ? 0 : (Get-History -Count 1).Duration)
+    # pwd
+    if ($PWD.Provider.Name -eq 'FileSystem') {
+      if ($env:WSL_DISTRO_NAME) {
+        "`e]8;;file://$(wslpath -w $PWD.ProviderPath)`e\$PWD`e]8;;`e\"
+      }
+      else {
+        "`e]8;;file://$($PWD.ProviderPath)`e\$PWD`e]8;;`e\"
+      }
+    }
+    else {
+      $PWD.Path
+    }
+    # endMark
+    ($PWD.Path.Length / [System.Console]::WindowWidth -gt .42 ? "`n" : '') + ('>' * ($NestedPromptLevel + 1))
+  )
 }

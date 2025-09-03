@@ -2,7 +2,7 @@
 .SYNOPSIS
 View command source.
  #>
-function vw {
+function Show-Command {
   [CmdletBinding()]
   param(
     [ArgumentCompleter({
@@ -16,7 +16,7 @@ function vw {
         )
         # note: using namespace not effects, this executed likes background job
         $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
-        if ($results.Length) { $results } else {
+        if ($results) { $results } else {
           [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
         }
       })]
@@ -32,10 +32,10 @@ function vw {
     $InputObject
   )
   begin {
-    $lines = [System.Collections.Generic.List[string]]::new()
+    $lines = @()
   }
   process {
-    $lines.Add($InputObject)
+    $lines += $InputObject
   }
   end {
     if ($MyInvocation.ExpectingInput) {
@@ -47,20 +47,21 @@ function vw {
       }
     }
     if (!$FullName) {
-      $FullName = $MyInvocation.InvocationName
+      $FullName = '.'
     }
-    try {
-      $info = Get-Command $FullName -TotalCount 1 -ea Stop
-    }
-    catch {
+    if (Test-Path $FullName) {
       return less $FullName $ExtraArgs # use LESSOPEN to handle any path, e.g. $PWD
+    }
+    $info = Get-Command $FullName -TotalCount 1 -ea Ignore
+    if (!$info) {
+      return Write-Warning 'not found'
     }
     if ($info.CommandType -eq 'Alias') {
       $info = $info.ResolvedCommand
     }
     switch ([string]$info.CommandType) {
       Cmdlet {
-        return help $info.Name -Category Cmdlet @ExtraArgs
+        return help $info.Name -Category Cmdlet
       }
       Configuration {
         return & $info.Name
@@ -69,17 +70,19 @@ function vw {
         return $info.Definition | bat -plps1 $ExtraArgs
       }
       { 'Application,ExternalScript'.Contains($_) } {
-        return less $info.Path $ExtraArgs
+        return less $info.Path $ExtraArgs # to handle any excutable
       }
     }
   }
 }
 
+Set-Alias l Show-Command
+
 <#
 .SYNOPSIS
 Edit command source.
  #>
-function edc {
+function Edit-Command {
   [CmdletBinding()]
   param(
     [ArgumentCompleter({
@@ -120,10 +123,10 @@ function edc {
     $InputObject
   )
   begin {
-    $lines = [System.Collections.Generic.List[string]]::new()
+    $lines = @()
   }
   process {
-    $lines.Add($InputObject)
+    $lines += $InputObject
   }
   end {
     if ($MyInvocation.ExpectingInput -and (!$FullName -or
@@ -134,7 +137,13 @@ function edc {
     if (!$FullName) {
       $FullName = $MyInvocation.InvocationName
     }
-    $info = Get-Command $FullName -TotalCount 1 -ea Stop
+    if (Test-Path $FullName) {
+      return & $Editor $FullName $ExtraArgs
+    }
+    $info = Get-Command $FullName -TotalCount 1 -ea Ignore
+    if (!$info) {
+      return & $Editor $FullName $ExtraArgs # fallback, e.g. code --help
+    }
     if ($info.CommandType -eq 'Alias') {
       $info = $info.ResolvedCommand
     }
@@ -162,6 +171,8 @@ function edc {
     }
   }
 }
+
+Set-Alias e Edit-Command
 
 function shouldEdit ([string]$LiteralPath) {
   end {
@@ -248,32 +259,36 @@ function Invoke-Sudo {
     if ($info.CommandType -eq 'Alias') {
       $info = $info.ResolvedCommand
     }
-    if ($null -eq $info) {
-      return
+    if (!$info) {
+      # fallback to handle sudo options
+      return & (Get-Command -Type Application -TotalCount 1 -ea Stop sudo).Path $args
     }
-    elseif ($info.CommandType -eq 'Application') {
+    if ($info.CommandType -eq 'Application') {
+      $args[0] = $info.Source
     }
-    elseif ('Function,Filter'.Contains([string]$info.CommandType)) {
-      if ($null -eq $info.Module) {
-        return
-      }
-      @($pwshExe, '-nop')
-    }
-    elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
+    elseif ($info.CommandType -eq 'ExternalScript') {
+      $args[0] = $info.Source
       @($pwshExe, '-nop')
     }
     else {
+      if ($info.Module) {
+        $args[0] = $info.Source + '\' + $info.Name
+      }
+      else {
+        Write-Warning "running a no module $($info.CommandType) $info"
+      }
       @($pwshExe, '-nop', '-c')
     }
   }
   if ($sudoExe) {
     $ags = $extraArgs + $args
-    Write-Debug "$sudoExe -- $ags"
+    $sudoArgs = @(if ($IsLinux) { '-E' })
+    Write-Debug "$sudoExe $sudoArgs -- $ags"
     if ($MyInvocation.ExpectingInput) {
-      $input | & $sudoExe -- $ags
+      $input | & $sudoExe $sudoArgs -- $ags
     }
     else {
-      & $sudoExe -- $ags
+      & $sudoExe $sudoArgs -- $ags
     }
   }
   else {

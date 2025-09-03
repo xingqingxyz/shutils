@@ -21,7 +21,6 @@ Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   zegrep  = 'zegrep', '--color=auto'
   zfgrep  = 'zfgrep', '--color=auto'
   zgrep   = 'zgrep', '--color=auto'
-  l       = 'ls', '--color=auto', '--hyperlink=auto'
   ls      = 'ls', '--color=auto', '--hyperlink=auto', '-lah'
   tree    = 'tree', '-C', '--hyperlink', '--gitignore'
 }

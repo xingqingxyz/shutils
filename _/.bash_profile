@@ -45,6 +45,7 @@ $PNPM_HOME
 $HOME/go/bin
 $HOME/.cargo/bin
 $HOME/.local/share/dsc
+$HOME/.local/share/powershell/Scripts
 $HOME/.local/share/JetBrains/Toolbox/scripts
 $SHUTILS_ROOT/scripts
 EOF
@@ -59,3 +60,7 @@ fi
 
 # Get the aliases and functions
 . "$SHUTILS_ROOT/_/.bashrc"
+
+#region UserEnv
+export T='1'
+#endregion

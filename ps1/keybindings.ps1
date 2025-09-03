@@ -5,11 +5,14 @@ Set-PSReadLineKeyHandler -Chord Ctrl+d -Function DeleteCharOrExit
 Set-PSReadLineKeyHandler -Chord Ctrl+Delete -Function DeleteEndOfWord
 Set-PSReadLineKeyHandler -Chord Ctrl+e -Function ViEditVisually
 Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardWord
+Set-PSReadLineKeyHandler -Chord Ctrl+g -Function WhatIsKey
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function DeleteLineToFirstChar
-Set-PSReadLineKeyHandler -Chord Ctrl+Z -Function Redo
+if ($IsLinux) {
+  Set-PSReadLineKeyHandler -Chord Ctrl+c -Function CancelLine
+}
 # custom
 Set-PSReadLineKeyHandler -Chord Ctrl+o -Description 'Comment inputs and accept' -ScriptBlock {
-  [string]$text = $null
+  [string]$text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, ($text.Split("`n").ForEach{ "# $_" } -join "`n"))
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
@@ -23,7 +26,10 @@ Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -
   if ($info.CommandType -eq 'Alias') {
     $info = $info.ResolvedCommand
   }
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, 0, "vw $($info.Name) # ")
+  if (!$info) {
+    return
+  }
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, 0, "Show-Command $($info.Name) # ")
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell docs in browser about the command' -ScriptBlock {
@@ -56,16 +62,16 @@ Set-PSReadLineKeyHandler -Chord Alt+c -Description 'Fzf select sub directories t
 Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history files to replace command line' -ScriptBlock {
   $history = switch ($true) {
     $IsWindows { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt"; break }
-    $IsLinux { "${env:HOME}/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
+    $IsLinux { "$HOME/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
     default { throw 'not implemented' }
   }
   $history = Get-Content -Raw $history | fzf --tac --scheme=history
   if (!$history) {
     return
   }
-  $line = ''
-  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $history)
+  [string]$text = ''
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, $history)
 }
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
   $path = (Invoke-Z -List).Path | fzf --scheme=path
@@ -78,12 +84,12 @@ Set-PSReadLineKeyHandler -Chord Alt+s -Description 'Add sudo to command line and
   [System.Management.Automation.Language.Ast]$ast = $null
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$ast, [ref]$tokens, [ref]$null, [ref]$null)
-  $line = $ast.ToString()
-  if (($tokens.Where{ $_.TokenFlags -eq 'CommandName' }).Count -eq 1) {
-    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo $line")
+  $text = $ast.ToString()
+  if (@($tokens.Where{ $_.TokenFlags -eq 'CommandName' }).Count -eq 1) {
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "sudo $text")
   }
   else {
-    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, "sudo {$line}")
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "sudo {$text}")
   }
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
@@ -114,11 +120,11 @@ Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -S
   }
 }
 Set-PSReadLineKeyHandler -Chord Alt+e -Description 'Eval command line and replace it, except empty results' -ScriptBlock {
-  $line = ''
-  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
-  [string]$result = Invoke-Expression $line
+  [string]$text = ''
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
+  [string]$result = Invoke-Expression $text
   if ([string]::IsNullOrWhiteSpace($result)) {
     return
   }
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $result)
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, $result)
 }

@@ -5,3 +5,4 @@ aria2c https://github.com/junegunn/fzf/releases/download/0.63.0/fzf-0.63.0-linux
 curl -f https://zed.dev/install.sh | sh
 curl -fsSL https://bun.sh/install | bash
 curl -fsSL https://deno.land/install.sh | sh
+sudo dnf install https://github.com/PowerShell/PowerShell/releases/download/v7.5.2/powershell-7.5.2-1.rh.x86_64.rpm

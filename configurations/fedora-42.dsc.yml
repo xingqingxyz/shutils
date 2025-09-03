@@ -1,0 +1,26 @@
+$schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.vscode.json
+resources:
+  - type: Microsoft.DSC/Assertion
+    name: os assert
+    properties:
+      $schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.json
+      resources:
+        - type: Microsoft/OSInfo
+          name: os info
+          properties:
+            family: Linux
+            version: 42.0.0
+            bitness: '64'
+            architecture: x86_64
+  - type: Microsoft.DSC/Include
+    name: setup once
+    properties:
+      configurationFile: ./fedora-42-once.dsc.yml
+  - type: Microsoft.DSC/Include
+    name: setup apps
+    properties:
+      configurationFile: ./fedora-42-apps.dsc.yml
+  - type: Microsoft.DSC/Include
+    name: setup configs
+    properties:
+      configurationFile: ./fedora-42-configs.dsc.yml

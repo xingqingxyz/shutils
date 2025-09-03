@@ -1,4 +1,4 @@
-#Requires -PSEdition Core
+#Requires -Version 7.5.2
 & {
   # let user select dotnet tools path order while pwsh run as a dotnet tool
   $first, $second = $env:PATH.Split([System.IO.Path]::PathSeparator, 2)
