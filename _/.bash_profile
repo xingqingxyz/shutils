@@ -45,10 +45,11 @@ $HOME/.local/bin
 $PNPM_HOME
 $HOME/go/bin
 $HOME/.cargo/bin
-$HOME/.local/share/dsc
 $ANDROID_HOME/platform-tools
 $HOME/.local/share/JetBrains/Toolbox/scripts
 $SHUTILS_ROOT/scripts
+$HOME/.local/share/dsc
+$HOME/.local/share/numbat
 EOF
 IFS=: MAPFILE=${MAPFILE[*]} IFS=$' \t\n'
 if [[ :$PATH: != *":$MAPFILE:"* ]]; then
