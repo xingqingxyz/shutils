@@ -1,5 +1,5 @@
 Register-ArgumentCompleter -Native -CommandName aria2c -ScriptBlock {
-  param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
+  param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
     if ($i.Extent.StartOffset -ge $cursorPosition) {

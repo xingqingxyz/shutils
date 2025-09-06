@@ -1,16 +1,16 @@
 # max value 10000 * 9000 * 3 => 2.7e8 < 1e9
-function frecent(rank, time) {
+function frecent (rank, time) {
   return int(10000 * rank * (3.75 / (.0001 * (now - time) + 1.25)))
 }
 
-function tlide_path(path) {
+function tlide_path (path) {
   if (index(path, HOME) == 1) {
     return "~" substr(path, length(HOME) + 1)
   }
   return path
 }
 
-function output(matches, best_match) {
+function output (matches, best_match) {
   commnon = LCP(matches)
   if (list) {
     printf "%-10s %s\n", "LCP:", tlide_path(commnon)
@@ -26,7 +26,7 @@ function output(matches, best_match) {
   print best_match
 }
 
-function LCP(matches) {
+function LCP (matches) {
   for (x in matches) {
     if (!short || length(x) < length(short)) {
       short = x

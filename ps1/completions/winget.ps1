@@ -1,5 +1,5 @@
 Register-ArgumentCompleter -Native -CommandName winget -ScriptBlock {
-  param(
+  param (
     [string]$wordToComplete,
     [System.Management.Automation.Language.CommandAst]$commandAst,
     [int]$cursorPosition

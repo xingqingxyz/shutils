@@ -2,7 +2,7 @@ using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName 'hyperfine' -ScriptBlock {
-  param($wordToComplete, $commandAst, $cursorPosition)
+  param ($wordToComplete, $commandAst, $cursorPosition)
 
   $commandElements = $commandAst.CommandElements
   $command = @(

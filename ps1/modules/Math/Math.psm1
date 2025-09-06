@@ -1,5 +1,5 @@
 function hex {
-  param(
+  param (
     [switch]$NoPrefix
   )
   $c = switch ($MyInvocation.InvocationName) {

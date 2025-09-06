@@ -17,13 +17,8 @@
 PATH+=:/usr/bin
 
 if [ -d "$1" ]; then
-  out=$(ls -xA --color=always --hyperlink=always -- "$1")
-  if [ -z "$out" ]; then
-    ls -lahd --color=always --hyperlink=always -- "$1"
-  else
-    echo -n "$out"
-  fi
-  exit
+  ls -xA --color=always --hyperlink=always -- "$1"
+  exit 1 # less auto handle empty output
 fi
 
 manfilter() {

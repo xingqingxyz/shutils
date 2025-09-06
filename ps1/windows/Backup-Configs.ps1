@@ -11,7 +11,7 @@ function Backup-Files {
 }
 
 function Add-BakFile {
-    param(
+    param (
         [Parameter(Mandatory, Position = 1, ParameterSetName = 'Path')]
         [string]$FromFile,
         [Parameter(Position = 2, ParameterSetName = 'Path')]

@@ -5,7 +5,7 @@
 function Register-ArgumentCompleter {
   [CmdletBinding()]
   [OutputType([scriptblock])]
-  param(
+  param (
     [Parameter()]
     [string[]]
     $CommandName,
@@ -37,7 +37,7 @@ function Get-ArgumentCompleter ([string]$CommandName) {
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}
 Microsoft.PowerShell.Core\Register-ArgumentCompleter -CommandName (Get-ChildItem -LiteralPath $PSScriptRoot/completions).BaseName -Native -ScriptBlock {
-  param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
+  param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $commandName = Split-Path -LeafBase $commandAst.GetCommandName()
   & (Get-ArgumentCompleter $commandName) @PSBoundParameters
 }

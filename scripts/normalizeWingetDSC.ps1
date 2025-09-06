@@ -1,4 +1,4 @@
-param([string[]]$Path = $PWD, [switch]$WhatIf)
+param ([string[]]$Path = $PWD, [switch]$WhatIf)
 
 Get-ChildItem -Path $Path -Filter *.dsc.yml -File | ForEach-Object {
   #Requires -Modules Yayaml

@@ -25,7 +25,7 @@ Clear outdated modules.
  #>
 function Clear-Module {
   [CmdletBinding(SupportsShouldProcess)]
-  param(
+  param (
     [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
     $InputObject
   )

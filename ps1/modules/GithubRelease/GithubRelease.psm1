@@ -44,7 +44,7 @@ function rustenv {
   $platform = switch ($true) {
     $IsWindows { 'pc'; break }
     $IsLinux { 'unknown'; break }
-    default { throw "not implemented platform $_" }
+    default { throw 'unknown platform' }
   }
   $os = switch ($true) {
     $IsWindows { 'windows-msvc'; break }
@@ -67,4 +67,16 @@ function rustenv {
     }
   }
   "$arch-$platform-$os"
+}
+
+$versionGetMap = @{
+  fzf      = { (fzf --version).Substring(' ', 2)[0] }
+  tracexec = { (tracexec -V).Substring(' ', 2)[1] }
+  pastel   = { (pastel -V).Split(' ', 3)[1] }
+  yq       = { (yq --version).Substring(' ', 2)[0] }
+}
+
+function getVersion ([string]$Name) {
+  [version]$version = & $Name --version
+
 }

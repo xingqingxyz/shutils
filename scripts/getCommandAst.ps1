@@ -1,6 +1,6 @@
 using namespace System.Management.Automation.Language
 
-param(
+param (
   [Parameter(Mandatory, Position = 1, ValueFromPipeline)]
   [string]
   $InputObject

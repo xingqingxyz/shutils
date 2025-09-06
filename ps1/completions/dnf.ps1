@@ -2,7 +2,7 @@ using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName dnf, dnf5, yum -ScriptBlock {
-  param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
+  param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $words = @(
     $iter = $commandAst.CommandElements.GetEnumerator()
     $null = $iter.MoveNext()

@@ -1,7 +1,7 @@
 using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName env -ScriptBlock {
-  param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
+  param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $shouldPassive = $false
   for ($i = 0; $i -lt $commandAst.CommandElements.Count; $i++) {
     $el = $commandAst.CommandElements[$i]
