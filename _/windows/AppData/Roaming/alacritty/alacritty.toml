@@ -1,0 +1,34 @@
+[cursor.style]
+shape    = "Beam"
+blinking = "On"
+
+[[keyboard.bindings]]
+key    = "n"
+mods   = "Control|Shift"
+action = "CreateNewWindow"
+
+[[keyboard.bindings]]
+key    = "F11"
+action = "ToggleFullscreen"
+
+[mouse]
+hide_when_typing = true
+
+[terminal]
+shell = "pwsh"
+
+[window]
+resize_increments = true
+
+[window.dimensions]
+columns = 120
+lines   = 35
+
+[bell]
+animation = "EaseOut"
+color     = "#111111"
+duration  = 216
+
+[general]
+import = []
+working_directory = "C:\\Users\\cmema"

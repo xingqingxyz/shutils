@@ -40,8 +40,6 @@ function Get-TypeMember {
   }
 }
 
-Set-Alias gtm Get-TypeMember
-
 function yq {
   [CmdletBinding()]
   [OutputType([string])]
@@ -429,8 +427,6 @@ function Invoke-CodeFormatter {
   }
 }
 
-Set-Alias icf Invoke-CodeFormatter
-
 function batf {
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
     return Get-Item -Force $args | ForEach-Object {
@@ -495,3 +491,6 @@ $parserWriteCommandMap = @{
   # zig            = {}
   none             = {}
 }
+
+Set-Alias gtm Get-TypeMember
+Set-Alias icf Invoke-CodeFormatter

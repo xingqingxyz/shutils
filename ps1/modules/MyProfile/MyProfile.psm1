@@ -76,8 +76,6 @@ function Show-Command {
   }
 }
 
-Set-Alias l Show-Command
-
 <#
 .SYNOPSIS
 Edit command source.
@@ -171,8 +169,6 @@ function Edit-Command {
     }
   }
 }
-
-Set-Alias e Edit-Command
 
 function shouldEdit ([string]$LiteralPath) {
   end {
@@ -303,6 +299,15 @@ function Invoke-Sudo {
 
 function Invoke-Which {
   param(
+    [ArgumentCompleter({
+        [OutputType([System.Management.Automation.CompletionResult])]
+        param(
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+      })]
     [Parameter(Mandatory, Position = 0)]
     [string]
     $Name,
@@ -311,3 +316,6 @@ function Invoke-Which {
   )
   (Get-Item (Get-Command $Name -Type Application -TotalCount ($All ? 9999 : 1) -ea Stop).Path).ResolvedTarget
 }
+
+Set-Alias l Show-Command
+Set-Alias e Edit-Command

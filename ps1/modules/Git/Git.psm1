@@ -41,27 +41,3 @@ function Clear-Module {
       }
   }
 }
-
-[DscResource()]
-class TestDSC {
-  [DscProperty(Key)]
-  [string]
-  $id = ''
-
-  [DscProperty(Mandatory)]
-  [string]
-  $value = ''
-
-  [TestDSC] Get() {
-    $this.value = Get-Date
-    return $this
-  }
-
-  [void] Set() {
-    $this.value | ConvertTo-Json > ${env:SHUTILS_ROOT}/test.json
-  }
-
-  [bool] Test() {
-    return $true
-  }
-}
