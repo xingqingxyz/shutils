@@ -2,6 +2,17 @@
 shape    = "Beam"
 blinking = "On"
 
+#region bug fix
+[[keyboard.bindings]]
+key   = "Backspace"
+chars = "\u007f"
+
+[[keyboard.bindings]]
+key   = "Backspace"
+mods  = "Control"
+chars = "\b"
+#endregion
+
 [[keyboard.bindings]]
 key    = "n"
 mods   = "Control|Shift"
@@ -11,8 +22,15 @@ action = "CreateNewWindow"
 key    = "F11"
 action = "ToggleFullscreen"
 
+[[mouse.bindings]]
+mouse  = "Right"
+action = "Paste"
+
 [mouse]
 hide_when_typing = true
+
+[selection]
+save_to_clipboard = true
 
 [terminal]
 shell = "pwsh"
@@ -30,5 +48,5 @@ color     = "#111111"
 duration  = 216
 
 [general]
-import = []
+import = ["./theme_dark.toml"]
 working_directory = "C:\\Users\\cmema"

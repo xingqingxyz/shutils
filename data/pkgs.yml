@@ -42,3 +42,7 @@
   localVersion: 0.0.0
   tag: v1.4.5
   version: 1.4.5
+- name: node
+  repo: nodejs/node
+- name: nerdfonts
+  repo: ryanoasis/nerd-fonts

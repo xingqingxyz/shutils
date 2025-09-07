@@ -43,27 +43,139 @@ function Show-Command {
     $FullName = '.'
   }
   if (Test-Path $FullName) {
-    return Invoke-Less $FullName @ExtraArgs # use LESSOPEN to handle any path, e.g. $PWD
+    return lessfilter $FullName
   }
   $info = Get-Command $FullName -TotalCount 1 -ea Ignore
   if (!$info) {
-    return Write-Warning 'not found'
+    return Write-Error "command not found: $FullName"
   }
   if ($info.CommandType -eq 'Alias') {
     $info = $info.ResolvedCommand
   }
-  switch ([string]$info.CommandType) {
+  switch ($info.CommandType) {
+    Application {
+      return lessfilter $info.Source # for all other files
+    }
     Cmdlet {
-      return help $info.Name -Category Cmdlet
+      return Get-Help $info.Name -Category Cmdlet | bat -plman
     }
     Configuration {
       return & $info.Name
     }
-    { 'Filter,Function'.Contains($_) } {
+    ExternalScript {
+      return bat -plps1 $info.Source @ExtraArgs
+    }
+    { 'Filter,Function'.Contains($_.ToString()) } {
       return $info.Definition | bat -plps1 @ExtraArgs
     }
-    { 'Application,ExternalScript'.Contains($_) } {
-      return Invoke-Less $info.Path @ExtraArgs # to handle any excutable
+    default {
+      throw "not impletmented command type $_"
+    }
+  }
+}
+
+function manfilter {
+  $cmd = (Get-Command -Type Application -TotalCount 1 -ea Stop man).Source
+  $(if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd -l -
+    }
+    else {
+      & $cmd -l $args[0]
+    }) -creplace '\x1b\[[0-9;]*m\|.\x08', '' | bat -plman --color=always
+}
+
+function execute {
+  $cmd, $ags = $args
+  Write-Debug "C:\Program Files\Git\usr\bin\$cmd.exe $ags"
+  if ($MyInvocation.ExpectingInput) {
+    $input | & "C:\Program Files\Git\usr\bin\$cmd.exe" $ags
+  }
+  else {
+    & "C:\Program Files\Git\usr\bin\$cmd.exe" $ags
+  }
+}
+
+function decompress ([System.IO.FileSystemInfo]$Item) {
+  execute ($(switch ($Item.Extension) {
+        '.gz' { 'gzip -dc'; break }
+        '.bz2' { 'bzip2 -dc'; break }
+        '.lz' { 'lzip -dc'; break }
+        '.zst' { 'zstd -dcq'; break }
+        '.br' { 'brotli -dc'; break }
+        '.xz' { 'xz -dc'; break }
+        '.lzma' { 'xz -dc'; break }
+        default { throw 'not implemented' }
+      }).Split(' ') + @('--', $Item))
+}
+
+function lessfilter ([string]$Path) {
+  [System.IO.FileSystemInfo]$item = Get-Item -LiteralPath $Path -Force -ea Stop
+  if ($item.Mode.StartsWith('l')) {
+    $item = $item.ResolveLinkTarget($true)
+  }
+  if ($item.Mode.StartsWith('d')) {
+    return execute ls -xA --color=always --hyperlink=always -- $Path
+  }
+  switch -CaseSensitive -Regex ($item.Name) {
+    '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
+      if ((decompress $item | execute file -L -).Contains('troff')) {
+        decompress $item | manfilter
+      }
+      break
+    }
+    '\.(?:[1-9n]|[1-9]x|man)$' {
+      if ((execute file -L $item).Contains('troff')) {
+        manfilter $item
+      }
+      break
+    }
+    '\.(?:tar|tgz|tbz2)$' {
+      tar -tvvf $item
+      break
+    }
+    '\.tar\.(?:bz2|[glx]z|[zZ]|lzma|br)$' {
+      tar -tvvf $item
+      break
+    }
+    '\.tar\.zst$' {
+      tar --zstd -tvvf $item
+      break
+    }
+    '\.tar\.lz$' {
+      tar --lzip -tvvf $item
+      break
+    }
+    '\.(?:zip|jar|nbm)$' {
+      tar -tvvf $item
+      break
+    }
+    '\.(?:[glx]z|bz2|zst|br|lzma)$' {
+      decompress $item | bat -p --color=always --file-name=$(Split-Path -LeafBase $item)
+      break
+    }
+    '\.rpm$' {
+      rpm -qpivl --changelog --nomanifest -- $item
+      break
+    }
+    '\.cpio?$' {
+      Get-Content -AsByteStream -LiteralPath $item | cpio -itv
+      break
+    }
+    '\.gpg$' {
+      gpg -d $item
+      break
+    }
+    '\.(?:gif|jpeg|jpg|pcd|png|tga|tiff|tif)$' {
+      identify $item
+      break
+    }
+    default {
+      $encoding = execute file -Lb --mime-encoding $item
+      if (!$encoding.StartsWith('utf-')) {
+        return bat -p --color=always $item
+      }
+      iconv -f $encoding -t $OutputEncoding.WebName | bat -p --color=always $item
+      break
     }
   }
 }
@@ -130,7 +242,7 @@ function Edit-Command {
   if ($info.CommandType -eq 'Alias') {
     $info = $info.ResolvedCommand
   }
-  if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
+  if ('Cmdlet,Configuration,Filter,Function'.Contains($info.CommandType.ToString())) {
     if ($info.Module) {
       Write-Debug "$Editor $($info.Module.Path) $ExtraArgs"
       & $Editor $info.Module.Path @ExtraArgs
@@ -139,18 +251,21 @@ function Edit-Command {
       Show-Command $info.Name @ExtraArgs
     }
   }
-  elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
-    Write-Debug "$Editor $($info.Path) $ExtraArgs"
-    & $Editor $info.Path @ExtraArgs
+  elseif ('ExternalScript'.Contains($info.CommandType.ToString())) {
+    Write-Debug "$Editor $($info.Source) $ExtraArgs"
+    & $Editor $info.Source @ExtraArgs
   }
   elseif ($info.CommandType -eq 'Application') {
-    if (shouldEdit $info.Path) {
-      Write-Debug "$Editor $($info.Path) $ExtraArgs"
-      & $Editor $info.Path @ExtraArgs
+    if (shouldEdit $info.Source) {
+      Write-Debug "$Editor $($info.Source) $ExtraArgs"
+      & $Editor $info.Source @ExtraArgs
     }
     else {
-      Write-Warning "skip to edit binary $($info.Path)"
+      Write-Warning "skip to edit binary $($info.Source)"
     }
+  }
+  else {
+    throw 'not implemented'
   }
 }
 
@@ -172,19 +287,6 @@ function shouldEdit ([string]$LiteralPath) {
   }
   clean {
     $s.Close()
-  }
-}
-
-function Invoke-Less {
-  if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
-    return $input | bat -plman
-  }
-  $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : (Get-Command -CommandType Application -TotalCount 1 -ea Stop less).Path
-  if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd $args
-  }
-  else {
-    & $cmd $args
   }
 }
 
@@ -261,14 +363,13 @@ function Invoke-Sudo {
     }
   }
   if ($sudoExe) {
-    $ags = $extraArgs + $args
-    $sudoArgs = @(if ($IsLinux) { '-E' })
-    Write-Debug "$sudoExe $sudoArgs -- $ags"
+    $ags = @('-E', '--') + $extraArgs + $args
+    Write-Debug "$sudoExe $ags"
     if ($MyInvocation.ExpectingInput) {
-      $input | & $sudoExe $sudoArgs -- $ags
+      $input | & $sudoExe $ags
     }
     else {
-      & $sudoExe $sudoArgs -- $ags
+      & $sudoExe $ags
     }
   }
   else {
@@ -279,26 +380,6 @@ function Invoke-Sudo {
     }
     Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory $PWD.Path
   }
-}
-
-function Invoke-Which {
-  param (
-    [ArgumentCompleter({
-        [OutputType([System.Management.Automation.CompletionResult])]
-        param(
-          [string]$CommandName,
-          [string]$ParameterName,
-          [string]$WordToComplete
-        )
-        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
-      })]
-    [Parameter(Mandatory, Position = 0)]
-    [string]
-    $Name,
-    [switch]
-    $All
-  )
-  (Get-Item (Get-Command $Name -Type Application -TotalCount ($All ? 9999 : 1) -ea Stop).Path).ResolvedTarget
 }
 
 Set-Alias l Show-Command

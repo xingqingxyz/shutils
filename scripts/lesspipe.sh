@@ -50,16 +50,12 @@ case "$1" in
       exit
     fi
     ;;
-esac
-case "$1" in
   *.[1-9n] | *.[1-9]x | *.man)
     if file -L "$1" | grep -q troff; then
       manfilter "$1"
       exit
     fi
     ;;
-esac
-case "$1" in
   *.tar)
     tar tvvf "$1"
     exit

@@ -1,11 +1,14 @@
 function bat {
   if ($MyInvocation.PipelinePosition -eq $MyInvocation.PipelineLength) {
-    if ($MyInvocation.ExpectingInput) {
-      $input | bat.exe --color=always $args | & 'C:\Program Files\Git\usr\bin\less.exe'
-    }
-    else {
-      bat.exe --color=always $args | & 'C:\Program Files\Git\usr\bin\less.exe'
-    }
+    $(try {
+        if ($MyInvocation.ExpectingInput) {
+          $input | bat.exe --color=always $args
+        }
+        else {
+          bat.exe --color=always $args
+        }
+      }
+      catch {}) | & 'C:\Program Files\Git\usr\bin\less.exe'
   }
   else {
     if ($MyInvocation.ExpectingInput) {

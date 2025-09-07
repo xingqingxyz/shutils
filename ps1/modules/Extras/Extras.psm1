@@ -295,7 +295,7 @@ function icat {
 .SYNOPSIS
 Simple impl for surfboard localnet network proxy.
  #>
-function Set-GnomeProxy {
+function Set-SystemProxy {
   [CmdletBinding()]
   param (
     [Parameter()]
@@ -307,15 +307,26 @@ function Set-GnomeProxy {
     $MagicDigit = 2
   )
   $hostName = '192.168.0.10' + $MagicDigit
-  $mode = $On ? 'manual' : 'none'
-  gsettings set org.gnome.system.proxy mode $mode
-  if ($On -and (gsettings get org.gnome.system.proxy.http host) -ne $hostName) {
-    gsettings set org.gnome.system.proxy.http host $hostName
-    gsettings set org.gnome.system.proxy.http port 1234
-    gsettings set org.gnome.system.proxy.https host $hostName
-    gsettings set org.gnome.system.proxy.https port 1234
-    gsettings set org.gnome.system.proxy.socks host $hostName
-    gsettings set org.gnome.system.proxy.socks port 1235
+  if ($IsWindows) {
+    Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyEnable -Value ([int]$On.IsPresent) -Type DWord
+    if ($On) {
+      Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyServer -Value ${hostName}:1234 -Type String
+      Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyOverride -Value (@($env:no_proxy.Split(',').ForEach{ "https://$_" }; '<local>') -join ';') -Type String
+    }
+  }
+  elseif ($IsLinux -and $env:XDG_CURRENT_DESKTOP.Contains('gnome')) {
+    $mode = $On ? 'manual' : 'none'
+    gsettings set org.gnome.system.proxy mode $mode
+    if ($On -and (gsettings get org.gnome.system.proxy.http host) -ne $hostName) {
+      gsettings set org.gnome.system.proxy.http host $hostName
+      gsettings set org.gnome.system.proxy.http port 1234
+      gsettings set org.gnome.system.proxy.https host $hostName
+      gsettings set org.gnome.system.proxy.https port 1234
+      gsettings set org.gnome.system.proxy.socks host $hostName
+      gsettings set org.gnome.system.proxy.socks port 1235
+    }
+  }
+  if ($On) {
     setenv -Scope User http_proxy=https://${hostName}:1234 https_proxy=https://${hostName}:1234 all_proxy=socks5://${hostName}:1235
   }
   else {
@@ -399,7 +410,7 @@ function Test-Administrator {
 
 function Enable-EnvironmentFile {
   param (
-    [string]
+    [string[]]
     $Path = '.env'
   )
   Get-Content $Path | ForEach-Object {
@@ -408,17 +419,121 @@ function Enable-EnvironmentFile {
   }
 }
 
-function getParserName ([System.IO.FileSystemInfo]$Info) {
-  $query = ",$($Info.Extension.Substring(1)),"
-  foreach ($key in $parserMap.Keys) {
-    if ($parserMap.$key.Contains($query)) {
-      if (Get-Command ($parserRequiresMap.$key ?? $key) -TotalCount 1 -ea Ignore) {
-        return $key
+function getParser ([string]$Extension, [switch]$Inplace) {
+  switch -CaseSensitive -Regex ($Extension.Substring(1)) {
+    '^(?:c|m|mm|cpp|cc|cp|cxx|c++|h|hh|hpp|hxx|h++|inl|ipp)$' {
+      if ($Inplace) {
+        { clang-format -i --style=LLVM $args[0] }
+      }
+      else {
+        { clang-format --style=LLVM $args[0] }
       }
       break
     }
+    '^(?:dart)$' {
+      if ($Inplace) {
+        { dart format $args[0] }
+      }
+      else {
+        { dart format -o show --show none --summary none $args[0] }
+      }
+      break
+    }
+    '^(?:cs|csx|fs|fsi|fsx|vb)$' {
+      if ($Inplace) {
+        { dotnet format }
+      }
+      else {
+        { <# dotnet format; #> Get-Content -Raw -LiteralPath $args[0] }
+      }
+      break
+    }
+    '^(?:go)$' {
+      if ($Inplace) {
+        { gofmt -w $args[0] }
+      }
+      else {
+        { gofmt $args[0] }
+      }
+      break
+    }
+    '^(?:java)$' {
+      if ($Inplace) {
+        {}
+      }
+      else {
+        {}
+      }
+      break
+    }
+    '^(?:js|cjs|mjs|jsx|tsx|ts|cts|mts|json|jsonc|json5|yml|yaml|htm|html|xhtml|shtml|vue|gql|graphql|css|scss|sass|less|hbs|md|markdown)$' {
+      if ($Inplace) {
+        { pnpx prettier -w --ignore-path= $args[0] }
+      }
+      else {
+        { pnpx prettier --ignore-path= $args[0] }
+      }
+      break
+    }
+    '^(?:ps1|psm1|psd1)$' {
+      if ($Inplace) {
+        { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 > $args[0] }
+      }
+      else {
+        { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 }
+      }
+      break
+    }
+    '^(?:py|pyi|pyw|pyx|pxd|gyp|gypi)$' {
+      if ($Inplace) {
+        { ruff format -n $args[0] }
+      }
+      else {
+        { Get-Content -Raw -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
+      }
+      break
+    }
+    '^(?:rs)$' {
+      if ($Inplace) {
+        { rustfmt $args[0] }
+      }
+      else {
+        { rustfmt --emit stdout $args[0] }
+      }
+      break
+    }
+    '^(?:sh|bash|zsh|ash)$' {
+      if ($Inplace) {
+        { shfmt -i 2 -bn -ci -sr $args[0] }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
+      }
+      break
+    }
+    '^(?:lua)$' {
+      if ($Inplace) {
+        { stylua $args[0] }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | stylua }
+      }
+      break
+    }
+    '^(?:zig)$' {
+      if ($Inplace) {
+        {}
+      }
+      else {
+        {}
+      }
+      break
+    }
+    default {
+      Get-Content -AsByteStream -LiteralPath $args[0]
+      break
+    }
   }
-  return 'none'
 }
 
 function Invoke-CodeFormatter {
@@ -429,73 +544,19 @@ function Invoke-CodeFormatter {
     $Path
   )
   Get-Item -Force $Path | ForEach-Object {
-    & $parserWriteCommandMap.(getParserName $_) $_.FullName
+    & (getParser $_ -Inplace) $_.FullName
   }
 }
 
 function batf {
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
     return Get-Item -Force $args | ForEach-Object {
-      & $parserCommandMap.(getParserName $_) $_.FullName
+      & (getParser $_ -Inplace) $_.FullName
     }
   }
   Get-Item -Force $args | ForEach-Object {
-    & $parserCommandMap.(getParserName $_) $_.FullName |
-      bat --color=always --file-name $_.Name |
-      Out-Default # for impl Windows\bat
-    } | less
-}
-
-$parserMap = @{
-  'clang-format'   = 'c,m,mm,cpp,cc,cp,cxx,c++,h,hh,hpp,hxx,h++,inl,ipp'
-  dart             = 'dart'
-  dotnet           = 'cs,csx,fs,fsi,fsx,vb'
-  gofmt            = 'go'
-  java             = 'java'
-  prettier         = 'js,cjs,mjs,jsx,tsx,ts,cts,mts,json,jsonc,json5,yml,yaml,htm,html,xhtml,shtml,vue,gql,graphql,css,scss,sass,less,hbs,md,markdown'
-  PSScriptAnalyzer = 'ps1,psm1,psd1'
-  ruff             = 'py,pyi,pyw,pyx,pxd,gyp,gypi'
-  rustfmt          = 'rs'
-  shfmt            = 'sh,bash,zsh,ash'
-  stylua           = 'lua'
-  zig              = 'zig'
-}
-@($parserMap.Keys).ForEach{
-  $parserMap.$_ = ",$($parserMap.$_),"
-}
-$parserRequiresMap = @{
-  prettier         = 'pnpx'
-  PSScriptAnalyzer = 'Invoke-Formatter'
-}
-$parserCommandMap = @{
-  'clang-format'   = { clang-format --style=LLVM $args[0] }
-  dart             = { dart format -o show --show none --summary none $args[0] }
-  dotnet           = { <# dotnet format; #> Get-Content -Raw -LiteralPath $args[0] }
-  gofmt            = { gofmt $args[0] }
-  # java           = {}
-  prettier         = { pnpx prettier --ignore-path= $args[0] }
-  PSScriptAnalyzer = { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 }
-  ruff             = { Get-Content -Raw -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
-  rustfmt          = { rustfmt --emit stdout $args[0] }
-  shfmt            = { Get-Content -Raw -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
-  # stylua         = {}
-  # zig            = {}
-  none             = { Get-Content -Raw -LiteralPath $args[0] }
-}
-$parserWriteCommandMap = @{
-  'clang-format'   = { clang-format -i --style=LLVM $args[0] }
-  dart             = { dart format $args[0] }
-  dotnet           = { dotnet format }
-  gofmt            = { gofmt -w $args[0] }
-  # java           = {}
-  prettier         = { pnpx prettier -w --ignore-path= $args[0] }
-  PSScriptAnalyzer = { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings ${env:SHUTILS_ROOT}/CodeFormatting.psd1 > $args[0] }
-  ruff             = { ruff format -n $args[0] }
-  rustfmt          = { rustfmt $args[0] }
-  shfmt            = { shfmt -i 2 -bn -ci -sr $args[0] }
-  stylua           = { stylua $args[0] }
-  # zig            = {}
-  none             = {}
+    & (getParser $_) $_.FullName | bat --color=always --file-name $_.Name
+  } | bat
 }
 
 Set-Alias gtm Get-TypeMember

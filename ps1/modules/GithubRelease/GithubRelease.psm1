@@ -106,7 +106,7 @@ function rustenv {
   }
 }
 
-function command {
+function execute {
   $cmd, $ags = $args
   Write-Debug "$args"
   & $cmd $ags
@@ -134,7 +134,7 @@ function updateLatestVersion ($Meta) {
   $extraArgs = @(if (!$Meta.allowPrerelease) {
       '--exclude-pre-releases'
     })
-  $tag = command gh release list -R $Meta.repo -L1 -q '.[].tagName' --json tagName @extraArgs
+  $tag = execute gh release list -R $Meta.repo -L1 -q '.[].tagName' --json tagName @extraArgs
   $Meta.tag = $tag
   try {
     [version]$version = $Meta.version = switch ($Meta.name) {
@@ -198,28 +198,42 @@ function Install-Release {
     [Parameter(Mandatory, Position = 0)]
     $Meta
   )
-  $ext = $IsWindows ? 'zip' : 'tar.gz'
+  $ext = $IsWindows ? '.zip' : '.tar.gz'
   $exe = $IsWindows ? '.exe' : ''
   if (!$PSCmdlet.ShouldProcess("$($Meta.name)@$($Meta.version)", 'install')) {
     return
   }
   Write-Information "Installing $($Meta.name)@$($Meta.version) by tag $($Meta.tag)"
   function downloadRelease ([string]$Pattern) {
-    command gh release download -R $Meta.repo -p $Pattern -D $buildDir --skip-existing $Meta.tag
+    execute gh release download -R $Meta.repo -p $Pattern -D $buildDir --skip-existing $Meta.tag
   }
   switch ($Meta.name) {
     fzf {
       $base = 'fzf-{0}-{1}_{2}' -f $Meta.version, $go.os, $go.arch
-      downloadRelease $base`.$ext
-      command tar -xf $buildDir/$base.$ext -C $binDir
+      downloadRelease $base$ext
+      execute tar -xf $buildDir/$base$ext -C $binDir
       break
     }
     yq {
       $base = 'yq_{0}_{1}' -f $go.os, $go.arch
-      downloadRelease $base`.$ext
-      command tar -xf $buildDir/$base.$ext -C $buildDir
+      downloadRelease $base$ext
+      execute tar -xf $buildDir/$base$ext -C $buildDir
       Copy-Item -LiteralPath $buildDir/$base $binDir/yq
       Copy-Item -LiteralPath $buildDir/yq.1 $manDir/man1
+      break
+    }
+    nerdfonts {
+      downloadRelease 0xProto.zip
+      if ($IsLinux) {
+        execute tar -xf $buildDir/0xProto.zip -C $dataDir/fonts/truetype
+        execute sudo fc-cache -v
+      }
+      elseif ($IsWindows) {
+        execute sudo tar -xf $buildDir/0xProto.zip -C C:\Windows\Fonts
+      }
+      else {
+        throw 'not implemented'
+      }
       break
     }
     dsc {
@@ -229,21 +243,40 @@ function Install-Release {
       else {
         'DSC-{0}-{1}' -f $Meta.version, $rust.target
       }
-      downloadRelease $base`.$ext
+      downloadRelease $base$ext
       New-EmptyDir $dataDir/dsc
-      command tar -xf $buildDir/$base.$ext -C $dataDir/dsc
+      execute tar -xf $buildDir/$base$ext -C $dataDir/dsc
+      break
+    }
+    node {
+      $file = switch ($true) {
+        $IsWindows { "node-$($Meta.tag)-x64.msi"; break }
+        $IsLinux { "node-$($Meta.tag)-linux-x64.tar.xz"; break }
+        $IsMacOS { "node-$($Meta.tag).pkg"; break }
+        default { throw 'not implemented'; break }
+      }
+      execute aria2c https://nodejs.org/dist/$($Meta.tag)/$file -d $buildDir
+      if ($IsLinux) {
+        New-EmptyDir $dataDir/nodejs
+        execute tar -xf $buildDir/$file -C $dataDir/nodejs
+        $null = New-Item -ItemType SymbolicLink -Force -Target $dataDir/nodejs/node $binDir/node
+        $null = New-Item -ItemType SymbolicLink -Force -Target $dataDir/nodejs/npm $binDir/npm
+      }
+      else {
+        Invoke-Item -LiteralPath $buildDir/$file
+      }
       break
     }
     pwsh {
       switch -CaseSensitive -Wildcard ($PSVersionTable.OS) {
         'Fedora Linux*' {
-          command sudo dnf install https://github.com/PowerShell/PowerShell/pkgs/download/$($Meta.tag)/powershell-$($Meta.version)-1.rh.$($go.arch).rpm
+          execute sudo dnf install https://github.com/PowerShell/PowerShell/pkgs/download/$($Meta.tag)/powershell-$($Meta.version)-1.rh.$($go.arch).rpm
           break
         }
         'Ubuntu *' {
           $file = 'powershell-{0}.{1}.deb' -f $Meta.version, $go.arch
           downloadRelease $file
-          command sudo dpkg -i $buildDir/$file
+          execute sudo dpkg -i $buildDir/$file
           break
         }
       }
@@ -255,29 +288,29 @@ function Install-Release {
         $IsLinux { 'musl'; break }
       }
       $base = 'grex-{0}-{1}-{2}-{3}' -f $Meta.tag, $rust.arch, $rust.platform, (@($rust.os; $clib) -join '-')
-      downloadRelease $base`.$ext
-      command tar -xf $buildDir/$base.$ext -C $binDir
+      downloadRelease $base$ext
+      execute tar -xf $buildDir/$base$ext -C $binDir
       break
     }
     tracexec {
       $base = 'tracexec-{0}' -f $rust.target
-      downloadRelease $base`.$ext
-      command tar -xf $buildDir/$base.$ext -C $buildDir
+      downloadRelease $base$ext
+      execute tar -xf $buildDir/$base$ext -C $buildDir
       Copy-Item -LiteralPath $buildDir/tracexec$exe $binDir
       break
     }
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base`.$ext
-      command tar -xf $buildDir/$base.$ext -C $buildDir
+      downloadRelease $base$ext
+      execute tar -xf $buildDir/$base$ext -C $buildDir
       New-EmptyDir $dataDir/numbat
       Move-Item $buildDir/$base $dataDir/numbat
       break
     }
     pastel {
       $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base`.$ext
-      command tar -xf $buildDir/$base.$ext -C $buildDir
+      downloadRelease $base$ext
+      execute tar -xf $buildDir/$base$ext -C $buildDir
       Copy-Item -LiteralPath $buildDir/$base/$base/pastel$exe $binDir
       break
     }
@@ -289,7 +322,7 @@ function Install-Release {
 
 $go = goenv
 $rust = rustenv
-$buildDir = "${env:SHUTILS_ROOT}/build"
+$buildDir = (Get-PSDrive Temp).Root
 $binDir = $IsWindows ? "$HOME/tools" : "$HOME/.local/bin"
-$manDir = $IsWindows ? "${env:APPDATA}/man" : "$HOME/.local/share/man"
-$dataDir = $IsWindows ? $env:APPDATA : "$HOME/.local/share"
+$manDir = $IsWindows ? "${env:LOCALAPPDATA}/man" : "$HOME/.local/share/man"
+$dataDir = $IsWindows ? "${env:LOCALAPPDATA}/Programs" : "$HOME/.local/share"

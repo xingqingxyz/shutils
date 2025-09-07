@@ -40,5 +40,4 @@ color     = "#111111"
 duration  = 216
 
 [general]
-import = ["./enfocado_dark.toml"]
-
+import = ["./theme_dark.toml"]
