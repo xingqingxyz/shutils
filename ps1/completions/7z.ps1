@@ -1,5 +1,5 @@
 Register-ArgumentCompleter -Native -CommandName 7z -ScriptBlock {
-  param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
+  param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
 
   @(if ($commandAst.CommandElements.Count -le 2) {
       @('a', 'b', 'd', 'e', 'h', 'i', 'l', 'rn', 't', 'u', 'x')

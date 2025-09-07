@@ -1,5 +1,5 @@
 function Format-Duration {
-  param(
+  param (
     [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
     [timespan]
     $Duration

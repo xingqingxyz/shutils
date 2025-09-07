@@ -1,4 +1,4 @@
-param(
+param (
   [string]
   $Tag = (gh api graphql -F owner=PowerShell -F repo=DSC -F query=@${env:SHUTILS_ROOT}/gql/stable.gql -f operationName=getTag -q .data.repository.tagName | ConvertFrom-Json),
   [string]

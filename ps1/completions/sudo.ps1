@@ -1,5 +1,5 @@
 Register-ArgumentCompleter -Native -CommandName sudo -ScriptBlock {
-  param([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
+  param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   if ($commandAst.CommandElements.Count -le 2 -and
     $cursorPosition -le $commandAst.CommandElements[-1].Extent.EndOffset) {
     return [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)

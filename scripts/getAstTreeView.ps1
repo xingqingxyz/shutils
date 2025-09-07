@@ -1,7 +1,7 @@
 using namespace System.Collections.Generic
 using namespace System.Management.Automation.Language
 
-param(
+param (
   [Parameter(Position = 0, ValueFromPipeline)]
   $InputObject = 'ls -File|%{$_.FullName}'
 )

@@ -6,7 +6,7 @@ function Invoke-ExecutableAlias {
     $command = ($MyInvocation.Statement -split '\s+', 3)[1]
   }
   $command, [string[]]$arguments = $_executableAliasMap.$command
-  $command = (Get-Command -Type Application -TotalCount 1 -ea Stop $command).Path
+  $command = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $command).Path
   $arguments += $args
   Write-Debug "$command $arguments"
   if ($MyInvocation.ExpectingInput) {

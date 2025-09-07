@@ -1,4 +1,7 @@
-function quote([string]$s) {
+using namespace System.Management.Automation
+using namespace System.Management.Automation.Language
+
+function quote ([string]$s) {
   if ($s.Length -le 1) {
     return "'$s'"
   }
@@ -14,7 +17,7 @@ function quote([string]$s) {
   }
 }
 
-function unquote([string]$s) {
+function unquote ([string]$s) {
   $s -replace "^['`"]|['`"]$", ''
 }
 
@@ -32,5 +35,37 @@ function readWrite {
       [string]::new($buffer, 0, [System.Console]::In.Read($buffer, 0, $tuple.Item2))
     ) -join ''
     "$($text.Length)`n$text"
+  }
+}
+
+function dynamicparams {
+  [CmdletBinding()]
+  param (
+
+  )
+  dynamicparam {
+    $text = $MyInvocation.Statement
+    $cursor = 0
+    if (!$text) {
+      [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$cursor)
+    }
+    [ast[]]$items = [CommandCompletion]::MapStringInputToParsedInput($text, $cursor).Item1.EndBlock.Statements[0].PipelineElements
+    [CommandAst]$commandAst = foreach ($item in $items) {
+      if ($item -is [CommandAst] -and $item.Extent.StartOffset -le $cursor -and $cursor -le $item.Extent.EndOffset) {
+        $item
+        break
+      }
+    }
+    if (!$commandAst.GetCommandName().StartsWith('e')) {
+      return
+    }
+    $params = [RuntimeDefinedParameterDictionary]::new()
+    @(
+      [RuntimeDefinedParameter]::new('Editor', [string], @([Parameter]@{ParameterSetName = 'Edit' }))
+    ).ForEach{ $params.Add($_.Name, $_) }
+    $params
+  }
+  end {
+    $PSBoundParameters
   }
 }

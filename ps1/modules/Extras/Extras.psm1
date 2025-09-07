@@ -1,8 +1,8 @@
 function Get-TypeMember {
   [CmdletBinding()]
-  param(
+  param (
     [ArgumentCompleter({
-        param(
+        param (
           [string]$CommandName,
           [string]$ParameterName,
           [string]$WordToComplete
@@ -10,10 +10,10 @@ function Get-TypeMember {
         [System.Management.Automation.CompletionCompleters]::CompleteType($WordToComplete)
       })]
     [Parameter(Mandatory, ValueFromPipeline)]
-    [type[]]
+    [type]
     $InputObject,
     [ArgumentCompleter({
-        param(
+        param (
           [string]$CommandName,
           [string]$ParameterName,
           [string]$WordToComplete,
@@ -31,47 +31,53 @@ function Get-TypeMember {
     $MemberType = 'All'
   )
   process {
-    $InputObject.ForEach{
-      $typeName = $_.FullName
-      $_.GetMembers().Where{
-        $MemberType.HasFlag($_.MemberType) -and $_.Name -like $Name
-      }.ForEach{ [Microsoft.PowerShell.Commands.MemberDefinition]::new($typeName, $_.Name, $_.MemberType, "$_") }
-    }
+    $InputObject.GetMembers().Where{
+      $item = $_
+      $(switch ($_.MemberType) {
+          Method { !$item.IsSpecialName; break }
+          Constructor { $false; break }
+          default { $MemberType.HasFlag($_); break }
+        }) -and $_.Name -like $Name
+    }.ForEach{ [Microsoft.PowerShell.Commands.MemberDefinition]::new($InputObject.FullName, $_.Name, $_.MemberType, $_.ToString()) }
   }
 }
 
 function yq {
   [CmdletBinding()]
   [OutputType([string])]
-  param(
-    [Parameter(ParameterSetName = 'Path')]
+  param (
+    [Parameter()]
     [string]
     $Path,
-    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string]
-    $InputObject = (Get-Content -Raw $Path),
     [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]]
     $Query
   )
-  ConvertFrom-Yaml -InputObject $InputObject | ConvertTo-Json -Depth 99 | jq $Query
+  $(if ($MyInvocation.ExpectingInput) {
+      $input
+    }
+    else {
+      Get-Content -Raw $Path
+    }) | ConvertFrom-Yaml | ConvertTo-Json -Depth 99 | jq $Query
 }
 
 function tq {
   [CmdletBinding()]
   [OutputType([string])]
-  param(
-    [Parameter(ParameterSetName = 'Path')]
+  param (
+    [Parameter()]
     [string]
     $Path,
-    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string]
-    $InputObject = (Get-Content -Raw $Path),
     [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]]
     $Query
   )
-  ConvertFrom-Toml -InputObject $InputObject | ConvertTo-Json -Depth 99 | jq $Query
+  $(if ($MyInvocation.ExpectingInput) {
+      $input
+    }
+    else {
+      Get-Content -Raw $Path
+    }) | ConvertFrom-Toml | ConvertTo-Json -Depth 99 | jq $Query
 }
 
 function packageJSON {
@@ -93,7 +99,7 @@ A sequence of 'Query/Key' pairs.
 function sortJSON {
   [CmdletBinding()]
   [OutputType([string])]
-  param(
+  param (
     [Parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
     [string[]]
     $Path,
@@ -167,7 +173,7 @@ function sortJSON {
 
 function setenv {
   [CmdletBinding()]
-  param(
+  param (
     [Parameter(Mandatory, Position = 0, ValueFromRemainingArguments)]
     [string[]]
     $ExtraArgs,
@@ -256,7 +262,7 @@ function setenv {
 
 function icat {
   [CmdletBinding(DefaultParameterSetName = 'Path')]
-  param(
+  param (
     [Parameter(Position = 0, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
     [string[]]
     $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation,
@@ -291,7 +297,7 @@ Simple impl for surfboard localnet network proxy.
  #>
 function Set-GnomeProxy {
   [CmdletBinding()]
-  param(
+  param (
     [Parameter()]
     [switch]
     $On,
@@ -321,7 +327,7 @@ function Set-Region {
   [CmdletBinding()]
   [OutputType([string], [void], ParameterSetName = 'Path')]
   [OutputType([string], ParameterSetName = 'Stdin')]
-  param(
+  param (
     [Parameter(Mandatory, Position = 0)]
     [string]
     $Name,
@@ -392,7 +398,7 @@ function Test-Administrator {
 }
 
 function Enable-EnvironmentFile {
-  param(
+  param (
     [string]
     $Path = '.env'
   )

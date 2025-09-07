@@ -1,7 +1,8 @@
 # .bash_profile
 
 export SHUTILS_ROOT="$HOME/p/shutils" \
-  PNPM_HOME="$HOME/.local/share/pnpm"
+  PNPM_HOME="$HOME/.local/share/pnpm" \
+  ANDROID_HOME="$HOME/Android/Sdk"
 export \
   LANG='zh_CN.UTF-8' \
   PAGER='less' \
@@ -44,23 +45,22 @@ $HOME/.local/bin
 $PNPM_HOME
 $HOME/go/bin
 $HOME/.cargo/bin
-$HOME/.local/share/dsc
-$HOME/.local/share/powershell/Scripts
+$ANDROID_HOME/platform-tools
 $HOME/.local/share/JetBrains/Toolbox/scripts
 $SHUTILS_ROOT/scripts
+$HOME/.local/share/dsc
+$HOME/.local/share/numbat
 EOF
 IFS=: MAPFILE=${MAPFILE[*]} IFS=$' \t\n'
 if [[ :$PATH: != *":$MAPFILE:"* ]]; then
   export PATH=$MAPFILE:$PATH
 fi
 
-if [[ :$PSModulePath: != *":$SHUTILS_ROOT/ps1/modules:"* ]]; then
-  export PSModulePath="$PSModulePath${PSModulePath+:}$SHUTILS_ROOT/ps1/modules"
-fi
-
 # Get the aliases and functions
 . "$SHUTILS_ROOT/_/.bashrc"
 
 #region UserEnv
-export T='1'
+export http_proxy='' \
+  all_proxy='' \
+  https_proxy=''
 #endregion

@@ -26,7 +26,7 @@ function env {
     }
     $environment.$name = $value
   }
-  $Command = (Get-Command -Type Application -TotalCount 1 -ea Stop $args[$i]).Path
+  $Command = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $args[$i]).Path
   $ArgumentList = $args[($i + 1)..($args.Length - 1)]
   $saveEnvironment = @{}
   $environment.GetEnumerator().ForEach{

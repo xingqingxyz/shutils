@@ -2,7 +2,7 @@ using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName ruff -ScriptBlock {
-  param([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
+  param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $commands = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
         continue

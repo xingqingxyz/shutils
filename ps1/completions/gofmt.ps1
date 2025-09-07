@@ -1,7 +1,7 @@
 using namespace System.Management.Automation
 
 Register-ArgumentCompleter -Native -CommandName gofmt -ScriptBlock {
-  param([string]$wordToComplete)
+  param ([string]$wordToComplete)
   @(if ($wordToComplete.StartsWith('-')) {
       [CompletionResult]::new('-cpuprofile', 'cpuprofile', [CompletionResultType]::ParameterValue, 'write cpu profile to this file')
       [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterValue, 'display diffs instead of rewriting files')

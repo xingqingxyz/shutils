@@ -5,7 +5,7 @@ param (
   $Path = '/usr/share/code/resources/app/extensions/theme-defaults/themes/dark_modern.json'
 )
 
-function hex([string]$Color) {
+function hex ([string]$Color) {
   $r, $g, $b = $Color.Substring(1, 2), $Color.Substring(3, 2), $Color.Substring(5, 2)
   [System.Convert]::ToInt32($r, 16),
   [System.Convert]::ToInt32($g, 16),

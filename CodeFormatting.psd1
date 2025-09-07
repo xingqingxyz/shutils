@@ -34,10 +34,11 @@
       Enable         = $true
       CheckHashtable = $true
     }
-    PSUseCorrectCasing                 = @{ Enable = $true
-      CheckCommands                = $true
-      CheckKeyword                 = $true
-      CheckOperator                = $true
+    PSUseCorrectCasing                 = @{
+      Enable        = $true
+      CheckCommands = $true
+      CheckKeyword  = $true
+      CheckOperator = $true
     }
     PSAvoidUsingCmdletAliases          = @{
       AllowList = @()

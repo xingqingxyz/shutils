@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-View command source.
+Show command source.
  #>
 function Show-Command {
   [CmdletBinding()]
-  param(
+  param (
     [ArgumentCompleter({
         [OutputType([System.Management.Automation.CompletionResult])]
-        param(
+        param (
           [string]$CommandName,
           [string]$ParameterName,
           [string]$WordToComplete,
@@ -31,47 +31,39 @@ function Show-Command {
     [string]
     $InputObject
   )
-  begin {
-    $lines = @()
-  }
-  process {
-    $lines += $InputObject
-  }
-  end {
-    if ($MyInvocation.ExpectingInput) {
-      if (!$FullName) {
-        return $lines | bat -plhelp $ExtraArgs
-      }
-      elseif ($PSBoundParameters.BoundPositionally.Contains('FullName')) {
-        return $lines | bat $FullName $ExtraArgs
-      }
-    }
+  if ($MyInvocation.ExpectingInput) {
     if (!$FullName) {
-      $FullName = '.'
+      return $input | bat -plhelp @ExtraArgs
     }
-    if (Test-Path $FullName) {
-      return less $FullName $ExtraArgs # use LESSOPEN to handle any path, e.g. $PWD
+    elseif ($PSBoundParameters.BoundPositionally.Contains('FullName')) {
+      return $input | bat $FullName @ExtraArgs
     }
-    $info = Get-Command $FullName -TotalCount 1 -ea Ignore
-    if (!$info) {
-      return Write-Warning 'not found'
+  }
+  if (!$FullName) {
+    $FullName = '.'
+  }
+  if (Test-Path $FullName) {
+    return Invoke-Less $FullName @ExtraArgs # use LESSOPEN to handle any path, e.g. $PWD
+  }
+  $info = Get-Command $FullName -TotalCount 1 -ea Ignore
+  if (!$info) {
+    return Write-Warning 'not found'
+  }
+  if ($info.CommandType -eq 'Alias') {
+    $info = $info.ResolvedCommand
+  }
+  switch ([string]$info.CommandType) {
+    Cmdlet {
+      return help $info.Name -Category Cmdlet
     }
-    if ($info.CommandType -eq 'Alias') {
-      $info = $info.ResolvedCommand
+    Configuration {
+      return & $info.Name
     }
-    switch ([string]$info.CommandType) {
-      Cmdlet {
-        return help $info.Name -Category Cmdlet
-      }
-      Configuration {
-        return & $info.Name
-      }
-      { 'Filter,Function'.Contains($_) } {
-        return $info.Definition | bat -plps1 $ExtraArgs
-      }
-      { 'Application,ExternalScript'.Contains($_) } {
-        return less $info.Path $ExtraArgs # to handle any excutable
-      }
+    { 'Filter,Function'.Contains($_) } {
+      return $info.Definition | bat -plps1 @ExtraArgs
+    }
+    { 'Application,ExternalScript'.Contains($_) } {
+      return Invoke-Less $info.Path @ExtraArgs # to handle any excutable
     }
   }
 }
@@ -82,10 +74,10 @@ Edit command source.
  #>
 function Edit-Command {
   [CmdletBinding()]
-  param(
+  param (
     [ArgumentCompleter({
         [OutputType([System.Management.Automation.CompletionResult])]
-        param(
+        param (
           [string]$CommandName,
           [string]$ParameterName,
           [string]$WordToComplete,
@@ -106,7 +98,7 @@ function Edit-Command {
     [string[]]
     $ExtraArgs,
     [ArgumentCompleter({
-        param(
+        param (
           [string]$CommandName,
           [string]$ParameterName,
           [string]$WordToComplete
@@ -120,52 +112,44 @@ function Edit-Command {
     [string]
     $InputObject
   )
-  begin {
-    $lines = @()
+  if ($MyInvocation.ExpectingInput -and (!$FullName -or
+      $PSBoundParameters.BoundPositionally.Contains('FullName'))) {
+    Write-Debug "| $Editor $FullName $ExtraArgs"
+    return $input | & $Editor $FullName @ExtraArgs
   }
-  process {
-    $lines += $InputObject
+  if (Test-Path $FullName) {
+    return & $Editor $FullName @ExtraArgs
   }
-  end {
-    if ($MyInvocation.ExpectingInput -and (!$FullName -or
-        $PSBoundParameters.BoundPositionally.Contains('FullName'))) {
-      Write-Debug "| $Editor $FullName $ExtraArgs"
-      return $lines | & $Editor $FullName $ExtraArgs
+  if (!$FullName) {
+    $FullName = $MyInvocation.MyCommand.Name
+  }
+  $info = Get-Command $FullName -TotalCount 1 -ea Ignore
+  if (!$info) {
+    return & $Editor $FullName @ExtraArgs # fallback, e.g. code --help
+  }
+  if ($info.CommandType -eq 'Alias') {
+    $info = $info.ResolvedCommand
+  }
+  if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
+    if ($info.Module) {
+      Write-Debug "$Editor $($info.Module.Path) $ExtraArgs"
+      & $Editor $info.Module.Path @ExtraArgs
     }
-    if (!$FullName) {
-      $FullName = $MyInvocation.InvocationName
+    else {
+      Show-Command $info.Name @ExtraArgs
     }
-    if (Test-Path $FullName) {
-      return & $Editor $FullName $ExtraArgs
-    }
-    $info = Get-Command $FullName -TotalCount 1 -ea Ignore
-    if (!$info) {
-      return & $Editor $FullName $ExtraArgs # fallback, e.g. code --help
-    }
-    if ($info.CommandType -eq 'Alias') {
-      $info = $info.ResolvedCommand
-    }
-    if ('Cmdlet,Configuration,Filter,Function'.Contains([string]$info.CommandType)) {
-      if ($info.Module) {
-        Write-Debug "$Editor $($info.Module.Path) $ExtraArgs"
-        & $Editor $info.Module.Path $ExtraArgs
-      }
-      else {
-        vw $info.Name $ExtraArgs
-      }
-    }
-    elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
+  }
+  elseif ('ExternalScript'.Contains([string]$info.CommandType)) {
+    Write-Debug "$Editor $($info.Path) $ExtraArgs"
+    & $Editor $info.Path @ExtraArgs
+  }
+  elseif ($info.CommandType -eq 'Application') {
+    if (shouldEdit $info.Path) {
       Write-Debug "$Editor $($info.Path) $ExtraArgs"
-      & $Editor $info.Path $ExtraArgs
+      & $Editor $info.Path @ExtraArgs
     }
-    elseif ($info.CommandType -eq 'Application') {
-      if (shouldEdit $info.Path) {
-        Write-Debug "$Editor $($info.Path) $ExtraArgs"
-        & $Editor $info.Path $ExtraArgs
-      }
-      else {
-        Write-Warning "skip to edit binary $($info.Path)"
-      }
+    else {
+      Write-Warning "skip to edit binary $($info.Path)"
     }
   }
 }
@@ -195,7 +179,7 @@ function Invoke-Less {
   if ($MyInvocation.Statement -eq '& $pagerCommand $pagerArgs') {
     return $input | bat -plman
   }
-  $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : '/usr/bin/less'
+  $cmd = $IsWindows ? 'C:\Program Files\Git\usr\bin\less.exe' : (Get-Command -CommandType Application -TotalCount 1 -ea Stop less).Path
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $args
   }
@@ -257,7 +241,7 @@ function Invoke-Sudo {
     }
     if (!$info) {
       # fallback to handle sudo options
-      return & (Get-Command -Type Application -TotalCount 1 -ea Stop sudo).Path $args
+      return & (Get-Command -CommandType Application -TotalCount 1 -ea Stop sudo).Path $args
     }
     if ($info.CommandType -eq 'Application') {
       $args[0] = $info.Source
@@ -298,7 +282,7 @@ function Invoke-Sudo {
 }
 
 function Invoke-Which {
-  param(
+  param (
     [ArgumentCompleter({
         [OutputType([System.Management.Automation.CompletionResult])]
         param(

@@ -14,7 +14,6 @@ function Invoke-Z {
     [Parameter(ParameterSetName = 'Main')][switch]$Cwd,
     [Parameter(ParameterSetName = 'Main', ValueFromRemainingArguments)][string[]]$Queries
   )
-
   $sum = $_z.rankSum
   switch ($PSCmdlet.ParameterSetName) {
     'Add' {
@@ -28,7 +27,7 @@ function Invoke-Z {
             return
           }
         }
-        $item = ($_z.itemsMap.$path ??= ([PSCustomObject]@{
+        $item = ($_z.itemsMap.$path ??= ([pscustomobject]@{
               Path = $path
               Rank = 0.0
               Time = 0
@@ -130,7 +129,7 @@ Set-Variable -Option ReadOnly -Force _z ([pscustomobject]@{
   }
   Get-Content -LiteralPath $_z.config.dataFile -ea Ignore | ForEach-Object {
     $path, [double]$rank, [int]$time = $_.Split($_z.config.dataSeperator)
-    $_z.itemsMap.Add($path, [PSCustomObject]@{
+    $_z.itemsMap.Add($path, [pscustomobject]@{
         Path = $path
         Rank = $rank
         Time = $time
