@@ -49,10 +49,10 @@ else
 fi
 if [[ $name != *$'\n_prompt;'* ]]; then
   name=$'\n_prompt;'$name
-  unset -n name
 fi
+unset -n name
 
-items=(
+MAPFILE=(
   '\[\e[$((31 + !$?))m\]$?\[\e[0m\]'
   '(\!:\[\e[${LAST_CMD_DUR_C}m\]$LAST_CMD_DUR_T\[\e[0m\])'
   '\[\e]8;;file://$PWD\e\\\\\]\w\[\e]8;;\e\\\\\]'
@@ -60,19 +60,18 @@ items=(
 )
 case "$OSTYPE" in
   msys | cygwin)
-    items[2]=${items[2]/'$PWD'/'$(cygpath -w "$PWD")'}
+    MAPFILE[2]=${MAPFILE[2]/'$PWD'/'$(cygpath -w "$PWD")'}
     ;;
   linux-gnu)
     if declare -xp WSL_DISTRO_NAME &> /dev/null; then
-      items[2]=${items[2]/'$PWD'/'$(wslpath -w "$PWD")'}
+      MAPFILE[2]=${MAPFILE[2]/'$PWD'/'$(wslpath -w "$PWD")'}
     fi
     ;;
 esac
 if declare -Fp __git_ps1 &> /dev/null; then
-  items[3]='$(__git_ps1)'${items[3]}
+  MAPFILE[3]='$(__git_ps1)'${MAPFILE[3]}
 fi
-printf -v PS1 '%s ' "${items[@]}"
-unset items
+printf -v PS1 '%s ' "${MAPFILE[@]}"
 
 _idefault_complete() {
   mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")

@@ -21,4 +21,3 @@ Get-ChildItem -LiteralPath ${env:SHUTILS_ROOT}/ps1 -File -ea Ignore | ForEach-Ob
 Set-Alias npm Invoke-Npm
 Set-Alias npx Invoke-Npx
 Set-Alias sudo Invoke-Sudo
-Set-Alias which Invoke-Which

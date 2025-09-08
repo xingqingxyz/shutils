@@ -108,24 +108,37 @@ function rustenv {
 
 function execute {
   $cmd, $ags = $args
+  $cmd = (Get-Command -Type Application -TotalCount 1 -ea Stop $cmd).Source
   Write-Debug "$args"
-  & $cmd $ags
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd $ags
+  }
+  else {
+    & $cmd $ags
+  }
 }
 
 function New-EmptyDir ([string]$Path) {
-  Remove-Item -Recurse -Force $Path
+  Remove-Item -Recurse -Force $Path -ea Ignore
   $null = New-Item -ItemType Directory -Force $Path
 }
 
-function updateLocalVersion ($Meta) {
-  $Meta.localVersion = try {
+function getLocalVersion ($Meta) {
+  try {
     switch ($Meta.name) {
-      fzf { (fzf --version).Split(' ', 2)[0]; break }
-      pastel { (pastel -V).Split(' ', 3)[1]; break }
-      default { (& $_ --version).Split(' ')[-1] -replace '^v', ''; break }
+      fzf { (execute fzf --version).Split(' ', 2)[0]; break }
+      pastel { (execute pastel -V).Split(' ', 3)[1]; break }
+      mold { (execute mold -v).Split(' ', 3)[1]; break }
+      jq { (execute jq -V).Split('-', 2)[1]; break }
+      plantuml {
+        (execute java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
+        break
+      }
+      default { (execute $_ --version).Split(' ')[-1] -replace '^v', ''; break }
     }
   }
   catch {
+    Write-Warning "cannot detect local version for $($Meta.name)"
     '0.0.0'
   }
 }
@@ -133,14 +146,17 @@ function updateLocalVersion ($Meta) {
 function updateLatestVersion ($Meta) {
   $extraArgs = @(if (!$Meta.allowPrerelease) {
       '--exclude-pre-releases'
+    }) + @(switch ($Meta.name) {
+      node { '-L5', '--json', 'tagName,isLatest', '-q', '.[] | select(.isLatest) | .tagName'; break }
+      default { '-L1', '--json', 'tagName', '-q', '.[0].tagName'; break }
     })
-  $tag = execute gh release list -R $Meta.repo -L1 -q '.[].tagName' --json tagName @extraArgs
-  $Meta.tag = $tag
+  $tag = $Meta.tag = execute gh release list -R $Meta.repo --exclude-drafts @extraArgs
   try {
     [version]$version = $Meta.version = switch ($Meta.name) {
+      jq { $tag.Split('-', 2)[1]; break }
       default { $tag -replace '^v', ''; break }
     }
-    if ($version -gt $Meta.localVersion) {
+    if ($version -gt (getLocalVersion $Meta)) {
       $Meta
     }
     else {
@@ -152,44 +168,18 @@ function updateLatestVersion ($Meta) {
   }
 }
 
-function Update-Release {
-  [CmdletBinding(SupportsShouldProcess)]
-  param (
-    [ArgumentCompleter({
-        [OutputType([CompletionResult])]
-        param (
-          [string]$CommandName,
-          [string]$ParameterName,
-          [string]$WordToComplete
-        )
-        (Get-Content -Raw "${env:SHUTILS_ROOT}/data/pkgs.yml" | ConvertFrom-Yaml).name |
-          Where-Object { $_ -like "$WordToComplete*" }
-      })]
-    [Parameter(Position = 0)]
-    [string[]]
-    $Name
-  )
-  $pkgsFile = "${env:SHUTILS_ROOT}/data/pkgs.yml"
-  $pkgMap = @{}
-  $pkgs = Get-Content -Raw $pkgsFile | ConvertFrom-Yaml
-  $pkgs.ForEach{ $pkgMap[$_.name] = $_ }
-  $Name ??= $pkgs.Keys
-  $Name.ForEach{
-    $pkg = $pkgMap.$_
-    if (!$pkg) {
-      return Write-Warning "unknown pkg $_"
-    }
-    updateLocalVersion $pkg
-    updateLatestVersion $pkg
-  }.ForEach{
-    try {
-      Install-Release $_
-    }
-    catch {
-      Write-Warning $_
-    }
+function downloadFile ([string]$Url, [string]$Path) {
+  if ($Path) {
+    $dir = Split-Path $Path
+    $file = Split-Path -Leaf $Path
   }
-  $pkgs | ConvertTo-Yaml > $pkgsFile
+  else {
+    $dir = $buildDir
+    $file = Split-Path -Leaf $Url
+    $Path = "$dir/$file"
+  }
+  Remove-Item -Force -LiteralPath $Path -ea Ignore
+  execute aria2c $Url -d $dir -o $file -l (Get-Item -LiteralPath temp:/aria2c.log).FullName
 }
 
 function Install-Release {
@@ -211,21 +201,37 @@ function Install-Release {
     fzf {
       $base = 'fzf-{0}-{1}_{2}' -f $Meta.version, $go.os, $go.arch
       downloadRelease $base$ext
-      execute tar -xf $buildDir/$base$ext -C $binDir
+      tar -xf $buildDir/$base$ext -C $binDir
       break
     }
     yq {
       $base = 'yq_{0}_{1}' -f $go.os, $go.arch
       downloadRelease $base$ext
-      execute tar -xf $buildDir/$base$ext -C $buildDir
-      Copy-Item -LiteralPath $buildDir/$base $binDir/yq
-      Copy-Item -LiteralPath $buildDir/yq.1 $manDir/man1
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base $binDir/yq
+      Move-Item -LiteralPath $buildDir/yq.1 $manDir/man1
+      break
+    }
+    jq {
+      $os = switch ($true) {
+        $IsLinux { 'linux'; break }
+        $IsWindows { 'windows'; break }
+        $IsMacOS { 'macos'; break }
+        default { throw 'unknown os' }
+      }
+      $file = 'jq-{0}-{1}{2}' -f $os, $go.arch, $exe
+      downloadRelease $file
+      Move-Item -LiteralPath $buildDir/$file $binDir/jq$exe
+      if (!$IsWindows) {
+        chmod +x $binDir/jq$exe
+      }
+      downloadFile https://github.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $manDir/man1/jq.1
       break
     }
     nerdfonts {
       downloadRelease 0xProto.zip
       if ($IsLinux) {
-        execute tar -xf $buildDir/0xProto.zip -C $dataDir/fonts/truetype
+        tar -xf $buildDir/0xProto.zip -C $dataDir/fonts/truetype
         execute sudo fc-cache -v
       }
       elseif ($IsWindows) {
@@ -245,22 +251,30 @@ function Install-Release {
       }
       downloadRelease $base$ext
       New-EmptyDir $dataDir/dsc
-      execute tar -xf $buildDir/$base$ext -C $dataDir/dsc
+      tar -xf $buildDir/$base$ext -C $dataDir/dsc
       break
     }
     node {
+      $arch = switch ([RuntimeInformation]::OSArchitecture) {
+        'X64' { 'x64'; break }
+        'Arm64' { 'arm64'; break }
+        default { throw "not supported arch $_" }
+      }
       $file = switch ($true) {
-        $IsWindows { "node-$($Meta.tag)-x64.msi"; break }
-        $IsLinux { "node-$($Meta.tag)-linux-x64.tar.xz"; break }
+        $IsWindows { "node-$($Meta.tag)-$arch.msi"; break }
+        $IsLinux { "node-$($Meta.tag)-linux-$arch.tar.xz"; break }
         $IsMacOS { "node-$($Meta.tag).pkg"; break }
         default { throw 'not implemented'; break }
       }
-      execute aria2c https://nodejs.org/dist/$($Meta.tag)/$file -d $buildDir
+      downloadFile https://nodejs.org/dist/$($Meta.tag)/$file
       if ($IsLinux) {
-        New-EmptyDir $dataDir/nodejs
-        execute tar -xf $buildDir/$file -C $dataDir/nodejs
-        $null = New-Item -ItemType SymbolicLink -Force -Target $dataDir/nodejs/node $binDir/node
-        $null = New-Item -ItemType SymbolicLink -Force -Target $dataDir/nodejs/npm $binDir/npm
+        tar -xf $buildDir/$file -C $buildDir
+        $null = New-Item -ItemType Directory -Force $dataDir/nodejs
+        $root = "$dataDir/nodejs/$($Meta.tag)"
+        Remove-Item -LiteralPath $root -Recurse -Force -ea Ignore
+        Move-Item -LiteralPath $buildDir/node-$($Meta.tag)-linux-$arch $root
+        $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/node $binDir/node
+        $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/npm $binDir/npm
       }
       else {
         Invoke-Item -LiteralPath $buildDir/$file
@@ -289,20 +303,58 @@ function Install-Release {
       }
       $base = 'grex-{0}-{1}-{2}-{3}' -f $Meta.tag, $rust.arch, $rust.platform, (@($rust.os; $clib) -join '-')
       downloadRelease $base$ext
-      execute tar -xf $buildDir/$base$ext -C $binDir
+      tar -xf $buildDir/$base$ext -C $binDir
       break
     }
     tracexec {
       $base = 'tracexec-{0}' -f $rust.target
       downloadRelease $base$ext
-      execute tar -xf $buildDir/$base$ext -C $buildDir
-      Copy-Item -LiteralPath $buildDir/tracexec$exe $binDir
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/tracexec$exe $binDir
+      break
+    }
+    rga {
+      $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      $files = 'rga rga-fzf rga-fzf-open rga-preproc'.Split(' ').ForEach{ "$buildDir/$_$exe" }
+      Move-Item -LiteralPath $files $binDir
+      break
+    }
+    hexyl {
+      $base = 'hexyl-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir
+      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $manDir/man1
+      break
+    }
+    mdbook {
+      $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/mdbook$exe $binDir
+      break
+    }
+    mold {
+      $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item $buildDir/$base/bin/* $binDir
+      Move-Item $buildDir/$base/lib/* $libDir
+      Move-Item $buildDir/$base/share/man/man1/* $manDir/man1
+      break
+    }
+    plantuml {
+      $file = 'plantuml-gplv2-{0}.jar' -f $Meta.version
+      downloadRelease $file
+      Move-Item -LiteralPath $buildDir/$file $binDir/plantuml.jar
       break
     }
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      execute tar -xf $buildDir/$base$ext -C $buildDir
+      tar -xf $buildDir/$base$ext -C $buildDir
       New-EmptyDir $dataDir/numbat
       Move-Item $buildDir/$base $dataDir/numbat
       break
@@ -310,8 +362,8 @@ function Install-Release {
     pastel {
       $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      execute tar -xf $buildDir/$base$ext -C $buildDir
-      Copy-Item -LiteralPath $buildDir/$base/$base/pastel$exe $binDir
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/$base/pastel$exe $binDir
       break
     }
     default {
@@ -320,9 +372,49 @@ function Install-Release {
   }
 }
 
+function Update-Release {
+  [CmdletBinding(SupportsShouldProcess)]
+  param (
+    [ArgumentCompleter({
+        param (
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        (Get-Content -Raw $PSScriptRoot/pkgs.yml | ConvertFrom-Yaml).name |
+          Where-Object { $_ -like "$WordToComplete*" }
+      })]
+    [Parameter(Position = 0)]
+    [string[]]
+    $Name
+  )
+  $pkgsFile = "$PSScriptRoot/pkgs.yml"
+  $pkgMap = @{}
+  $pkgs = Get-Content -Raw $pkgsFile | ConvertFrom-Yaml
+  $pkgs.ForEach{ $pkgMap[$_.name] = $_ }
+  $Name ??= $pkgs.Keys
+  $Name.ForEach{
+    $pkg = $pkgMap.$_
+    if (!$pkg) {
+      return Write-Warning "unknown pkg $_"
+    }
+    updateLatestVersion $pkg
+  }.ForEach{
+    try {
+      Install-Release $_
+    }
+    catch {
+      Write-Warning $_
+    }
+  }
+  $pkgs | ConvertTo-Yaml > $pkgsFile
+}
+
 $go = goenv
 $rust = rustenv
-$buildDir = (Get-PSDrive Temp).Root
+$buildDir = [System.IO.Path]::GetTempPath().TrimEnd([System.IO.Path]::DirectorySeparatorChar)
 $binDir = $IsWindows ? "$HOME/tools" : "$HOME/.local/bin"
-$manDir = $IsWindows ? "${env:LOCALAPPDATA}/man" : "$HOME/.local/share/man"
 $dataDir = $IsWindows ? "${env:LOCALAPPDATA}/Programs" : "$HOME/.local/share"
+$manDir = "$dataDir/man"
+$libDir = "$dataDir/lib"
+$null = New-Item -ItemType Directory $binDir, $manDir, $libDir -Force

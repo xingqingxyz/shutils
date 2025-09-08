@@ -1,26 +1,28 @@
 # .bash_profile
-
-export SHUTILS_ROOT="$HOME/p/shutils" \
-  PNPM_HOME="$HOME/.local/share/pnpm" \
-  ANDROID_HOME="$HOME/Android/Sdk"
 export \
-  LANG='zh_CN.UTF-8' \
-  PAGER='less' \
-  SYSTEMD_PAGER= \
+  ANDROID_HOME="$HOME/Android/Sdk" \
   EDITOR='msedit' \
+  GTK_IM_MODULE='fcitx' \
+  LANG='zh_CN.UTF-8' \
   LESS='-R --quit-if-one-screen --use-color --wordwrap --ignore-case --incsearch --search-options=W' \
-  LESSOPEN="||'$SHUTILS_ROOT/scripts/lesspipe.sh' %s 2>/dev/null" \
-  MANROFFOPT='-c' \
+  LESSOPEN="||$HOME/.local/bin/lesspipe.sh %s" \
   MANPAGER="sh -c \"sed 's/\x1b\[[0-9;]*m\|.\x08//g' 2>/dev/null | bat -plman\"" \
+  MANROFFOPT='-c' \
   no_proxy='127.0.0.1,localhost,internal.domain,kkgithub.com,raw.githubusercontents.com,mirror.sjtu.edu.cn,mirrors.ustc.edu.cn,mirrors.tuna.tsinghua.edu.cn' \
-  RUSTUP_UPDATE_ROOT='https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' \
-  RUSTUP_DIST_SERVER='https://mirrors.tuna.tsinghua.edu.cn/rustup' \
-  NODE_PATH="$PNPM_HOME/global/5/node_modules" \
-  XMODIFIERS='@im=fcitx' \
+  PAGER='less' \
+  PNPM_HOME="$HOME/.local/share/pnpm" \
   QT_IM_MODULE='fcitx' \
-  GTK_IM_MODULE='fcitx'
+  RUSTUP_DIST_SERVER='https://mirrors.tuna.tsinghua.edu.cn/rustup' \
+  RUSTUP_UPDATE_ROOT='https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' \
+  SHUTILS_ROOT="$HOME/p/shutils" \
+  SYSTEMD_PAGER= \
+  XMODIFIERS='@im=fcitx'
 
-items=(
+# pnpm root
+export NODE_PATH+="$PNPM_HOME/global/5/node_modules"
+
+# fzf default opts
+MAPFILE=(
   alt-+:change-multi
   alt-J:jump
   alt-\\:first
@@ -37,30 +39,30 @@ items=(
   ctrl-\\:preview-top
   ctrl-/:preview-bottom
 )
-export FZF_DEFAUT_OPTS="--cycle ${items[*]/*/--bind=&}"
-unset items
+export FZF_DEFAUT_OPTS="--cycle ${MAPFILE[*]/*/--bind=&}"
 
+# PATH
 mapfile -t << EOF
 $HOME/.local/bin
 $PNPM_HOME
 $HOME/go/bin
 $HOME/.cargo/bin
 $ANDROID_HOME/platform-tools
-$HOME/.local/share/JetBrains/Toolbox/scripts
 $SHUTILS_ROOT/scripts
+$HOME/.local/share/JetBrains/Toolbox/scripts
 $HOME/.local/share/dsc
 $HOME/.local/share/numbat
 EOF
-IFS=: MAPFILE=${MAPFILE[*]} IFS=$' \t\n'
-if [[ :$PATH: != *":$MAPFILE:"* ]]; then
-  export PATH=$MAPFILE:$PATH
+printf -v MAPFILE '%s:' "${MAPFILE[@]}"
+if [[ :$PATH: != *":$MAPFILE"* ]]; then
+  export PATH=$MAPFILE$PATH
 fi
 
 # Get the aliases and functions
 . "$SHUTILS_ROOT/_/.bashrc"
 
 #region UserEnv
-export http_proxy='' \
-  all_proxy='' \
-  https_proxy=''
+export https_proxy='' \
+  http_proxy='' \
+  all_proxy=''
 #endregion

@@ -16,6 +16,10 @@ action = "ToggleFullscreen"
 key    = "F11"
 action = "ToggleFullscreen"
 
+[[mouse.bindings]]
+mouse  = "Right"
+action = "Paste"
+
 [mouse]
 hide_when_typing = true
 

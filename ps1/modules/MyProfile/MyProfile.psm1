@@ -3,109 +3,123 @@
 Show command source.
  #>
 function Show-Command {
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName = 'Base')]
   param (
     [ArgumentCompleter({
-        [OutputType([System.Management.Automation.CompletionResult])]
         param (
           [string]$CommandName,
           [string]$ParameterName,
-          [string]$WordToComplete,
-          [System.Management.Automation.Language.CommandAst]$CommandAst,
-          [System.Collections.IDictionary]$FakeBoundParameters
+          [string]$WordToComplete
         )
-        # note: using namespace not effects, this executed likes background job
         $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
         if ($results) { $results } else {
           [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
         }
       })]
-    [Alias('Path', 'Name')]
-    [Parameter(Position = 0, ValueFromPipelineByPropertyName)]
-    [string]
-    $FullName,
-    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [Parameter(Position = 0, ValueFromRemainingArguments, ParameterSetName = 'Base')]
     [string[]]
     $ExtraArgs,
-    [Parameter(ValueFromPipeline)]
+    [Alias('Path', 'Name')]
+    [Parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'FullName')]
+    [string]
+    $FullName,
+    [Parameter(ValueFromPipeline, ParameterSetName = 'Stdin')]
     [string]
     $InputObject
   )
-  if ($MyInvocation.ExpectingInput) {
-    if (!$FullName) {
-      return $input | bat -plhelp @ExtraArgs
-    }
-    elseif ($PSBoundParameters.BoundPositionally.Contains('FullName')) {
-      return $input | bat $FullName @ExtraArgs
+  begin {
+    $Name = @()
+  }
+  process {
+    if ($FullName) {
+      $Name += $FullName
     }
   }
-  if (!$FullName) {
-    $FullName = '.'
+  end {
+    switch -CaseSensitive ($PSCmdlet.ParameterSetName) {
+      'Stdin' { return $InputObject | bat -plhelp @ExtraArgs }
+      'FullName' { break }
+      'Base' {
+        if (!$ExtraArgs) {
+          $ExtraArgs = '.'
+        }
+        for ($i = 0; $i -lt $ExtraArgs.Count; $i++) {
+          if ($ExtraArgs[$i].StartsWith('-')) {
+            break
+          }
+          $Name += $ExtraArgs[$i]
+        }
+        $ExtraArgs = $ExtraArgs[$i..($ExtraArgs.Count)]
+        break
+      }
+    }
+    $Name | ForEach-Object {
+      if (Test-Path $_) {
+        return lessfilter $_
+      }
+      $info = Get-Command $_ -TotalCount 1 -ea Ignore
+      if (!$info) {
+        return Write-Error "command not found: $_"
+      }
+      if ($info.CommandType -eq 'Alias') {
+        $info = $info.ResolvedCommand
+      }
+      switch ($info.CommandType) {
+        Application {
+          return lessfilter $info.Source # for all other files
+        }
+        Cmdlet {
+          return Get-Help $info.Name -Category Cmdlet -Full | bat -plman @ExtraArgs
+        }
+        Configuration {
+          return & $info.Name
+        }
+        ExternalScript {
+          return bat -plps1 @ExtraArgs '--' $info.Source
+        }
+        { 'Filter,Function'.Contains($_.ToString()) } {
+          return $info.Definition | bat -plps1 @ExtraArgs
+        }
+        default {
+          throw "not impletmented command type $_"
+        }
+      }
+    }
   }
-  if (Test-Path $FullName) {
-    return lessfilter $FullName
-  }
-  $info = Get-Command $FullName -TotalCount 1 -ea Ignore
-  if (!$info) {
-    return Write-Error "command not found: $FullName"
-  }
-  if ($info.CommandType -eq 'Alias') {
-    $info = $info.ResolvedCommand
-  }
-  switch ($info.CommandType) {
-    Application {
-      return lessfilter $info.Source # for all other files
-    }
-    Cmdlet {
-      return Get-Help $info.Name -Category Cmdlet | bat -plman
-    }
-    Configuration {
-      return & $info.Name
-    }
-    ExternalScript {
-      return bat -plps1 $info.Source @ExtraArgs
-    }
-    { 'Filter,Function'.Contains($_.ToString()) } {
-      return $info.Definition | bat -plps1 @ExtraArgs
-    }
-    default {
-      throw "not impletmented command type $_"
-    }
-  }
-}
-
-function manfilter {
-  $cmd = (Get-Command -Type Application -TotalCount 1 -ea Stop man).Source
-  $(if ($MyInvocation.ExpectingInput) {
-      $input | & $cmd -l -
-    }
-    else {
-      & $cmd -l $args[0]
-    }) -creplace '\x1b\[[0-9;]*m\|.\x08', '' | bat -plman --color=always
 }
 
 function execute {
   $cmd, $ags = $args
-  Write-Debug "C:\Program Files\Git\usr\bin\$cmd.exe $ags"
+  try {
+    $cmd = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $cmd).Source
+  }
+  catch {
+    $cmd = "C:\Program Files\Git\usr\bin\$cmd.exe"
+    if (!($IsWindows -and (Test-Path -LiteralPath $cmd))) {
+      throw $_
+    }
+  }
+  Write-Debug "$cmd $ags"
   if ($MyInvocation.ExpectingInput) {
-    $input | & "C:\Program Files\Git\usr\bin\$cmd.exe" $ags
+    $input | & $cmd $ags
   }
   else {
-    & "C:\Program Files\Git\usr\bin\$cmd.exe" $ags
+    & $cmd $ags
   }
 }
 
 function decompress ([System.IO.FileSystemInfo]$Item) {
-  execute ($(switch ($Item.Extension) {
-        '.gz' { 'gzip -dc'; break }
-        '.bz2' { 'bzip2 -dc'; break }
-        '.lz' { 'lzip -dc'; break }
-        '.zst' { 'zstd -dcq'; break }
-        '.br' { 'brotli -dc'; break }
-        '.xz' { 'xz -dc'; break }
-        '.lzma' { 'xz -dc'; break }
-        default { throw 'not implemented' }
-      }).Split(' ') + @('--', $Item))
+  $ags = $(switch ($Item.Extension) {
+      '.gz' { 'gzip -dc'; break }
+      '.bz2' { 'bzip2 -dc'; break }
+      '.lz' { 'lzip -dc'; break }
+      '.zst' { 'zstd -dcq'; break }
+      '.br' { 'brotli -dc'; break }
+      '.xz' { 'xz -dc'; break }
+      '.lzma' { 'xz -dc'; break }
+      default { throw 'not implemented' }
+    }).Split(' ') + @('--', $Item)
+  execute @ags
 }
 
 function lessfilter ([string]$Path) {
@@ -114,18 +128,24 @@ function lessfilter ([string]$Path) {
     $item = $item.ResolveLinkTarget($true)
   }
   if ($item.Mode.StartsWith('d')) {
-    return execute ls -xA --color=always --hyperlink=always -- $Path
+    return execute ls -xA --color=auto --hyperlink=auto '--' $item
   }
   switch -CaseSensitive -Regex ($item.Name) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if ((decompress $item | execute file -L -).Contains('troff')) {
-        decompress $item | manfilter
+        decompress $item | execute man -l - | execute sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman
+      }
+      else {
+        bat -p '--' $item
       }
       break
     }
     '\.(?:[1-9n]|[1-9]x|man)$' {
-      if ((execute file -L $item).Contains('troff')) {
-        manfilter $item
+      if ((execute file -L '--' $item).Contains('troff')) {
+        execute man -l '--' $item | execute sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman
+      }
+      else {
+        bat -p '--' $item
       }
       break
     }
@@ -150,11 +170,11 @@ function lessfilter ([string]$Path) {
       break
     }
     '\.(?:[glx]z|bz2|zst|br|lzma)$' {
-      decompress $item | bat -p --color=always --file-name=$(Split-Path -LeafBase $item)
+      decompress $item | bat -p --file-name=$(Split-Path -LeafBase $item)
       break
     }
     '\.rpm$' {
-      rpm -qpivl --changelog --nomanifest -- $item
+      rpm -qpivl --changelog --nomanifest '--' $item
       break
     }
     '\.cpio?$' {
@@ -162,19 +182,19 @@ function lessfilter ([string]$Path) {
       break
     }
     '\.gpg$' {
-      gpg -d $item
+      gpg -d '--' $item
       break
     }
     '\.(?:gif|jpeg|jpg|pcd|png|tga|tiff|tif)$' {
-      identify $item
+      icat -- $item # unsafe `--` for Function\:icat
       break
     }
     default {
-      $encoding = execute file -Lb --mime-encoding $item
-      if (!$encoding.StartsWith('utf-')) {
-        return bat -p --color=always $item
+      switch -CaseSensitive (execute file -Lb --mime-encoding '--' $item) {
+        binary { hexyl '--' $item | & { $input | less <# fixes hexyl pipe close #> }; break }
+        $OutputEncoding.WebName { bat -p '--' $item; break }
+        default { Get-Content -Encoding ([System.Text.Encoding]::GetEncoding($_)) -LiteralPath $item | bat -p --file-name=$item; break }
       }
-      iconv -f $encoding -t $OutputEncoding.WebName | bat -p --color=always $item
       break
     }
   }
@@ -188,15 +208,11 @@ function Edit-Command {
   [CmdletBinding()]
   param (
     [ArgumentCompleter({
-        [OutputType([System.Management.Automation.CompletionResult])]
         param (
           [string]$CommandName,
           [string]$ParameterName,
-          [string]$WordToComplete,
-          [System.Management.Automation.Language.CommandAst]$CommandAst,
-          [System.Collections.IDictionary]$FakeBoundParameters
+          [string]$WordToComplete
         )
-        # note: using namespace not effects, this executed likes background job
         $results = @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
         if ($results.Length) { $results } else {
           [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
@@ -251,7 +267,7 @@ function Edit-Command {
       Show-Command $info.Name @ExtraArgs
     }
   }
-  elseif ('ExternalScript'.Contains($info.CommandType.ToString())) {
+  elseif ($info.CommandType -eq 'ExternalScript') {
     Write-Debug "$Editor $($info.Source) $ExtraArgs"
     & $Editor $info.Source @ExtraArgs
   }
@@ -378,7 +394,7 @@ function Invoke-Sudo {
     if ($MyInvocation.ExpectingInput) {
       Write-Warning 'ignored stdin'
     }
-    Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory $PWD.Path
+    Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory .
   }
 }
 

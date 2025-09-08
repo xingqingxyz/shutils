@@ -1,5 +1,7 @@
 https://docs.github.com/public/fpt/schema.docs.graphql
 aria2c https://github.com/xingqingxyz/mvext/archive/refs/heads/main.zip
+aria2c https://github.com/xingqingxyz/mvext/blob/HEAD/README.md
+aria2c https://github.com/xingqingxyz/mvext/raw/refs/heads/main/README.md
 aria2c https://github.com/PowerShell/DSC/releases/download/v3.1.0/DSC-3.1.0-x86_64-linux.tar.gz
 aria2c https://github.com/junegunn/fzf/releases/download/0.63.0/fzf-0.63.0-linux_amd64.tar.gz
 curl -f https://zed.dev/install.sh | sh

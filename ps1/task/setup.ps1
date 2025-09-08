@@ -2,7 +2,10 @@ param (
   [Parameter()]
   [ValidateSet('monthly', 'weekly', 'daily')]
   [string[]]
-  $Kind
+  $Kind,
+  [Parameter()]
+  [switch]
+  $Unregister
 )
 
 function encodedCommand ([string]$Kind) {
@@ -12,6 +15,14 @@ function encodedCommand ([string]$Kind) {
 }
 
 if ($IsLinux) {
+  if ($Unregister) {
+    $Kind.ForEach{
+      systemctl disable --user pwsh-$_.timer
+      Remove-Item -LiteralPath ~/.config/systemd/user/pwsh-$_.service, ~/.config/systemd/user/pwsh-$_.timer -Force
+    }
+    systemctl daemon-reload --user
+    return
+  }
   $Kind.ForEach{
     $service = @"
 [Unit]
@@ -19,7 +30,7 @@ Description=PowerShell $_ task
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/pwsh -noni -nop -e $(encodedCommand $_)")
+ExecStart=/usr/bin/pwsh -noni -nop -e $(encodedCommand $_)
 "@
     $timer = @"
 [Unit]
@@ -33,16 +44,19 @@ AccuracySec=1d
 [Install]
 WantedBy=timers.target
 "@
-    $service > ~/.config/systemd/user/$_-task.service
-    $timer > ~/.config/systemd/user/$_-task.timer
+    $service > ~/.config/systemd/user/pwsh-$_.service
+    $timer > ~/.config/systemd/user/pwsh-$_.timer
   }
 
   systemctl daemon-reload --user
   $Kind.ForEach{
-    systemctl enable --user --now $_-task.timer
+    systemctl enable --user --now pwsh-$_.timer
   }
 }
 elseif ($IsWindows) {
+  if ($Unregister) {
+    return Unregister-ScheduledTask ($Kind.ForEach{ "pwsh-$_" })
+  }
   $Kind.ForEach{
     $trigger = switch ($_) {
       'daily' { New-ScheduledTaskTrigger -At 0am -Daily; break }
@@ -50,7 +64,7 @@ elseif ($IsWindows) {
       'monthly' { New-ScheduledTaskTrigger -At 0am -Daily -DaysInterval 30; break }
     }
     $action = New-ScheduledTaskAction -Execute pwsh -Argument "-noni -nop -e $(encodedCommand $_)"
-    Register-ScheduledTask "pwsh-$_" -Force -Description "PowerShell $_ task" -Trigger $trigger -Action $action
+    Register-ScheduledTask pwsh-$_ -Force -Description "PowerShell $_ task" -Trigger $trigger -Action $action
   }
 }
 else {

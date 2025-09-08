@@ -24,6 +24,6 @@ else
 fi
 if [[ $name != *$'\n_z_prompt;'* ]]; then
   name+=$'\n_z_prompt;'
-  unset -n name
   alias z=_z
 fi
+unset -n name
