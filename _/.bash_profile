@@ -8,8 +8,10 @@ export \
   LESSOPEN="||$HOME/.local/bin/lesspipe.sh %s" \
   MANPAGER="sh -c \"sed 's/\x1b\[[0-9;]*m\|.\x08//g' 2>/dev/null | bat -plman\"" \
   MANROFFOPT='-c' \
+  NODE_PATH+="${NODE_PATH+:}$HOME/.local/share/pnpm/global/5/node_modules" \
   no_proxy='127.0.0.1,localhost,internal.domain,kkgithub.com,raw.githubusercontents.com,mirror.sjtu.edu.cn,mirrors.ustc.edu.cn,mirrors.tuna.tsinghua.edu.cn' \
   PAGER='less' \
+  PSModulePath+="${PSModulePath+:}$HOME/.local/share/powershell/Modules" \
   PNPM_HOME="$HOME/.local/share/pnpm" \
   QT_IM_MODULE='fcitx' \
   RUSTUP_DIST_SERVER='https://mirrors.tuna.tsinghua.edu.cn/rustup' \
@@ -17,9 +19,6 @@ export \
   SHUTILS_ROOT="$HOME/p/shutils" \
   SYSTEMD_PAGER= \
   XMODIFIERS='@im=fcitx'
-
-# pnpm root
-export NODE_PATH+="$PNPM_HOME/global/5/node_modules"
 
 # fzf default opts
 MAPFILE=(
@@ -62,7 +61,7 @@ fi
 . "$SHUTILS_ROOT/_/.bashrc"
 
 #region UserEnv
-export https_proxy='' \
-  http_proxy='' \
-  all_proxy=''
+export http_proxy='' \
+all_proxy='' \
+https_proxy=''
 #endregion

@@ -1,7 +1,7 @@
 if (!$IsWindows) {
   Write-Error 'can only run on windows'
 }
-$root = "${env:SHUTILS_ROOT}\_\windows"
+$root = "$env:SHUTILS_ROOT\_\windows"
 $files = @{}
 Get-ChildItem $root -Recurse -File -ea Ignore | ForEach-Object {
   $files.($_.ResolvedTarget) = $_.FullName.Replace($root, $HOME)

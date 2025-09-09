@@ -118,11 +118,6 @@ function execute {
   }
 }
 
-function New-EmptyDir ([string]$Path) {
-  Remove-Item -Recurse -Force $Path -ea Ignore
-  $null = New-Item -ItemType Directory -Force $Path
-}
-
 function getLocalVersion ($Meta) {
   try {
     switch ($Meta.name) {
@@ -178,8 +173,9 @@ function downloadFile ([string]$Url, [string]$Path) {
     $file = Split-Path -Leaf $Url
     $Path = "$dir/$file"
   }
-  Remove-Item -Force -LiteralPath $Path -ea Ignore
-  execute aria2c $Url -d $dir -o $file -l (Get-Item -LiteralPath temp:/aria2c.log).FullName
+  $null = New-Item -Type Directory -Force $dir
+  Remove-Item -LiteralPath $Path -Force -ea Ignore
+  execute aria2c $Url -d $dir -o $file -l $buildDir/aria2c.log
 }
 
 function Install-Release {
@@ -208,8 +204,8 @@ function Install-Release {
       $base = 'yq_{0}_{1}' -f $go.os, $go.arch
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base $binDir/yq
-      Move-Item -LiteralPath $buildDir/yq.1 $manDir/man1
+      Move-Item -LiteralPath $buildDir/$base $binDir/yq -Force
+      Move-Item -LiteralPath $buildDir/yq.1 $manDir/man1 -Force
       break
     }
     jq {
@@ -221,7 +217,7 @@ function Install-Release {
       }
       $file = 'jq-{0}-{1}{2}' -f $os, $go.arch, $exe
       downloadRelease $file
-      Move-Item -LiteralPath $buildDir/$file $binDir/jq$exe
+      Move-Item -LiteralPath $buildDir/$file $binDir/jq$exe -Force
       if (!$IsWindows) {
         chmod +x $binDir/jq$exe
       }
@@ -250,7 +246,8 @@ function Install-Release {
         'DSC-{0}-{1}' -f $Meta.version, $rust.target
       }
       downloadRelease $base$ext
-      New-EmptyDir $dataDir/dsc
+      Remove-Item -LiteralPath $dataDir/dsc -Recurse -Force -ea Ignore
+      $null = New-Item -ItemType Directory -Force $dataDir/dsc
       tar -xf $buildDir/$base$ext -C $dataDir/dsc
       break
     }
@@ -310,7 +307,7 @@ function Install-Release {
       $base = 'tracexec-{0}' -f $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/tracexec$exe $binDir
+      Move-Item -LiteralPath $buildDir/tracexec$exe $binDir -Force
       break
     }
     rga {
@@ -318,52 +315,52 @@ function Install-Release {
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       $files = 'rga rga-fzf rga-fzf-open rga-preproc'.Split(' ').ForEach{ "$buildDir/$_$exe" }
-      Move-Item -LiteralPath $files $binDir
+      Move-Item -LiteralPath $files $binDir -Force
       break
     }
     hexyl {
       $base = 'hexyl-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir
-      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $manDir/man1
+      Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $manDir/man1 -Force
       break
     }
     mdbook {
       $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/mdbook$exe $binDir
+      Move-Item -LiteralPath $buildDir/mdbook$exe $binDir -Force
       break
     }
     mold {
       $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item $buildDir/$base/bin/* $binDir
-      Move-Item $buildDir/$base/lib/* $libDir
-      Move-Item $buildDir/$base/share/man/man1/* $manDir/man1
+      Move-Item $buildDir/$base/bin/* $binDir -Force
+      Move-Item $buildDir/$base/lib/* $libDir -Force
+      Move-Item $buildDir/$base/share/man/man1/* $manDir/man1 -Force
       break
     }
     plantuml {
       $file = 'plantuml-gplv2-{0}.jar' -f $Meta.version
       downloadRelease $file
-      Move-Item -LiteralPath $buildDir/$file $binDir/plantuml.jar
+      Move-Item -LiteralPath $buildDir/$file $binDir/plantuml.jar -Force
       break
     }
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      New-EmptyDir $dataDir/numbat
-      Move-Item $buildDir/$base $dataDir/numbat
+      Remove-Item -LiteralPath $dataDir/numbat -Recurse -Force -ea Ignore
+      Move-Item -LiteralPath $buildDir/$base $dataDir/numbat -Force
       break
     }
     pastel {
       $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/$base/pastel$exe $binDir
+      Move-Item -LiteralPath $buildDir/$base/$base/pastel$exe $binDir -Force
       break
     }
     default {
@@ -414,7 +411,7 @@ $go = goenv
 $rust = rustenv
 $buildDir = [System.IO.Path]::GetTempPath().TrimEnd([System.IO.Path]::DirectorySeparatorChar)
 $binDir = $IsWindows ? "$HOME/tools" : "$HOME/.local/bin"
-$dataDir = $IsWindows ? "${env:LOCALAPPDATA}/Programs" : "$HOME/.local/share"
+$dataDir = $IsWindows ? "$env:LOCALAPPDATA/Programs" : "$HOME/.local/share"
 $manDir = "$dataDir/man"
 $libDir = "$dataDir/lib"
 $null = New-Item -ItemType Directory $binDir, $manDir, $libDir -Force

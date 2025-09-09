@@ -1,1 +1,1 @@
-ast-grep
+./ast-grep.sh

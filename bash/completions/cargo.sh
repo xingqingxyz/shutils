@@ -1,1 +1,1 @@
-eval "$(rustup completions powershell cargo)"
+eval "$(rustup completions bash cargo)"

@@ -1,7 +1,7 @@
 if (!$IsLinux) {
   Write-Error 'can only run on linux'
 }
-$root = "${env:SHUTILS_ROOT}/_"
+$root = "$env:SHUTILS_ROOT/_"
 $files = @{}
 Get-ChildItem $root -Exclude windows -Force -ea Ignore |
   Get-ChildItem -Recurse -File -Force -ea Ignore | ForEach-Object {

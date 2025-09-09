@@ -26,7 +26,7 @@ while ($true) {
       [string]::new($buffer, 0, $reader.Read($buffer, 0, 1024))
     }) -join ''
   try {
-    $text = & ${env:SHUTILS_ROOT}/scripts/getAstTreeView.ps1 $text
+    $text = & $env:SHUTILS_ROOT/scripts/getAstTreeView.ps1 $text
     $writer.Write($text)
   }
   catch {

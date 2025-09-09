@@ -1,5 +1,5 @@
 $baseDir = switch ($true) {
-  $IsWindows { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine"; break }
+  $IsWindows { "$env:APPDATA/Microsoft/Windows/PowerShell/PSReadLine"; break }
   $IsLinux { "$HOME/.local/share/powershell/PSReadLine"; break }
   default { throw 'not implemented' }
 }

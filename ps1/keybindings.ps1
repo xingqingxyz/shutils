@@ -61,7 +61,7 @@ Set-PSReadLineKeyHandler -Chord Alt+c -Description 'Fzf select sub directories t
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history files to replace command line' -ScriptBlock {
   $history = switch ($true) {
-    $IsWindows { "${env:APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt"; break }
+    $IsWindows { "$env:APPDATA/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt"; break }
     $IsLinux { "$HOME/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
     default { throw 'not implemented' }
   }
