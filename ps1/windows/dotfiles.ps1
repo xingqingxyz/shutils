@@ -1,6 +1,7 @@
 if (!$IsWindows) {
   Write-Error 'can only run on windows'
 }
+Repair-GitSymlinks
 $root = "$env:SHUTILS_ROOT\_\windows"
 $files = @{}
 Get-ChildItem $root -Recurse -File -ea Ignore | ForEach-Object {

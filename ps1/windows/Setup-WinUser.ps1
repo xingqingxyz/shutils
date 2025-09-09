@@ -1,8 +1,67 @@
-# shutils scripts
-$userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-if (!";$userPath;".Contains(";$env:SHUTILS_ROOT\scripts;")) {
-  [System.Environment]::SetEnvironmentVariable('Path', ($userPath, "$env:SHUTILS_ROOT\scripts" -join ';') , 'User')
+#region env
+@{
+  ANDROID_HOME       = "$HOME\Android\Sdk"
+  EDITOR             = 'edit'
+  LESS               = '-R --quit-if-one-screen --use-color --wordwrap --ignore-case --incsearch --search-options=W'
+  PAGER              = 'C:\Program Files\Git\usr\bin\less.exe'
+  PNPM_HOME          = "$env:LOCALAPPDATA\pnpm"
+  RUSTUP_DIST_SERVER = 'https://mirrors.tuna.tsinghua.edu.cn/rustup'
+  RUSTUP_UPDATE_ROOT = 'https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup'
+  SHUTILS_ROOT       = 'D:\p\shutils'
+  FZF_DEFAUT_OPTS    = @'
+--cycle
+--bind=alt-+:change-multi
+--bind=alt-J:jump
+--bind=alt-\:first
+--bind=alt-/:last
+--bind=ctrl-alt-f:page-down
+--bind=ctrl-alt-b:page-up
+--bind=ctrl-alt-d:half-page-down
+--bind=ctrl-alt-u:half-page-up
+--bind=ctrl-a:toggle-all
+--bind=ctrl-e:preview-down
+--bind=ctrl-y:preview-up
+--bind=ctrl-f:preview-page-down
+--bind=ctrl-b:preview-page-up
+--bind=ctrl-\:preview-top
+--bind=ctrl-/:preview-bottom
+'@.ReplaceLineEndings(' ')
+  no_proxy           = @'
+127.0.0.1
+localhost
+internal.domain
+kkgithub.com
+raw.githubusercontents.com
+mirror.sjtu.edu.cn
+mirrors.ustc.edu.cn
+mirrors.tuna.tsinghua.edu.cn
+'@.ReplaceLineEndings(',')
+}.GetEnumerator().ForEach{
+  [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'User')
+  Set-Item -LiteralPath env:$($_.Key) $_.Value
 }
+# PATH like envs
+@{
+  NODE_PATH = "$env:LOCALAPPDATA\pnpm\global\5\node_modules"
+  Path      = @"
+$env:PNPM_HOME
+$HOME\go\bin
+$HOME\.cargo\bin
+$env:ANDROID_HOME\platform-tools
+$HOME\tools
+$HOME\tools\numbat
+$HOME\tools\codeql
+$HOME\Documents\PowerShell\Scripts
+$env:SHUTILS_ROOT\scripts
+"@.ReplaceLineEndings(';')
+}.GetEnumerator().ForEach{
+  $value = @(
+    [System.Environment]::GetEnvironmentVariable($_.Key, 'User').Split(';')
+    $_.Value.Split(';')
+  ) | Select-Object -Unique | Join-String -Separator ';'
+  [System.Environment]::SetEnvironmentVariable($_.Key, $value, 'User')
+}
+#endregion
 # pwsh PSRepository
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 # pwsh modules

@@ -9,10 +9,6 @@
   Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff$exe
   Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format$exe
 }
-# add scripts to PATH
-if ($PSGetPath) {
-  $env:PATH = @($env:PATH, $PSGetPath.AllUsersScripts, $PSGetPath.CurrentUserScripts) -join [System.IO.Path]::PathSeparator
-}
 # init scripts
 Get-ChildItem -LiteralPath $env:SHUTILS_ROOT/ps1 -File -ea Ignore | ForEach-Object { . $_.FullName }
 # platform code

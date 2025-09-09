@@ -348,36 +348,36 @@ function Invoke-Npx {
 
 $pwshExe, $sudoExe = (Get-Command pwsh, sudo -CommandType Application -TotalCount 1 -ea Ignore).Path
 function Invoke-Sudo {
-  [string[]]$extraArgs = if ($args[0] -is [scriptblock]) {
-    $args[0] = $args[0].ToString()
-    @($pwshExe, '-nop', '-cwa')
-  }
-  else {
-    $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
-    if ($info.CommandType -eq 'Alias') {
-      $info = $info.ResolvedCommand
-    }
-    if (!$info) {
-      # fallback to handle sudo options
-      return & (Get-Command -CommandType Application -TotalCount 1 -ea Stop sudo).Path $args
-    }
-    if ($info.CommandType -eq 'Application') {
-      $args[0] = $info.Source
-    }
-    elseif ($info.CommandType -eq 'ExternalScript') {
-      $args[0] = $info.Source
-      @($pwshExe, '-nop')
+  $extraArgs = @(if ($args[0] -is [scriptblock]) {
+      $args[0] = $args[0].ToString()
+      @($pwshExe, '-nop', '-cwa')
     }
     else {
-      if ($info.Module) {
-        $args[0] = $info.Source + '\' + $info.Name
+      $info = Get-Command $args[0] -TotalCount 1 -ea Ignore
+      if ($info.CommandType -eq 'Alias') {
+        $info = $info.ResolvedCommand
+      }
+      if (!$info) {
+        # fallback to handle sudo options
+        return & (Get-Command -CommandType Application -TotalCount 1 -ea Stop sudo).Path $args
+      }
+      if ($info.CommandType -eq 'Application') {
+        $args[0] = $info.Source
+      }
+      elseif ($info.CommandType -eq 'ExternalScript') {
+        $args[0] = $info.Source
+        @($pwshExe, '-nop')
       }
       else {
-        Write-Warning "running a no module $($info.CommandType) $info"
+        if ($info.Module) {
+          $args[0] = $info.Source + '\' + $info.Name
+        }
+        else {
+          Write-Warning "running a no module $($info.CommandType) $info"
+        }
+        @($pwshExe, '-nop', '-c')
       }
-      @($pwshExe, '-nop', '-c')
-    }
-  }
+    })
   if ($sudoExe) {
     $ags = @('-E', '--') + $extraArgs + $args
     Write-Debug "$sudoExe $ags"

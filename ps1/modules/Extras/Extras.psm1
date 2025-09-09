@@ -65,7 +65,7 @@ function Set-SystemProxy {
       Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyOverride -Value (@($env:no_proxy.Split(',').ForEach{ "https://$_" }; '<local>') -join ';') -Type String
     }
   }
-  elseif ($IsLinux -and $env:XDG_CURRENT_DESKTOP.Contains('GNOME', [System.StringComparison]::CurrentCultureIgnoreCase)) {
+  elseif ($IsLinux -and $env:XDG_CURRENT_DESKTOP -like 'GNOME*') {
     $mode = $On ? 'manual' : 'none'
     gsettings set org.gnome.system.proxy mode $mode
     if ($On -and (gsettings get org.gnome.system.proxy.http host).Trim("'") -ne $hostName) {
@@ -93,6 +93,7 @@ function Set-Region {
     [string]
     $Name,
     [Parameter(Mandatory, Position = 1)]
+    [AllowNull()]
     [string[]]
     $Value,
     [Parameter(Mandatory, Position = 2, ParameterSetName = 'Path')]
@@ -139,7 +140,8 @@ function Set-Region {
       if ($found -eq 1) {
         Write-Warning 'not found #endregion mark'
       }
-      $newLines = $lines + @(
+      $newLines = @(
+        $lines
         "$LineComment#region $Name"
         $Value
         "$LineComment#endregion"
@@ -348,15 +350,18 @@ function Import-EnvironmentVariable {
 function Set-EnvironmentVariable {
   [CmdletBinding()]
   param (
-    [Parameter(Mandatory, Position = 0, ValueFromRemainingArguments)]
+    [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]]
     $ExtraArgs,
     [Parameter()]
     [System.EnvironmentVariableTarget]
-    $Scope = 'Process'
+    $Scope = 'Process',
+    [Parameter()]
+    [string]
+    $RegionName = "${Scope}Env"
   )
   if ($Scope -eq 'Machine' -and !(Test-Administrator)) {
-    return Invoke-Sudo Set-EnvironmentVariable -Scope $Scope @ExtraArgs
+    return Invoke-Sudo Set-EnvironmentVariable @PSBoundParameters
   }
   $Environment = @{}
   $ExtraArgs.ForEach{
@@ -387,7 +392,7 @@ function Set-EnvironmentVariable {
       Set-Item -LiteralPath env:$($_.Key) $_.Value
     }
   }
-  if ($Scope -eq 'Process' -or !$Environment.Count) {
+  if ($Scope -eq 'Process') {
     return
   }
   if ($IsWindows) {
@@ -404,12 +409,14 @@ function Set-EnvironmentVariable {
     }
   }
   elseif ($IsLinux) {
-    $text = $Environment.GetEnumerator().ForEach{
-      "$($_.Key)='$($_.Value.Replace("'", "'\''"))'"
-    } | Join-String -OutputPrefix 'export ' -Separator " \`n"
+    $text = if ($Environment.Count) {
+      $Environment.GetEnumerator().ForEach{
+        "$($_.Key)='$($_.Value.Replace("'", "'\''"))'"
+      } | Join-String -OutputPrefix 'export ' -Separator " \`n"
+    }
     switch ($Scope) {
       'User' {
-        Set-Region UserEnv $text $(if (Test-Path ~/.bash_profile) {
+        Set-Region $RegionName $text $(if (Test-Path ~/.bash_profile) {
             "$HOME/.bash_profile"
           }
           else {
@@ -418,7 +425,7 @@ function Set-EnvironmentVariable {
         break
       }
       'Machine' {
-        Set-Region SysEnv $text /etc/profile.d/sh.local -Inplace
+        Set-Region $RegionName $text /etc/profile.d/sh.local -Inplace
         break
       }
     }

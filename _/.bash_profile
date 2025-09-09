@@ -47,10 +47,11 @@ $PNPM_HOME
 $HOME/go/bin
 $HOME/.cargo/bin
 $ANDROID_HOME/platform-tools
-$SHUTILS_ROOT/scripts
 $HOME/.local/share/JetBrains/Toolbox/scripts
 $HOME/.local/share/dsc
 $HOME/.local/share/numbat
+$HOME/.local/share/powershell/Scripts
+$SHUTILS_ROOT/scripts
 EOF
 printf -v MAPFILE '%s:' "${MAPFILE[@]}"
 if [[ :$PATH: != *":$MAPFILE"* ]]; then
@@ -61,7 +62,4 @@ fi
 . "$SHUTILS_ROOT/_/.bashrc"
 
 #region UserEnv
-export http_proxy='' \
-all_proxy='' \
-https_proxy=''
 #endregion

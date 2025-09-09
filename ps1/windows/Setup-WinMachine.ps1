@@ -1,9 +1,16 @@
 #Requires -RunAsAdministrator
-
-# PATHEXT
-if (!$env:PATHEXT.Split(';').Contains('.JAR')) {
-  [System.Environment]::SetEnvironmentVariable('PATHEXT', $env:PATHEXT + ';.JAR', 'Machine')
+#region env
+# PATH like envs
+@{
+  PATHEXT = '.JAR'
+}.GetEnumerator().ForEach{
+  $value = @(
+    [System.Environment]::GetEnvironmentVariable($_.Key, 'Machine').Split(';')
+    $_.Value.Split(';')
+  ) | Select-Object -Unique | Join-String -Separator ';'
+  [System.Environment]::SetEnvironmentVariable($_.Key, $value, 'Machine')
 }
+#endregion
 # ssh default shell
 New-ItemProperty -Path 'HKLM:\SOFTWARE\OpenSSH' -Name DefaultShell -Value ([System.Environment]::ProcessPath) -PropertyType String -Force
 # wsl
@@ -13,5 +20,5 @@ Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller
 # winget dsc
 winget.exe upgrade -r --accept-package-agreements
 winget.exe configure --enable
-winget.exe configure --accept-package-agreements --accept-configuration-agreements -f $PSScriptRoot/../configurations/win11-apps.dsc.yml
-winget.exe configure --accept-package-agreements --accept-configuration-agreements -f $PSScriptRoot/../configurations/win11-configs.dsc.yml
+winget.exe configure --accept-package-agreements --accept-configuration-agreements -f $env:SHUTILS_ROOT/configurations/win11-apps.dsc.yml
+winget.exe configure --accept-package-agreements --accept-configuration-agreements -f $env:SHUTILS_ROOT/configurations/win11-configs.dsc.yml
