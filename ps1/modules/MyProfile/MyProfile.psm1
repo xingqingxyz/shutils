@@ -124,10 +124,10 @@ function decompress ([System.IO.FileSystemInfo]$Item) {
 
 function lessfilter ([string]$Path) {
   [System.IO.FileSystemInfo]$item = Get-Item -LiteralPath $Path -Force -ea Stop
-  if ($item.Mode.StartsWith('l')) {
-    $item = $item.ResolveLinkTarget($true)
+  if ($item.LinkType) {
+    $item = $item.ResolveLinkTarget($true) ?? $item
   }
-  if ($item.Mode.StartsWith('d')) {
+  if ($item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
     return execute ls -xA --color=auto --hyperlink=auto '--' $item
   }
   switch -CaseSensitive -Regex ($item.Name) {

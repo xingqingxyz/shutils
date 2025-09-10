@@ -338,12 +338,7 @@ function Import-EnvironmentVariable {
   )
   Get-Content $Path | ForEach-Object {
     $name, $value = $_.Split('=', 2)
-    if ($value) {
-      Set-Item -LiteralPath env:$name $value
-    }
-    else {
-      Remove-Item -LiteralPath env:$name
-    }
+    Set-Item -LiteralPath env:$name $value
   }
 }
 
@@ -363,60 +358,43 @@ function Set-EnvironmentVariable {
   if ($Scope -eq 'Machine' -and !(Test-Administrator)) {
     return Invoke-Sudo Set-EnvironmentVariable @PSBoundParameters
   }
-  $Environment = @{}
-  $ExtraArgs.ForEach{
-    $value = "$_"
-    $index = $value.IndexOf('=')
-    if ($index -eq -1) {
-      $key = $value
-      $value = '1'
+  $environment = @{}
+  foreach ($arg in $ExtraArgs) {
+    if ($arg -notmatch '^(\w+)(?:(=|\+=)(.+)?)?$') {
+      return Write-Error "unknown format $arg"
     }
-    elseif ($index -and $value.IndexOf('+') -eq $index - 1) {
-      $key = $value.Substring(0, $index - 1)
-      $value = [System.Environment]::GetEnvironmentVariable($key) + $value.Substring($index + 1)
+    $key = $Matches[1]
+    $value = switch ($Matches[2]) {
+      '=' { $Matches[3]; break }
+      '+=' { [System.Environment]::GetEnvironmentVariable($key, $Scope) + $Matches[3]; break }
+      default { '1'; break }
     }
-    else {
-      $key = $value.Substring(0, $index)
-      $value = $value.Substring($index + 1)
-    }
-    if (!$key) {
-      return Write-Error "use empty key to set env value: $value"
-    }
-    $Environment.$key = $value
+    $environment.$key = $value
+    [System.Environment]::SetEnvironmentVariable($key, $value)
   }
-  $Environment.GetEnumerator().ForEach{
-    if (!$_.Value) {
-      Remove-Item -LiteralPath env:$($_.Key) -ea Ignore
-    }
-    else {
-      Set-Item -LiteralPath env:$($_.Key) $_.Value
-    }
-  }
+  Write-Debug "setting env $($environment.GetEnumerator())"
   if ($Scope -eq 'Process') {
     return
   }
   if ($IsWindows) {
-    $Environment.GetEnumerator().ForEach{
-      if (!$_.Value) {
+    $environment.GetEnumerator().ForEach{
+      if ($_.Value) {
+        [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+      }
+      else {
         $path = $Scope -eq 'Machine' ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
         Write-Debug "remove $($_.Key) on $path"
         Remove-ItemProperty -LiteralPath $path $_.Key
       }
-      else {
-        Write-Debug "$($_.Key)=$($_.Value)"
-        [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
-      }
     }
   }
   elseif ($IsLinux) {
-    $text = if ($Environment.Count) {
-      $Environment.GetEnumerator().ForEach{
-        "$($_.Key)='$($_.Value.Replace("'", "'\''"))'"
-      } | Join-String -OutputPrefix 'export ' -Separator " \`n"
+    $lines = $environment.GetEnumerator().Where{ $_.Value } | ForEach-Object {
+      "export $($_.Key)='$($_.Value.Replace("'", "'\''"))'"
     }
     switch ($Scope) {
       'User' {
-        Set-Region $RegionName $text $(if (Test-Path ~/.bash_profile) {
+        Set-Region $RegionName $lines $(if (Test-Path ~/.bash_profile) {
             "$HOME/.bash_profile"
           }
           else {
@@ -425,15 +403,16 @@ function Set-EnvironmentVariable {
         break
       }
       'Machine' {
-        Set-Region $RegionName $text /etc/profile.d/sh.local -Inplace
+        Set-Region $RegionName $lines /etc/profile.d/sh.local -Inplace
         break
       }
     }
   }
   elseif ($IsMacOS) {
-    $Environment.GetEnumerator().ForEach{
-      Write-Debug "$($_.Key)=$($_.Value)"
-      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+    $environment.GetEnumerator().ForEach{
+      if ($_.Value) {
+        [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+      }
     }
   }
   else {
@@ -443,4 +422,4 @@ function Set-EnvironmentVariable {
 
 Set-Alias gtm Get-TypeMember
 Set-Alias icf Invoke-CodeFormatter
-Set-Alias setenv Set-EnvironmentVariable
+Set-Alias senv Set-EnvironmentVariable

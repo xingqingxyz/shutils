@@ -1,3 +1,46 @@
+#region cross
+function env {
+  $environment = @{}
+  $reEnv = [regex]::new('^\w+\+?=')
+  $cmd, $ags = foreach ($arg in [string[]]$args) {
+    if (!$reEnv.IsMatch($arg)) {
+      @($arg; $foreach)
+      break
+    }
+    [string]$key, $value = $arg.Split('=', 2)
+    if ($key.EndsWith('+')) {
+      $key = $key.TrimEnd('+')
+      $value = [System.Environment]::GetEnvironmentVariable($key) + $value
+    }
+    $environment.$key = $value
+  }
+  $cmd = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $cmd).Source
+  $saveEnvironment = @{}
+  $environment.GetEnumerator().ForEach{
+    $saveEnvironment[$_.Key] = [System.Environment]::GetEnvironmentVariable($_.Key)
+    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
+  }
+  Write-Debug "$($environment.GetEnumerator()) $cmd $ags"
+  try {
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd $ags
+    }
+    else {
+      & $cmd $ags
+    }
+  }
+  finally {
+    $saveEnvironment.GetEnumerator().ForEach{
+      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
+    }
+  }
+}
+#endregion
+
+if (!$IsWindows) {
+  return
+}
+
 function bat {
   if ($MyInvocation.PipelinePosition -eq $MyInvocation.PipelineLength) {
     $(try {
@@ -16,47 +59,6 @@ function bat {
     }
     else {
       bat.exe $args
-    }
-  }
-}
-
-function env {
-  $environment = @{}
-  for ($i = 0; $i -lt $args.Length; $i++) {
-    $name, $value = $args[$i].Split('=', 2)
-    if ($null -eq $value) {
-      break
-    }
-    $environment.$name = $value
-  }
-  $Command = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $args[$i]).Path
-  $ArgumentList = $args[($i + 1)..($args.Length - 1)]
-  $saveEnvironment = @{}
-  $environment.GetEnumerator().ForEach{
-    # ignore non exist
-    $item = Get-Item -LiteralPath env:$($_.Key) -ea Ignore
-    if ($item) {
-      $saveEnvironment[$_.Key] = $item.Value
-    }
-    Set-Item -LiteralPath env:$($_.Key) $_.Value
-  }
-  Write-Debug "$($args[0..($i-1)]) $Command $ArgumentList"
-  try {
-    if ($InputObject) {
-      $InputObject | & $Command $ArgumentList
-    }
-    else {
-      & $Command $ArgumentList
-    }
-  }
-  finally {
-    foreach ($key in $environment.Keys) {
-      if ($saveEnvironment.Contains($key)) {
-        Set-Item -LiteralPath env:$key $saveEnvironment.$key
-      }
-      else {
-        Remove-Item -LiteralPath env:$key -ea Ignore
-      }
     }
   }
 }
