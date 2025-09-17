@@ -15,6 +15,6 @@ Register-ArgumentCompleter -Native -CommandName node, tsx -ScriptBlock {
       }
     }
     elseif ($prev -eq '--run') {
-      (packageJSON).scripts.Keys
+
     }).Where{ $_ -like "$wordToComplete*" }
 }

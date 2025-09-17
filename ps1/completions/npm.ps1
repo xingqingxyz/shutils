@@ -17,7 +17,31 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
       }
       $i.Value
     })
-
+  switch (0..$commands.Count) {
+    $commands.Count { break }
+    0 {
+      $commands[$_] = switch ($commands[$_]) {
+        'c' { 'config'; break }
+        'ln' { 'link'; break }
+        { @('add', 'i', 'in', 'ins', 'inst', 'insta', 'instal', 'isnt', 'isnta', 'isntal', 'isntall', 'up', 'update', 'upgrade').Contains($_) } { 'install'; break }
+        { @('rm', 'r', 'un', 'unlink', 'remove').Contains($_) } { 'uninstall'; break }
+        default { $_; break }
+      }
+      if ($commands[$_] -ceq 'exec' -and $commands.Count -gt 1) {
+        $commands = @('#exec')
+      }
+      continue
+    }
+    1 {
+      $commands[$_] = switch ($commands[$_]) {
+        'ls' { $commands[0] -ceq 'config' ? 'list' : $_; break }
+        default { $_; break }
+      }
+      continue
+    }
+    default { break }
+  }
+  $command = $commands -join ';'
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
     if ($i.Extent.StartOffset -ge $cursorPosition) {
@@ -26,32 +50,6 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
     $prev = $i
   }
   $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
-
-  if ($commands.Length) {
-    $commands[0] = switch ($commands[0]) {
-      'c' { 'config'; break }
-      'ln' { 'link'; break }
-      { @('add', 'i', 'in', 'ins', 'inst', 'insta', 'instal', 'isnt', 'isnta', 'isntal', 'isntall', 'up', 'update', 'upgrade').Contains($_) ? $_ : '' } { 'install'; break }
-      { @('rm', 'r', 'un', 'unlink', 'remove').Contains($_) ? $_ : '' } { 'uninstall'; break }
-      default { $_ }
-    }
-  }
-  switch ($commands[0]) {
-    'config' {
-      if ($commands.Length -gt 1) {
-        $commands[1] = switch ($commands[1]) {
-          'ls' { 'list'; break }
-          default { $_ }
-        }
-      }
-    }
-    'exec' {
-      if ($commands.Length -gt 1) {
-        $commands = @('#exec')
-      }
-    }
-  }
-  $command = $commands -join ';'
 
   @(switch ($command) {
       '' {
@@ -216,7 +214,7 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
         if ($commandAst.CommandElements.Count -eq $i -or
           ($commandAst.CommandElements.Count -eq ($i + 1) -and
           $cursorPosition -le $commandAst.CommandElements[$i].Extent.EndOffset)) {
-          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
+          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Sort-Object -Unique
         }
         else {
           $astList = $commandAst.CommandElements | Select-Object -Skip $i

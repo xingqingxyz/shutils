@@ -24,7 +24,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
     't' { 'test'; break }
     'ln' { 'link'; break }
     'rb' { 'rebuild'; break }
-    default { $command.StartsWith('exec;') ? '#exec' : $command }
+    default { $_.StartsWith('exec;') ? '#exec' : $_; break }
   }
   @(switch ($command) {
       '' {
@@ -62,7 +62,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         if ($commandAst.CommandElements.Count -eq $i -or
           ($commandAst.CommandElements.Count -eq ($i + 1) -and
           $cursorPosition -le $commandAst.CommandElements[$i].Extent.EndOffset)) {
-          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Select-Object -Unique
+          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Sort-Object -Unique
         }
         else {
           $astList = $commandAst.CommandElements | Select-Object -Skip 2

@@ -1,11 +1,12 @@
 # .bash_profile
 export \
   ANDROID_HOME="$HOME/Android/Sdk" \
+  DSC_RESOURCE_PATH="$HOME/.local/dsc" \
   EDITOR='msedit' \
   GTK_IM_MODULE='fcitx' \
   LANG='zh_CN.UTF-8' \
   LESS='-R --quit-if-one-screen --use-color --wordwrap --ignore-case --incsearch --search-options=W' \
-  LESSOPEN="||$HOME/.local/bin/lesspipe.sh %s" \
+  LESSOPEN="||$HOME/.local/bin/lesspipe.sh %s 2>/dev/null" \
   MANPAGER="sh -c \"sed 's/\x1b\[[0-9;]*m\|.\x08//g' 2>/dev/null | bat -plman\"" \
   MANROFFOPT='-c' \
   NODE_PATH+="${NODE_PATH+:}$HOME/.local/share/pnpm/global/5/node_modules" \
@@ -57,9 +58,6 @@ printf -v MAPFILE '%s:' "${MAPFILE[@]}"
 if [[ :$PATH: != *":$MAPFILE"* ]]; then
   export PATH=$MAPFILE$PATH
 fi
-
-# Get the aliases and functions
-. "$SHUTILS_ROOT/_/.bashrc"
 
 #region UserEnv
 #endregion

@@ -1,10 +1,11 @@
 function Invoke-ExecutableAlias {
   $cmd, [string[]]$ags = $_executableAliasMap[$MyInvocation.InvocationName]
   if (!$cmd) {
-    return Write-Error "command not found $($MyInvocation.InvocationName)"
+    return Write-Error "alias not set $($MyInvocation.InvocationName)"
   }
-  $cmd = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $cmd).Source
-  $ags += $args
+  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
+  # flat iterator args for native passing
+  $ags += $args.ForEach{ $_ }
   Write-Debug "$cmd $ags"
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $ags

@@ -3,7 +3,7 @@ Register-ArgumentCompleter -Native -CommandName npx, pnpx, bunx -ScriptBlock {
   if ($commandAst.CommandElements.Count -eq 1 -or
     ($commandAst.CommandElements.Count -eq 2 -and
     $cursorPosition -le $commandAst.CommandElements[1].Extent.EndOffset)) {
-    return (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -Like $wordToComplete* ).BaseName | Select-Object -Unique
+    return (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -Like $wordToComplete* ).BaseName | Sort-Object -Unique
   }
   $astList = $commandAst.CommandElements | Select-Object -Skip 1
   $commandName = Split-Path -LeafBase $astList[0].Value

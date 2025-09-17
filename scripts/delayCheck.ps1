@@ -22,7 +22,7 @@ if ($ScriptBlock) {
   & $ScriptBlock
 }
 else {
-  $Command = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $Command).Source
+  $Command = (Get-Command $Command -Type Application -TotalCount 1 -ea Stop).Source
   $description = "$Command $ArgumentList"
   & $Command $ArgumentList
 }

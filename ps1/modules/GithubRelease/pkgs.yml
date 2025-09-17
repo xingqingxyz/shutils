@@ -23,8 +23,8 @@
 - name: dsc
   repo: PowerShell/DSC
   allowPrerelease: true
-  tag: v3.2.0-preview.4
-  version: 3.2.0-preview.4
+  tag: v3.2.0-preview.5
+  version: 3.2.0-preview.5
 - name: tracexec
   repo: kxxt/tracexec
   tag: v0.13.1
@@ -65,3 +65,7 @@
   repo: rust-lang/mdBook
   tag: v0.4.52
   version: 0.4.52
+- name: localsend
+  repo: localsend/localsend
+  tag: v1.17.0
+  version: 1.17.0

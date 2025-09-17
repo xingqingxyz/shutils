@@ -65,7 +65,7 @@ function Set-SystemProxy {
       Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyOverride -Value (@($env:no_proxy.Split(',').ForEach{ "https://$_" }; '<local>') -join ';') -Type String
     }
   }
-  elseif ($IsLinux -and $env:XDG_CURRENT_DESKTOP -like 'GNOME*') {
+  elseif ($IsLinux -and $env:XDG_CURRENT_DESKTOP -ceq 'GNOME') {
     $mode = $On ? 'manual' : 'none'
     gsettings set org.gnome.system.proxy mode $mode
     if ($On -and (gsettings get org.gnome.system.proxy.http host).Trim("'") -ne $hostName) {

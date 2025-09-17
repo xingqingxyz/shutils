@@ -11,33 +11,18 @@
 # after the first one in the LESSOPEN environment variable:
 # export LESSOPEN="||lesspipe.sh %s"
 
-[ -e "$1" ] || exit
-
+f=$(realpath -qe -- "$1") || exit
 # git bash env
 PATH+=:/usr/bin
 
-if [ -d "$1" ]; then
-  ls -xA --color=always --hyperlink=always -- "$1"
+if [ -d "$f" ]; then
+  ls -xA --color=always --hyperlink=always "$f"
   exit 1 # less auto handle empty output
 fi
 
-manfilter() {
-  if test -x /usr/bin/man; then
-    # See rhbz#1241543 for more info.  Well, actually we firstly
-    # used 'man -l', then we switched to groff, and then we again
-    # switched back to 'man -l'.
-    MAN_KEEP_FORMATTING=1 man -P /usr/bin/cat -l -- "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
-  elif test -x /usr/bin/groff; then
-    # This is from pre-rhbz#1241543-time.
-    groff -Tascii -mandoc "$1" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
-  else
-    bat -pltroff --color=always -- "$1"
-  fi
-}
-
-case "$1" in
+case "$f" in
   *.[1-9n].bz2 | *.[1-9]x.bz2 | *.man.bz2 | *.[1-9n].[glx]z | *.[1-9]x.[glx]z | *.man.[glx]z | *.[1-9n].lzma | *.[1-9]x.lzma | *.man.lzma | *.[1-9n].zst | *.[1-9]x.zst | *.man.zst | *.[1-9n].br | *.[1-9]x.br | *.man.br)
-    case "$1" in
+    case "$f" in
       *.gz) DECOMPRESSOR="gzip -dc" ;;
       *.bz2) DECOMPRESSOR="bzip2 -dc" ;;
       *.lz) DECOMPRESSOR="lzip -dc" ;;
@@ -45,60 +30,60 @@ case "$1" in
       *.br) DECOMPRESSOR="brotli -dc" ;;
       *.xz | *.lzma) DECOMPRESSOR="xz -dc" ;;
     esac
-    if [ "$DECOMPRESSOR" ] && $DECOMPRESSOR -- "$1" | file -L - | grep -q troff; then
-      $DECOMPRESSOR -- "$1" | manfilter -
+    if [ "$DECOMPRESSOR" ] && $DECOMPRESSOR "$f" | file - | grep -q troff; then
+      $DECOMPRESSOR "$f" | man -l - | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
     else
-      echo "unknown man page $1"
+      echo "unknown man page $f"
       false
     fi
     ;;
   *.[1-9n] | *.[1-9]x | *.man)
-    if file -L -- "$1" | grep -q troff; then
-      manfilter "$1"
+    if file "$f" | grep -q troff; then
+      man -l "$f" | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman --color=always
     else
-      echo "unknown man page $1"
+      echo "unknown man page $f"
       false
     fi
     ;;
   *.tar | *.tar.xz | *.tgz | *.tar.gz | *.tar.[zZ] | *.tar.bz2 | *.tbz2 | *.tar.br)
-    tar -tvvf "$1"
+    tar -tvvf "$f"
     ;;
   *.tar.lz)
-    tar --lzip -tvvf "$1"
+    tar --lzip -tvvf "$f"
     ;;
   *.tar.zst)
-    tar --zstd -tvvf "$1"
+    tar --zstd -tvvf "$f"
     ;;
   *.xz | *.lzma)
-    xz -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
+    xz -dc "$f" | bat -p --color=always --file-name="${f%.*}"
     ;;
   *.lz)
-    lzip -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
+    lzip -dc "$f" | bat -p --color=always --file-name="${f%.*}"
     ;;
   *.zst)
-    zstd -dcq -- "$1" | bat -p --color=always --file-name="${1%.*}"
+    zstd -dcq "$f" | bat -p --color=always --file-name="${f%.*}"
     ;;
   *.br)
-    brotli -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
+    brotli -dc "$f" | bat -p --color=always --file-name="${f%.*}"
     ;;
   *.[zZ] | *.gz)
-    gzip -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
+    gzip -dc "$f" | bat -p --color=always --file-name="${f%.*}"
     ;;
   *.bz2)
-    bzip2 -dc -- "$1" | bat -p --color=always --file-name="${1%.*}"
+    bzip2 -dc "$f" | bat -p --color=always --file-name="${f%.*}"
     ;;
   *.zip | *.jar | *.nbm)
-    zipinfo -- "$1"
+    zipinfo "$f"
     ;;
   *.rpm)
-    rpm -qpivl --changelog --nomanifest -- "$1"
+    rpm -qpivl --changelog --nomanifest "$f"
     ;;
   *.cpi | *.cpio)
-    cpio -itv < "$1"
+    cpio -itv < "$f"
     ;;
   *.gpg)
     if read -r < <(type -aP gpg2 gpg); then
-      "$REPLY" -d -- "$1"
+      "$REPLY" -d "$f"
     else
       echo 'No GnuPG available.'
       echo 'Install gnupg2 or gnupg to show encrypted files.'
@@ -107,7 +92,7 @@ case "$1" in
     ;;
   *.gif | *.jpeg | *.jpg | *.pcd | *.png | *.tga | *.tiff | *.tif)
     if type -aP identify > /dev/null; then
-      identify -- "$1"
+      identify "$f"
     else
       echo 'No identify available'
       echo 'Install ImageMagick to browse images'
@@ -115,13 +100,12 @@ case "$1" in
     fi
     ;;
   *)
-    type -aP file iconv > /dev/null || exit 1
-    fc=$(file -Lb --mime-encoding -- "$1")
+    fc=$(file -b --mime-encoding "$f")
     tc=$(cut -d. -f2 <<< $LANG)
     if [ "$tc" -a "$fc" != "$tc" ]; then
-      iconv -f $fc -t $tc -- "$1" | bat -p --color=always --file-name="$1"
+      iconv -f $fc -t $tc "$f" | bat -p --color=always --file-name="$f"
     else
-      bat -p --color=always -- "$1"
+      bat -p --color=always "$f"
     fi
     ;;
 esac

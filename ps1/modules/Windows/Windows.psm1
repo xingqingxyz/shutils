@@ -2,7 +2,9 @@
 function env {
   $environment = @{}
   $reEnv = [regex]::new('^\w+\+?=')
-  $cmd, $ags = foreach ($arg in [string[]]$args) {
+  # flat iterator args for native passing
+  # note: replace token -- with '--' to escape function passing
+  $cmd, $ags = foreach ($arg in [string[]]$args.ForEach{ $_ }) {
     if (!$reEnv.IsMatch($arg)) {
       @($arg; $foreach)
       break
@@ -14,7 +16,7 @@ function env {
     }
     $environment.$key = $value
   }
-  $cmd = (Get-Command -CommandType Application -TotalCount 1 -ea Stop $cmd).Source
+  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
   $saveEnvironment = @{}
   $environment.GetEnumerator().ForEach{
     $saveEnvironment[$_.Key] = [System.Environment]::GetEnvironmentVariable($_.Key)
@@ -31,34 +33,12 @@ function env {
   }
   finally {
     $saveEnvironment.GetEnumerator().ForEach{
-      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
+      Set-Item -LiteralPath env:$($_.Key) $_.Value
     }
   }
 }
 #endregion
 
-if (!$IsWindows) {
-  return
-}
-
-function bat {
-  if ($MyInvocation.PipelinePosition -eq $MyInvocation.PipelineLength) {
-    $(try {
-        if ($MyInvocation.ExpectingInput) {
-          $input | bat.exe --color=always $args
-        }
-        else {
-          bat.exe --color=always $args
-        }
-      }
-      catch {}) | & 'C:\Program Files\Git\usr\bin\less.exe'
-  }
-  else {
-    if ($MyInvocation.ExpectingInput) {
-      $input | bat.exe $args
-    }
-    else {
-      bat.exe $args
-    }
-  }
+if ($IsLinux) {
+  . $PSScriptRoot/Linux.ps1
 }

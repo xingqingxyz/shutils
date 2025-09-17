@@ -2,7 +2,7 @@ using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
   param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
-  $command = @(foreach ($i in $commandAst.CommandElements) {
+  $commands = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {
         continue
       }
@@ -12,18 +12,27 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         break
       }
       $i.Value
-    }) -join ';'
-  $command = switch ($command) {
-    'a' { 'add'; break }
-    'c' { 'create'; break }
-    'i' { 'install'; break }
-    'rm' { 'remove'; break }
-    default { $command }
+    })
+  switch (0..$commands.Count) {
+    $commands.Count { break }
+    0 {
+      $commands[$_] = switch ($commands[$_]) {
+        'a' { 'add'; break }
+        'c' { 'create'; break }
+        'i' { 'install'; break }
+        'rm' { 'remove'; break }
+        default { $_; break }
+      }
+      continue
+    }
+    default { break }
   }
-  if ($command -eq 'x') {
-    return (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -Like $wordToComplete* | Select-Object -Unique).BaseName
+  $command = $commands -join ' '
+
+  if ($command -ceq 'x') {
+    return (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -Like $wordToComplete* | Sort-Object -Unique).BaseName
   }
-  elseif ($command -like 'x;*') {
+  elseif ($command -clike 'x *') {
     $astList = $commandAst.CommandElements | Select-Object -Skip 2
     $commandName = Split-Path -LeafBase $astList[0].Value
     $cursorPosition -= $astList[0].Extent.StartOffset
@@ -48,7 +57,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         }
         elseif ($prev.StartsWith('bun')) {
           @('a', 'add', 'build', 'create', 'exec', 'i', 'init', 'install', 'link', 'outdated', 'patch', 'pm', 'publish', 'remove', 'repl', 'rm', 'run', 'test', 'unlink', 'update', 'upgrade', 'x')
-          (packageJSON).scripts.Keys
+          (npm pkg get scripts | ConvertFrom-Json -AsHashtable).Keys
         }
         break
       }
@@ -79,7 +88,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
           @('--silent', '--filter', '-b', '--bun', '--shell', '--watch', '--hot', '--no-clear-screen', '--smol', '-r', '--preload', '--inspect', '--inspect-wait', '--inspect-brk', '--if-present', '--no-install', '--install', '-e', '--eval', '--print', '--prefer-offline', '--prefer-latest', '-p', '--port', '--conditions', '--fetch-preconnect', '--max-http-header-size', '--main-fields', '--extension-order', '--tsconfig-override', '-d', '--define', '--drop', '-l', '--loader', '--no-macros', '--jsx-factory', '--jsx-fragment', '--jsx-import-source', '--jsx-runtime', '--ignore-dce-annotations', '--env-file', '--cwd', '-c', '--config', '-h', '--help')
         }
         elseif ($prev.StartsWith('run')) {
-          (packageJSON).scripts.Keys
+          (npm pkg get scripts | ConvertFrom-Json -AsHashtable).Keys
         }
         break
       }
@@ -88,11 +97,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
           @('-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help', '--latest')
         }
         else {
-          foreach ($item in packageJSON) {
-            if ($item.Name -like '*dependencies') {
-              $item.Value.Keys
-            }
-          }
+          (npm pkg get | ConvertFrom-Json -AsHashtable).GetEnumerator() | Where-Object Name -Like '*dependencies' | ForEach-Object { $_.Value.Keys }
         }
         break
       }
@@ -130,23 +135,23 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         @('pack', 'bin', 'ls', 'whoami', 'hash', 'hash-string', 'hash-print', 'cache', 'migrate', 'untrusted', 'trust', 'default-trusted')
         break
       }
-      'pm;bin' {
+      'pm bin' {
         @('-g')
         break
       }
-      'pm;cache' {
+      'pm cache' {
         @('rm')
         break
       }
-      'pm;ls' {
+      'pm ls' {
         @('--all')
         break
       }
-      'pm;pack' {
+      'pm pack' {
         @('--dry-run', '--destination', '--help', '--ignore-scripts', '--gzip-level')
         break
       }
-      'pm;trust' {
+      'pm trust' {
         if ($wordToComplete.StartsWith('-')) {
           @('--all')
         }
@@ -193,11 +198,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
           @('-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help')
         }
         else {
-          foreach ($item in packageJSON) {
-            if ($item.Name -like '*dependencies') {
-              $item.Value.Keys
-            }
-          }
+          (npm pkg get | ConvertFrom-Json -AsHashtable).GetEnumerator() | Where-Object Name -Like '*dependencies' | ForEach-Object { $_.Value.Keys }
         }
         break
       }

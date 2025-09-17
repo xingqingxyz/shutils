@@ -108,7 +108,7 @@ function rustenv {
 
 function execute {
   $cmd, $ags = $args
-  $cmd = (Get-Command -Type Application -TotalCount 1 -ea Stop $cmd).Source
+  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
   Write-Debug "$args"
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $ags
@@ -122,6 +122,7 @@ function getLocalVersion ($Meta) {
   try {
     switch ($Meta.name) {
       fzf { (execute fzf --version).Split(' ', 2)[0]; break }
+      go { (execute go version).Split(' ', 4)[2]; break }
       pastel { (execute pastel -V).Split(' ', 3)[1]; break }
       mold { (execute mold -v).Split(' ', 3)[1]; break }
       jq { (execute jq -V).Split('-', 2)[1]; break }
@@ -178,6 +179,11 @@ function downloadFile ([string]$Url, [string]$Path) {
   execute aria2c $Url -d $dir -o $file -l $buildDir/aria2c.log
 }
 
+function New-EmptyDir ([string]$Path) {
+  Remove-Item -Recurse -Force -ea Ignore -LiteralPath $Path
+  New-Item -ItemType Directory -Force $Path
+}
+
 function Install-Release {
   [CmdletBinding(SupportsShouldProcess)]
   param (
@@ -204,8 +210,8 @@ function Install-Release {
       $base = 'yq_{0}_{1}' -f $go.os, $go.arch
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base $binDir/yq -Force
-      Move-Item -LiteralPath $buildDir/yq.1 $manDir/man1 -Force
+      Move-Item -LiteralPath $buildDir/$base$exe $binDir/yq$exe -Force
+      Move-Item -LiteralPath $buildDir/yq.1 $dataDir/man/man1 -Force
       break
     }
     jq {
@@ -221,17 +227,17 @@ function Install-Release {
       if (!$IsWindows) {
         chmod +x $binDir/jq$exe
       }
-      downloadFile https://github.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $manDir/man1/jq.1
+      downloadFile https://github.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $dataDir/man/man1/jq.1
       break
     }
     nerdfonts {
       downloadRelease 0xProto.zip
       if ($IsLinux) {
         tar -xf $buildDir/0xProto.zip -C $dataDir/fonts/truetype
-        execute sudo fc-cache -v
+        sudo fc-cache -v
       }
       elseif ($IsWindows) {
-        execute sudo tar -xf $buildDir/0xProto.zip -C C:\Windows\Fonts
+        sudo tar -xf $buildDir/0xProto.zip -C C:\Windows\Fonts
       }
       else {
         throw 'not implemented'
@@ -246,9 +252,8 @@ function Install-Release {
         'DSC-{0}-{1}' -f $Meta.version, $rust.target
       }
       downloadRelease $base$ext
-      Remove-Item -LiteralPath $dataDir/dsc -Recurse -Force -ea Ignore
-      $null = New-Item -ItemType Directory -Force $dataDir/dsc
-      tar -xf $buildDir/$base$ext -C $dataDir/dsc
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
+      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/dsc/dsc $binDir/dsc
       break
     }
     node {
@@ -265,11 +270,8 @@ function Install-Release {
       }
       downloadFile https://nodejs.org/dist/$($Meta.tag)/$file
       if ($IsLinux) {
-        tar -xf $buildDir/$file -C $buildDir
-        $null = New-Item -ItemType Directory -Force $dataDir/nodejs
-        $root = "$dataDir/nodejs/$($Meta.tag)"
-        Remove-Item -LiteralPath $root -Recurse -Force -ea Ignore
-        Move-Item -LiteralPath $buildDir/node-$($Meta.tag)-linux-$arch $root
+        $root = "$prefixDir/nodejs/$($Meta.tag)"
+        tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=2
         $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/node $binDir/node
         $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/npm $binDir/npm
       }
@@ -281,13 +283,15 @@ function Install-Release {
     pwsh {
       switch -CaseSensitive -Wildcard ($PSVersionTable.OS) {
         'Fedora Linux*' {
-          execute sudo dnf install https://github.com/PowerShell/PowerShell/pkgs/download/$($Meta.tag)/powershell-$($Meta.version)-1.rh.$($go.arch).rpm
+          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $Meta.version, $go.arch
+          downloadRelease $file
+          sudo dnf install -y $buildDir/$file
           break
         }
         'Ubuntu *' {
           $file = 'powershell-{0}.{1}.deb' -f $Meta.version, $go.arch
           downloadRelease $file
-          execute sudo dpkg -i $buildDir/$file
+          sudo dpkg -i $buildDir/$file
           break
         }
       }
@@ -323,23 +327,22 @@ function Install-Release {
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $manDir/man1 -Force
+      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $dataDir/man/man1 -Force
       break
     }
     mdbook {
       $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/mdbook$exe $binDir -Force
+      tar -xf $buildDir/$base$ext -C $binDir
       break
     }
     mold {
+      if (!$IsLinux) {
+        throw 'not implemented'
+      }
       $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item $buildDir/$base/bin/* $binDir -Force
-      Move-Item $buildDir/$base/lib/* $libDir -Force
-      Move-Item $buildDir/$base/share/man/man1/* $manDir/man1 -Force
+      sudo tar -xf $buildDir/$base$ext -C $sudoPrefixDir --no-same-owner --strip-components=2
       break
     }
     plantuml {
@@ -351,20 +354,42 @@ function Install-Release {
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Remove-Item -LiteralPath $dataDir/numbat -Recurse -Force -ea Ignore
-      Move-Item -LiteralPath $buildDir/$base $dataDir/numbat -Force
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=2
+      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/numbat/numbat $binDir/numbat
       break
     }
     pastel {
       $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/$base/pastel$exe $binDir -Force
+      tar -xf $buildDir/$base$ext -C $binDir --strip-components=3
+      break
+    }
+    localsend {
+      if (!$IsLinux) {
+        throw 'not implemented'
+      }
+      $base = 'LocalSend-{0}-{1}-x86-64' -f $Meta.version, $rust.os
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/localsend)
+      @"
+[Desktop Entry]
+Icon=$prefixDir/localsend/data/flutter_assets/assets/img/logo-512.png
+Exec=$prefixDir/localsend/localsend_app %u
+Version=1.0
+Type=Application
+Categories=Network
+Name=LocalSend
+Terminal=false
+Comment=A open-source, cross-platform alternative to AirDrop
+StartupNotify=true
+StartupWMClass=localsend_app
+"@ > $dataDir/applications/localsend.desktop
+      update-desktop-database
       break
     }
     default {
       throw "install method for $_ not implemented"
+      break
     }
   }
 }
@@ -401,17 +426,30 @@ function Update-Release {
       Install-Release $_
     }
     catch {
-      Write-Warning $_
+      Write-Error $_
     }
   }
   $pkgs | ConvertTo-Yaml > $pkgsFile
 }
 
+function Install-Golang ([version]$Version) {
+  if (!$IsLinux) {
+    throw 'not implemented'
+  }
+  $file = 'go{0}.{1}-{2}.tar.gz' -f $Version, $go.os, $go.arch
+  downloadFile https://golang.google.cn/dl/$file
+  sudo rm -rf $sudoPrefixDir/go
+  sudo tar -xf $buildDir/$file -C $sudoPrefixDir --no-same-owner
+  sudo ln -sf $sudoPrefixDir/go/bin/go $sudoPrefixDir/go/bin/gofmt $sudoBinDir
+}
+
 $go = goenv
 $rust = rustenv
-$buildDir = [System.IO.Path]::GetTempPath().TrimEnd([System.IO.Path]::DirectorySeparatorChar)
-$binDir = $IsWindows ? "$HOME/tools" : "$HOME/.local/bin"
-$dataDir = $IsWindows ? "$env:LOCALAPPDATA/Programs" : "$HOME/.local/share"
-$manDir = "$dataDir/man"
-$libDir = "$dataDir/lib"
-$null = New-Item -ItemType Directory $binDir, $manDir, $libDir -Force
+$buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
+$prefixDir = $IsWindows ? "$env:LOCALAPPDATA/Programs" : "$HOME/.local"
+$binDir = $IsWindows ? "$HOME/tools" : "$prefixDir/bin"
+$dataDir = $IsWindows ? $env:APPDATA : "$prefixDir/share"
+
+$sudoPrefixDir = $IsWindows ? $env:ProgramData : '/usr/local'
+$sudoBinDir = $IsWindows ? 'C:/tools' : "$sudoPrefixDir/bin"
+# $sudoDataDir = $IsWindows ? "$env:ProgramData/data" : "$sudoPrefixDir/share"

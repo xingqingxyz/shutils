@@ -4,7 +4,6 @@
 #>
 function Register-ArgumentCompleter {
   [CmdletBinding()]
-  [OutputType([scriptblock])]
   param (
     [Parameter()]
     [string[]]
@@ -21,21 +20,19 @@ function Register-ArgumentCompleter {
   )
   if ($ParameterName) {
     Write-Debug "Reload PS command parameter completion: $CommandName -$ParameterName"
-    Microsoft.PowerShell.Core\Register-ArgumentCompleter @PSBoundParameters
   }
   else {
     $CommandName.ForEach{ $_completionFuncMap.$_ = $ScriptBlock }
-    $ScriptBlock
   }
+  Microsoft.PowerShell.Core\Register-ArgumentCompleter @PSBoundParameters
 }
 
 function Get-ArgumentCompleter ([string]$CommandName) {
-  $_completionFuncMap.$CommandName ?? $(if (Test-Path -LiteralPath "$PSScriptRoot/completions/$CommandName.ps1") {
-      . $PSScriptRoot/completions/$CommandName.ps1
-    }
-    else {
-      {}
-    })
+  if (!$_completionFuncMap.Contains($CommandName) -and
+    (Test-Path -LiteralPath "$PSScriptRoot/completions/$CommandName.ps1")) {
+    & $PSScriptRoot/completions/$CommandName.ps1
+  }
+  $_completionFuncMap.$CommandName ?? {}
 }
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}

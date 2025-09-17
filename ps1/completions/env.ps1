@@ -8,7 +8,7 @@ Register-ArgumentCompleter -Native -CommandName env -ScriptBlock {
     if ($el.Extent.StartOffset -eq 0) {
       continue
     }
-    if ($el.Extent.EndOffset -eq $cursorPosition) {
+    if ($el.Extent.StartOffset -le $cursorPosition -and $cursorPosition -le $el.Extent.EndOffset) {
       break
     }
     if ($el -is [StringConstantExpressionAst]) {
@@ -30,11 +30,9 @@ Register-ArgumentCompleter -Native -CommandName env -ScriptBlock {
   if (!$IsWindows -and $wordToComplete.StartsWith('-')) {
     return @('-a', '--argv0=', '-i', '--ignore-environment', '-0', '--null', '-u', '--unset=', '-C', '--chdir=', '-S', '--split-string=', '--block-signal', '--block-signal=', '--default-signal', '--default-signal=', '--ignore-signal', '--ignore-signal=', '--list-signal-handling', '-v', '--debug', '--help', '--version').Where{ $_ -like "$wordToComplete*" }
   }
-  $words = (Get-Item env:$wordToComplete* -ea Ignore).Name
-  if ($words) {
-    $words.ForEach{ "$_=" }
+  if ($wordToComplete -match '^\w+=?') {
+    Get-Item env:$wordToComplete* -ea Ignore | ForEach-Object { $_.Name + '=' }
   }
-  else {
-    [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
-  }
+  $([System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)) ??
+  [System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)
 }

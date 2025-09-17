@@ -20,7 +20,7 @@ function Invoke-Z {
       if ($PWD.Provider.Name -ne 'FileSystem') {
         return
       }
-      Get-Item $Add -ea Ignore | ForEach-Object {
+      Get-Item $Add -ea Ignore | Where-Object { !$_.FullName.Contains("`n") } | ForEach-Object {
         $path = $_z.config.resolveSymlinks ? $_.ResolvedTarget : $_.FullName
         foreach ($pat in $_z.config.excludePatterns) {
           if ($path -like $pat) {
@@ -117,7 +117,7 @@ Set-Variable -Option ReadOnly -Force _z ([pscustomobject]@{
       dataSeperator   = '|'
       resolveSymlinks = $true
       maxHistory      = 1000
-      excludePatterns = @($HOME, (Get-PSDrive -PSProvider FileSystem).Root, ([System.IO.Path]::GetTempPath() + '*'))
+      excludePatterns = @($HOME, ([System.IO.Path]::GetTempPath() + '*'); (Get-PSDrive -PSProvider FileSystem).Root)
     }
     rankSum  = 0.0
     itemsMap = @{}

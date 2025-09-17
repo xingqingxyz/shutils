@@ -1,14 +1,15 @@
 function Invoke-ExecutableAlias {
-  $command = $_executableAliasMap[$MyInvocation.InvocationName]
-  if (!$command) {
-    return Write-Error "command not found $($MyInvocation.InvocationName)"
+  if (!$_executableAliasMap.Contains($MyInvocation.InvocationName)) {
+    return Write-Error "alias not set $($MyInvocation.InvocationName)"
   }
-  Write-Debug "/usr/bin/env -- $command $args"
+  # flat iterator args for native passing
+  $command = @($_executableAliasMap[$MyInvocation.InvocationName]; $args.ForEach{ $_ })
+  Write-Debug "/usr/bin/env -- $command"
   if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env -- $command $args
+    $input | /usr/bin/env -- $command
   }
   else {
-    /usr/bin/env -- $command $args
+    /usr/bin/env -- $command
   }
 }
 
@@ -21,7 +22,7 @@ Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   zegrep   = 'zegrep', '--color=auto'
   zfgrep   = 'zfgrep', '--color=auto'
   zgrep    = 'zgrep', '--color=auto'
-  ls       = 'ls', '-lah', '--color=auto', '--hyperlink=auto'
+  ls       = 'ls', '-A', '--color=auto', '--hyperlink=auto'
   tree     = 'tree', '-C', '--gitignore', '--hyperlink'
   plantuml = 'java', '-jar', "$HOME/.local/bin/plantuml.jar"
 }

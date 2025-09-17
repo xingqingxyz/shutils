@@ -7,7 +7,7 @@ function hex {
     'oct' { 'o'; break }
     default { 'x'; break }
   }
-  @($input; $args.ForEach{ $_ }).ForEach{
+  @($input; $args).ForEach{
     $value = $_
     $value = if ($value -is [string]) {
       try {
@@ -27,7 +27,7 @@ function hex {
             [System.Convert]::ToUInt64($Matches[2], 8)
           }
         }
-        elseif ($value -match '^([+-]?)([\da-f]+)$') {
+        elseif ($value -match '^([+-]?)((?!0[box])[\da-f]+)$') {
           $value = "$($Matches[1])0x$($Matches[2])"
           if ($Matches[1] -eq '-') {
             [long]$value
@@ -47,16 +47,16 @@ function hex {
     else {
       return Write-Error "cannot handle type $($value.GetType().FullName)"
     }
-    ($NoPrefix ? '' : "0$c") + $(if ($c -eq 'o') {
+    ($NoPrefix ? '' : "0$c") + $(if ($c -ceq 'o') {
         if ($value -is [ulong]) {
-          # this keeps the binary same
+          # keep binary same
           $value = [long]::CreateTruncating[ulong]($value)
         }
         [System.Convert]::ToString($value, 8)
       }
       else {
         # enums x format returns upper
-        ("{0:$c}" -f $value).ToLower()
+        $value.ToString($c).ToLower()
       })
   }
 }
