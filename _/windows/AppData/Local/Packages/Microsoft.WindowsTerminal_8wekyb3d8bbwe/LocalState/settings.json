@@ -17,6 +17,7 @@
     ],
     "copyFormatting": "none",
     "copyOnSelect": true,
+    "defaultInputScope": "alphanumericHalfWidth",
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
     "initialRows": 35,
     "keybindings": 
@@ -96,12 +97,6 @@
                 "name": "Git Bash",
                 "pathTranslationStyle": "msys2",
                 "source": "Git"
-            },
-            {
-                "guid": "{d614854d-b67b-58cb-b99c-2cdb7b39b0ef}",
-                "hidden": false,
-                "name": "FedoraLinux-42",
-                "source": "Microsoft.WSL"
             },
             {
                 "guid": "{16208362-94fc-5b1f-a491-5b2624d5ab56}",

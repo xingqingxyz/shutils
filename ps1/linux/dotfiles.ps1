@@ -8,6 +8,5 @@ Get-ChildItem $root -Exclude windows -Force -ea Ignore |
     $files.($_.FullName) = $_.FullName.Replace($root, $HOME)
   }
 $files.GetEnumerator().ForEach{
-  Write-Information "$($_.Value) -> $($_.Key)"
-  $null = New-Item -Type SymbolicLink -Target $_.Key $_.Value -Force
+  New-Item -Type SymbolicLink -Force -Target $_.Key $_.Value
 }

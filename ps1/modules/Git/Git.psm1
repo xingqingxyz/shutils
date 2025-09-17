@@ -12,9 +12,8 @@ function Repair-GitSymlinks {
       return Write-Warning "staged symlink not found: $item"
     }
     if ($item.LinkType -ne 'SymbolicLink') {
-      $target = Get-Content -LiteralPath $item
-      Write-Information "$item -> $target"
-      $null = New-Item -Force -ItemType SymbolicLink -Target $target $item
+      $target = Get-Content -Raw -LiteralPath $item
+      New-Item -ItemType SymbolicLink -Force -Target $target $item
     }
   }
 }
@@ -24,21 +23,10 @@ function Repair-GitSymlinks {
 Clear outdated modules.
  #>
 function Clear-Module {
-  [CmdletBinding(SupportsShouldProcess)]
-  param (
-    [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
-    $InputObject
-  )
-  begin {
-    # use PSBoundParameters to forward -Confirm and -WhatIf
-    $null = $PSBoundParameters.Remove('InputObject')
-  }
-  process {
-    Get-InstalledModule $InputObject.Name -AllVersions |
-      Where-Object Version -LT $InputObject.Version |
-      ForEach-Object {
-        Uninstall-Module $_.Name -MaximumVersion $_.Version @PSBoundParameters
-      }
+  Get-InstalledModule | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
+    $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
+  } | ForEach-Object {
+    Uninstall-Module $_.Name -MaximumVersion $_.Version
   }
 }
 

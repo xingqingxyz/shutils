@@ -1,4 +1,3 @@
-$modules = Update-Module -AcceptLicense -PassThru
-if ($modules) {
-  $modules | Clear-Module
+if (Update-Module -AcceptLicense -PassThru) {
+  Clear-Module
 }

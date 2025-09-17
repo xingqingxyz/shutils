@@ -422,4 +422,4 @@ function Set-EnvironmentVariable {
 
 Set-Alias gtm Get-TypeMember
 Set-Alias icf Invoke-CodeFormatter
-Set-Alias senv Set-EnvironmentVariable
+Set-Alias sev Set-EnvironmentVariable
