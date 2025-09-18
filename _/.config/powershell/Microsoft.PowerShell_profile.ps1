@@ -12,7 +12,7 @@
 # init scripts
 Get-ChildItem -LiteralPath $env:SHUTILS_ROOT/ps1 -File -ea Ignore | ForEach-Object { . $_.FullName }
 # platform code
-. $env:SHUTILS_ROOT/ps1/$($IsWindow ? 'windows' : 'linux')/profile.ps1
+. $env:SHUTILS_ROOT/ps1/$($IsWindows ? 'windows' : 'linux')/profile.ps1
 # aliases overrides exist commands must be explicitly set, due to module lazy
 Set-Alias npm Invoke-Npm
 Set-Alias npx Invoke-Npx

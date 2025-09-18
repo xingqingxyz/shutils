@@ -65,7 +65,7 @@ $env:SHUTILS_ROOT\scripts
 # pwsh PSRepository
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 # pwsh modules
-Install-Module powershell-yaml, PSToml, Pester
+Install-Module Yayaml, PSToml, Pester
 # pwsh scripts
 Install-Script Refresh-EnvironmentVariables
 # alacritty startup
@@ -75,4 +75,11 @@ function Set-DarkMode ([switch]$On) {
   Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'SystemUsesLightTheme' -Value (1 - $On.IsPresent) -Type DWord
   Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'AppsUseLightTheme' -Value (1 - $On.IsPresent) -Type DWord
   Stop-Process explorer
+}
+
+function Set-DscResourcePath {
+  $env:DSC_RESOURCE_PATH = $null
+  $resources = dsc resource list | ConvertFrom-Json
+  $env:DSC_RESOURCE_PATH = ($resources.directory | Sort-Object -Unique) -join [System.IO.Path]::PathSeparator
+  [System.Environment]::SetEnvironmentVariable('DSC_RESOURCE_PATH', $env:DSC_RESOURCE_PATH, 'User')
 }

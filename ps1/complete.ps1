@@ -36,7 +36,7 @@ function Get-ArgumentCompleter ([string]$CommandName) {
 }
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}
-Microsoft.PowerShell.Core\Register-ArgumentCompleter -CommandName (Get-ChildItem -LiteralPath $PSScriptRoot/completions).BaseName -Native -ScriptBlock {
+Microsoft.PowerShell.Core\Register-ArgumentCompleter -CommandName (Split-Path -Resolve -LeafBase $PSScriptRoot/completions/*) -Native -ScriptBlock {
   param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $commandName = Split-Path -LeafBase $commandAst.GetCommandName()
   & (Get-ArgumentCompleter $commandName) @PSBoundParameters

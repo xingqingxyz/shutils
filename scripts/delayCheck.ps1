@@ -22,7 +22,6 @@ if ($ScriptBlock) {
   & $ScriptBlock
 }
 else {
-  $Command = (Get-Command $Command -Type Application -TotalCount 1 -ea Stop).Source
   $description = "$Command $ArgumentList"
   & $Command $ArgumentList
 }

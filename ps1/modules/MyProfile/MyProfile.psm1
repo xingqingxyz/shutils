@@ -155,24 +155,20 @@ filter editable {
 }
 
 function shouldEdit ([string]$Path) {
-  end {
-    $item = Get-Item -LiteralPath $Path -Force
-    $s = $item.EditRead()
-    if ($s.Length -gt 0x300000) {
-      return $false # gt 3M
-    }
-    $buffer = [byte[]]::new(0xff)
-    $Len = $s.Read($buffer, 0, 0xff)
-    for ($i = 0; $i -lt $Len; $i++) {
-      if (!$buffer[$i]) {
-        return $false
-      }
-    }
-    return $true
+  $item = Get-Item -LiteralPath $Path -Force
+  if ($item.Length -gt 0x300000) {
+    return $false # gt 3M
   }
-  clean {
-    $s.Close()
+  $s = $item.OpenRead()
+  $buffer = [byte[]]::new(0xff)
+  $Len = $s.Read($buffer, 0, 0xff)
+  for ($i = 0; $i -lt $Len; $i++) {
+    if (!$buffer[$i]) {
+      break
+    }
   }
+  $s.Close()
+  return $i -ge $Len
 }
 
 function decompress ([System.IO.FileSystemInfo]$Item) {
@@ -195,13 +191,13 @@ filter lessfilter ([string[]]$ExtraArgs) {
     $item = $item.ResolveLinkTarget($true) ?? $item
   }
   if ($item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
-    return ls -lah --color=always --hyperlink=always $item $ExtraArgs | less
+    return & ('ls') -lah --color=always --hyperlink=always $item $ExtraArgs | less
   }
-  ls -lh --color=auto --hyperlink=auto $item
+  & ('ls') -lh --color=auto --hyperlink=auto $item
   switch -CaseSensitive -Regex ($item.Name) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if ((decompress $item | file -L -).Contains('troff')) {
-        decompress $item | & 'man' -l - 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
+        decompress $item | & ('man') -l - 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
       }
       else {
         bat -p $item $ExtraArgs
@@ -210,7 +206,7 @@ filter lessfilter ([string[]]$ExtraArgs) {
     }
     '\.(?:[1-9n]|[1-9]x|man)$' {
       if ((file -L $item).Contains('troff')) {
-        & 'man' -l $item 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
+        & ('man') -l $item 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
       }
       else {
         bat -p $item $ExtraArgs
