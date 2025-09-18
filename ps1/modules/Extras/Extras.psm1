@@ -345,6 +345,14 @@ function Import-EnvironmentVariable {
 function Set-EnvironmentVariable {
   [CmdletBinding()]
   param (
+    [ArgumentCompleter({
+        param (
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        (Get-Item env:$wordToComplete* -ea Ignore).Name.ForEach{ "$_=" }
+      })]
     [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]]
     $ExtraArgs,
@@ -422,4 +430,4 @@ function Set-EnvironmentVariable {
 
 Set-Alias gtm Get-TypeMember
 Set-Alias icf Invoke-CodeFormatter
-Set-Alias senv Set-EnvironmentVariable
+Set-Alias sev Set-EnvironmentVariable

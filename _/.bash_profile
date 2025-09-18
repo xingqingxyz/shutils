@@ -48,9 +48,6 @@ $PNPM_HOME
 $HOME/go/bin
 $HOME/.cargo/bin
 $ANDROID_HOME/platform-tools
-$HOME/.local/share/JetBrains/Toolbox/scripts
-$HOME/.local/share/dsc
-$HOME/.local/share/numbat
 $HOME/.local/share/powershell/Scripts
 $SHUTILS_ROOT/scripts
 EOF

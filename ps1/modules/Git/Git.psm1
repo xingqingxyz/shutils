@@ -124,7 +124,9 @@ function ijq {
     else
       "[\(.)]"
     end) | join(""))' '--' $file | fzf
-  $query = "jq '{0}' {1}" -f [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($query), (Convert-Path -LiteralPath $file)
+  $query = "jq '{0}' '{1}'" -f @(
+    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($query)
+    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent((Convert-Path -LiteralPath $file)))
   $query
   [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($query)
 }
