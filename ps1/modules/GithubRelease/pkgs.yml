@@ -16,6 +16,14 @@
   repo: sharkdp/pastel
   tag: v0.10.0
   version: 0.10.0
+- name: diskus
+  repo: sharkdp/diskus
+  tag: v0.8.0
+  version: 0.8.0
+- name: binocle
+  repo: sharkdp/binocle
+  tag: v0.3.2
+  version: 0.3.2
 - name: fzf
   repo: junegunn/fzf
   tag: v0.65.2

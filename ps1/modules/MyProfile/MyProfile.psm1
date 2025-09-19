@@ -44,35 +44,39 @@ function Show-Command {
     $FullName
   )
   begin {
-    $paths = @()
+    $lines = @()
   }
   process {
-    if ($FullName) {
-      $paths += $FullName
-    }
+    $lines += $FullName ? $FullName : $InputObject
   }
   end {
-    if ($PSBoundParameters.ContainsKey('FullName')) {
-      $paths = Convert-Path -LiteralPath $paths
-      if (!$paths) {
+    if ($MyInvocation.ExpectingInput) {
+      $ExtraArgs = $Name + $ExtraArgs
+      if ($PSBoundParameters.ContainsKey('FullName')) {
+        Write-Debug "files: $lines"
+        $items = Get-Item -LiteralPath $lines -Force
+        if (!$items) {
+          return
+        }
+        if ($Edit) {
+          Write-Debug "$Editor $items $ExtraArgs"
+          & $Editor $items $ExtraArgs
+        }
+        else {
+          Write-Debug "lessfilter $ExtraArgs"
+          $items | lessfilter $ExtraArgs
+        }
         return
       }
       if ($Edit) {
-        Write-Debug "$Editor $paths $Name $ExtraArgs"
-        return & $Editor $paths $Name $ExtraArgs
+        Write-Debug "$Editor $ExtraArgs"
+        $lines | & $Editor $ExtraArgs
       }
       else {
-        return $paths | lessfilter ($Name + $ExtraArgs)
+        Write-Debug "showing help from stdin $lines"
+        $lines | bat -plhelp $ExtraArgs
       }
-    }
-    elseif ($MyInvocation.ExpectingInput) {
-      if ($Edit) {
-        Write-Debug "$Editor $Name $ExtraArgs"
-        return $input | & $Editor $Name $ExtraArgs
-      }
-      else {
-        return $input | bat -plhelp $Name $ExtraArgs
-      }
+      return
     }
     if ($Edit) {
       $Name ??= $MyInvocation.MyCommand.Name
@@ -186,14 +190,25 @@ function decompress ([System.IO.FileSystemInfo]$Item) {
 }
 
 filter lessfilter ([string[]]$ExtraArgs) {
-  $item = Get-Item -LiteralPath $_ -Force -ea Stop
+  [System.IO.FileSystemInfo]$item = $_
   if ($item.LinkType) {
     $item = $item.ResolveLinkTarget($true) ?? $item
   }
   if ($item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
-    return & ('ls') -lah --color=always --hyperlink=always $item $ExtraArgs | less
+    if (!$IsWindows) {
+      return env ls -lah --color=always --hyperlink=always $item $ExtraArgs | less
+    }
+    $oldValue = $PSStyle.OutputRendering
+    $PSStyle.OutputRendering = 'Ansi'
+    try {
+      Get-ChildItem -LiteralPath $item | less
+    }
+    finally {
+      $PSStyle.OutputRendering = $oldValue
+    }
+    return
   }
-  & ('ls') -lh --color=auto --hyperlink=auto $item
+  $PSStyle.FormatHyperlink($item.FullName, [uri]$item.FullName)
   switch -CaseSensitive -Regex ($item.Name) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if ((decompress $item | file -L -).Contains('troff')) {
@@ -214,27 +229,27 @@ filter lessfilter ([string[]]$ExtraArgs) {
       break
     }
     '\.(?:tar|tgz|tbz2)$' {
-      tar -tvf $item
+      tar -tvf $item | less
       break
     }
     '\.tar\.(?:bz2|[glx]z|[zZ]|lzma|br)$' {
-      tar -tvf $item
+      tar -tvf $item | less
       break
     }
     '\.tar\.zst$' {
-      tar --zstd -tvf $item
+      tar --zstd -tvf $item | less
       break
     }
     '\.tar\.lz$' {
-      tar --lzip -tvf $item
+      tar --lzip -tvf $item | less
       break
     }
     '\.(?:zip|jar|nbm)$' {
       if ($IsWindows) {
-        tar -tvf $item
+        tar -tvf $item | less
       }
       else {
-        zipinfo $item
+        zipinfo $item | less
       }
       break
     }
@@ -243,15 +258,15 @@ filter lessfilter ([string[]]$ExtraArgs) {
       break
     }
     '\.rpm$' {
-      rpm -qpivl --changelog --nomanifest $item
+      rpm -qpivl --changelog --nomanifest $item | less
       break
     }
     '\.cpio?$' {
-      Get-Content -AsByteStream -LiteralPath $item | cpio -itv
+      Get-Content -AsByteStream -LiteralPath $item | cpio -itv | less
       break
     }
     '\.gpg$' {
-      gpg -d $item
+      gpg -d $item | less
       break
     }
     '\.(?:gif|jpeg|jpg|pcd|png|tga|tiff|tif)$' {

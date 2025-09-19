@@ -17,8 +17,6 @@ function Invoke-ExecutableAlias {
 
 # utf-8 process
 [System.Console]::InputEncoding = [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Set-Alias bash 'C:\Program Files\Git\usr\bin\bash.exe'
-Set-Alias rsync 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\rsync\rsync.exe'
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   grep     = 'grep', '--color=auto'
   plantuml = 'java', '-jar', "$HOME/tools/plantuml.jar"

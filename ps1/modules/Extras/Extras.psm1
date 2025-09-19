@@ -331,14 +331,38 @@ function icat {
   }
 }
 
-function Import-EnvironmentVariable {
+function Get-EnvironmentVariable {
+  [CmdletBinding()]
   param (
+    [ArgumentCompleter({
+        param (
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        Convert-Path env:$WordToComplete*
+      })]
+    [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]]
-    $Path = '.env'
+    $ExtraArgs,
+    [Parameter()]
+    [System.EnvironmentVariableTarget]
+    $Scope = 'Process',
+    [Parameter(ValueFromPipeline)]
+    [string]
+    $InputObject
   )
-  Get-Content $Path | ForEach-Object {
-    $name, $value = $_.Split('=', 2)
-    Set-Item -LiteralPath env:$name $value
+  if ($MyInvocation.ExpectingInput) {
+    $ExtraArgs += $input
+  }
+  if ($Scope -eq 'Process') {
+    return Get-Item $ExtraArgs.ForEach{ "env:$_" }
+  }
+  Convert-Path $ExtraArgs.ForEach{ "env:$_" } | ForEach-Object {
+    $value = [System.Environment]::GetEnvironmentVariable($_, $Scope)
+    if ($null -ne $value) {
+      [System.Collections.DictionaryEntry]::new($_, $value)
+    }
   }
 }
 
@@ -353,8 +377,14 @@ function Set-EnvironmentVariable {
     $Scope = 'Process',
     [Parameter()]
     [string]
-    $RegionName = "${Scope}Env"
+    $RegionName = "${Scope}Env",
+    [Parameter(ValueFromPipeline)]
+    [string]
+    $InputObject
   )
+  if ($MyInvocation.ExpectingInput) {
+    $PSBoundParameters.ExtraArgs = $ExtraArgs += $input
+  }
   if ($Scope -eq 'Machine' -and !(Test-Administrator)) {
     return Invoke-Sudo Set-EnvironmentVariable @PSBoundParameters
   }
@@ -420,6 +450,19 @@ function Set-EnvironmentVariable {
   }
 }
 
+function Import-EnvironmentVariable {
+  param (
+    [string[]]
+    $Path = '.env'
+  )
+  Get-Content $Path | ForEach-Object {
+    $name, $value = $_.Split('=', 2)
+    Set-Item -LiteralPath env:$name $value
+  }
+}
+
 Set-Alias gtm Get-TypeMember
 Set-Alias icf Invoke-CodeFormatter
+Set-Alias gev Get-EnvironmentVariable
 Set-Alias sev Set-EnvironmentVariable
+Set-Alias ipev Import-EnvironmentVariable
