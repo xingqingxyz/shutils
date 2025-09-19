@@ -233,7 +233,7 @@ function Install-Release {
     nerdfonts {
       downloadRelease 0xProto.zip
       if ($IsLinux) {
-        tar -xf $buildDir/0xProto.zip -C $dataDir/fonts/truetype
+        Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $dataDir/fonts/truetype
         sudo fc-cache -v
       }
       elseif ($IsWindows) {
@@ -323,6 +323,21 @@ function Install-Release {
       tar -xf $buildDir/$base$ext -C $buildDir
       $files = 'rga rga-fzf rga-fzf-open rga-preproc'.Split(' ').ForEach{ "$buildDir/$_$exe" }
       Move-Item -LiteralPath $files $binDir -Force
+      break
+    }
+    binocle {
+      $base = 'binocle-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/binocle$exe $binDir -Force
+      break
+    }
+    diskus {
+      $base = 'diskus-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/diskus$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/diskus.1 $dataDir/man/man1 -Force
       break
     }
     hexyl {
@@ -455,4 +470,4 @@ $dataDir = $IsWindows ? $env:APPDATA : "$prefixDir/share"
 
 $sudoPrefixDir = $IsWindows ? $env:ProgramData : '/usr/local'
 $sudoBinDir = $IsWindows ? 'C:/tools' : "$sudoPrefixDir/bin"
-# $sudoDataDir = $IsWindows ? "$env:ProgramData/data" : "$sudoPrefixDir/share"
+# $sudoDataDir = $IsWindows ? $env:ProgramData : "$sudoPrefixDir/share"
