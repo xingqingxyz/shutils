@@ -271,7 +271,7 @@ function Install-Release {
       downloadFile https://nodejs.org/dist/$($Meta.tag)/$file
       if ($IsLinux) {
         $root = "$prefixDir/nodejs/$($Meta.tag)"
-        tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=2
+        tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
         $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/node $binDir/node
         $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/npm $binDir/npm
       }
@@ -308,6 +308,9 @@ function Install-Release {
       break
     }
     tracexec {
+      if (!$IsLinux) {
+        throw 'not implemented'
+      }
       $base = 'tracexec-{0}' -f $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
@@ -342,7 +345,7 @@ function Install-Release {
       }
       $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
       downloadRelease $base$ext
-      sudo tar -xf $buildDir/$base$ext -C $sudoPrefixDir --no-same-owner --strip-components=2
+      sudo tar -xf $buildDir/$base$ext -C $sudoPrefixDir --no-same-owner --strip-components=1
       break
     }
     plantuml {
@@ -354,14 +357,14 @@ function Install-Release {
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=2
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
       $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/numbat/numbat $binDir/numbat
       break
     }
     pastel {
       $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $binDir --strip-components=3
+      tar -xf $buildDir/$base$ext -C $binDir --strip-components=2
       break
     }
     localsend {

@@ -2,7 +2,7 @@
 .SYNOPSIS
 Show or edit command source.
  #>
-function Show-Command {
+function Edit-Command {
   [CmdletBinding()]
   param (
     [ArgumentCompleter({
@@ -75,8 +75,12 @@ function Show-Command {
       }
     }
     if ($Edit) {
-      $Name ??= $MyInvocation.MyCommand.Name
-      $files = Get-Command $Name | editable
+      $files = if ($Name) {
+        Get-Command $Name | editable
+      }
+      else {
+        $MyInvocation.MyCommand.Module.Path
+      }
       if ($files) {
         Write-Debug "$Editor $files $ExtraArgs"
         & $Editor $files $ExtraArgs
@@ -112,7 +116,7 @@ filter show ([string[]]$ExtraArgs) {
       return Get-Help $info.Name -Category Cmdlet -Full | bat -plman $ExtraArgs
     }
     Configuration {
-      return & $info.Name
+      return & $info
     }
     { @('ExternalScript', 'Script').Contains($_.ToString()) } {
       return bat -plps1 $info.Source $ExtraArgs
@@ -260,7 +264,7 @@ filter lessfilter ([string[]]$ExtraArgs) {
     }
     default {
       switch -CaseSensitive (file -Lb --mime-encoding $item) {
-        binary { sh -c 'hexyl "$@" | less' '--' $item $ExtraArgs <# auto close hexyl pipe #>; break }
+        binary { sh -c 'hexyl "$@" | less' `-- $item $ExtraArgs <# auto close hexyl pipe #>; break }
         $OutputEncoding.WebName { bat -p $item $ExtraArgs; break }
         default { Get-Content -Encoding ([System.Text.Encoding]::GetEncoding($_)) -LiteralPath $item | bat -p --file-name=$item $ExtraArgs; break }
       }
@@ -361,5 +365,5 @@ function Invoke-Sudo {
   }
 }
 
-Set-Alias l Show-Command
-Set-Alias e Show-Command
+Set-Alias l Edit-Command
+Set-Alias e Edit-Command

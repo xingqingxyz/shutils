@@ -1,20 +1,3 @@
-function Invoke-ExecutableAlias {
-  $cmd, [string[]]$ags = $_executableAliasMap[$MyInvocation.InvocationName]
-  if (!$cmd) {
-    return Write-Error "alias not set $($MyInvocation.InvocationName)"
-  }
-  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
-  # flat iterator args for native passing
-  $ags += $args.ForEach{ $_ }
-  Write-Debug "$cmd $ags"
-  if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd $ags
-  }
-  else {
-    & $cmd $ags
-  }
-}
-
 # utf-8 process
 [System.Console]::InputEncoding = [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Set-Alias bash 'C:\Program Files\Git\usr\bin\bash.exe'
@@ -27,4 +10,23 @@ if ($env:TERM_PROGRAM -notlike 'vscode*') {
   $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
   $_executableAliasMap.rg = 'rg', '--hyperlink-format=default'
 }
-$_executableAliasMap.Keys.ForEach{ Set-Alias $_ Invoke-ExecutableAlias }
+Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
+  # prevent . invoke variable add
+  if ($MyInvocation.InvocationName -eq '.') {
+    return & $MyInvocation.MyCommand $args
+  }
+  $cmd = $MyInvocation.MyCommand.Name
+  if (!$_executableAliasMap.Contains($cmd)) {
+    return Write-Error "alias not set $cmd"
+  }
+  # flat iterator args for native passing
+  $cmd, $ags = @($_executableAliasMap.$cmd; $args.ForEach{ $_ })
+  $cmd = Get-Command $cmd -Type Application -TotalCount 1 -ea Stop
+  Write-Debug "$($cmd.Source) $ags"
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd $ags
+  }
+  else {
+    & $cmd $ags
+  }
+}

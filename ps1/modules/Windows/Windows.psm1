@@ -3,7 +3,7 @@ function env {
   $environment = @{}
   $reEnv = [regex]::new('^\w+\+?=')
   # flat iterator args for native passing
-  # note: replace token -- with '--' to escape function passing
+  # note: replace token -- with `-- to escape function passing
   $cmd, $ags = foreach ($arg in [string[]]$args.ForEach{ $_ }) {
     if (!$reEnv.IsMatch($arg)) {
       @($arg; $foreach)

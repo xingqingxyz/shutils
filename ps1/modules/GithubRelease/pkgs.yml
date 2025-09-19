@@ -41,8 +41,8 @@
   version: 1.4.5
 - name: node
   repo: nodejs/node
-  tag: v24.7.0
-  version: 24.7.0
+  tag: v24.8.0
+  version: 24.8.0
 - name: nerdfonts
   repo: ryanoasis/nerd-fonts
 - name: jq

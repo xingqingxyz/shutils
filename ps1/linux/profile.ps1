@@ -1,18 +1,3 @@
-function Invoke-ExecutableAlias {
-  if (!$_executableAliasMap.Contains($MyInvocation.InvocationName)) {
-    return Write-Error "alias not set $($MyInvocation.InvocationName)"
-  }
-  # flat iterator args for native passing
-  $command = @($_executableAliasMap[$MyInvocation.InvocationName]; $args.ForEach{ $_ })
-  Write-Debug "/usr/bin/env -- $command"
-  if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env -- $command
-  }
-  else {
-    /usr/bin/env -- $command
-  }
-}
-
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   egrep    = 'egrep', '--color=auto'
   grep     = 'grep', '--color=auto'
@@ -25,9 +10,28 @@ Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   ls       = 'ls', '-A', '--color=auto', '--hyperlink=auto'
   tree     = 'tree', '-C', '--gitignore', '--hyperlink'
   plantuml = 'java', '-jar', "$HOME/.local/bin/plantuml.jar"
+  tracexec = 'bash', '-ic', 'tracexec "$0" "$@"'
 }
 if ($env:TERM_PROGRAM -notlike 'vscode*') {
   $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
   $_executableAliasMap.rg = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=file://{wslprefix}{path}' : '--hyperlink-format=default')
 }
-$_executableAliasMap.Keys.ForEach{ Set-Alias $_ Invoke-ExecutableAlias }
+Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
+  # prevent . invoke variable add
+  if ($MyInvocation.InvocationName -eq '.') {
+    return & $MyInvocation.MyCommand $args
+  }
+  $command = $MyInvocation.MyCommand.Name
+  if (!$_executableAliasMap.Contains($command)) {
+    return Write-Error "alias not set $command"
+  }
+  # flat iterator args for native passing
+  $command = @($_executableAliasMap.$command; $args.ForEach{ $_ })
+  Write-Debug "/usr/bin/env -- $command"
+  if ($MyInvocation.ExpectingInput) {
+    $input | /usr/bin/env -- $command
+  }
+  else {
+    /usr/bin/env -- $command
+  }
+}

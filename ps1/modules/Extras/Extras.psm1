@@ -38,7 +38,7 @@ function Get-TypeMember {
           Constructor { $false; break }
           default { $MemberType.HasFlag($_); break }
         }) -and $_.Name -like $Name
-    }.ForEach{ [Microsoft.PowerShell.Commands.MemberDefinition]::new($InputObject.FullName, $_.Name, $_.MemberType, $_.ToString()) }
+    } | Select-Object Name, MemberType, @{Name = 'Definition'; Expression = { $_.ToString() } }
   }
 }
 
@@ -164,19 +164,19 @@ function getParser ([string]$Extension, [switch]$Inplace) {
   switch -CaseSensitive -Regex ($Extension.Substring(1)) {
     '^(?:c|m|mm|cpp|cc|cp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|inl|ipp)$' {
       if ($Inplace) {
-        { clang-format -i --style=LLVM '--' $args[0] }
+        { clang-format -i --style=LLVM `-- $args[0] }
       }
       else {
-        { clang-format --style=LLVM '--' $args[0] }
+        { clang-format --style=LLVM `-- $args[0] }
       }
       break
     }
     '^(?:dart)$' {
       if ($Inplace) {
-        { dart format '--' $args[0] }
+        { dart format `-- $args[0] }
       }
       else {
-        { dart format -o show --show none --summary none '--' $args[0] }
+        { dart format -o show --show none --summary none `-- $args[0] }
       }
       break
     }
@@ -191,10 +191,10 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     }
     '^(?:go)$' {
       if ($Inplace) {
-        { gofmt -w '--' $args[0] }
+        { gofmt -w `-- $args[0] }
       }
       else {
-        { gofmt '--' $args[0] }
+        { gofmt `-- $args[0] }
       }
       break
     }
@@ -209,10 +209,10 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     }
     '^(?:js|cjs|mjs|jsx|tsx|ts|cts|mts|json|jsonc|json5|yml|yaml|htm|html|xhtml|shtml|vue|gql|graphql|css|scss|sass|less|hbs|md|markdown)$' {
       if ($Inplace) {
-        { pnpx prettier -w --ignore-path= '--' $args[0] }
+        { pnpx prettier -w --ignore-path= `-- $args[0] }
       }
       else {
-        { pnpx prettier --ignore-path= '--' $args[0] }
+        { pnpx prettier --ignore-path= `-- $args[0] }
       }
       break
     }
@@ -227,7 +227,7 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     }
     '^(?:py|pyi|pyw|pyx|pxd|gyp|gypi)$' {
       if ($Inplace) {
-        { ruff format -n '--' $args[0] }
+        { ruff format -n `-- $args[0] }
       }
       else {
         { Get-Content -AsByteStream -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
@@ -236,16 +236,16 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     }
     '^(?:rs)$' {
       if ($Inplace) {
-        { rustfmt '--' $args[0] }
+        { rustfmt `-- $args[0] }
       }
       else {
-        { rustfmt --emit stdout '--' $args[0] }
+        { rustfmt --emit stdout `-- $args[0] }
       }
       break
     }
     '^(?:sh|bash|zsh|ash)$' {
       if ($Inplace) {
-        { shfmt -i 2 -bn -ci -sr '--' $args[0] }
+        { shfmt -i 2 -bn -ci -sr `-- $args[0] }
       }
       else {
         { Get-Content -AsByteStream -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
@@ -254,7 +254,7 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     }
     '^(?:lua)$' {
       if ($Inplace) {
-        { stylua '--' $args[0] }
+        { stylua `-- $args[0] }
       }
       else {
         { Get-Content -AsByteStream -LiteralPath $args[0] | stylua }
@@ -327,7 +327,7 @@ function icat {
   }
   (Get-Item $Path).FullName.ForEach{
     magick -density 3000 -background transparent $_ -resize "${Size}x" -define sixel:diffuse=true @ArgumentList sixel:- 2>$null
-    identify '--' $_
+    identify `-- $_
   }
 }
 
