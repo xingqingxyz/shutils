@@ -4,7 +4,7 @@ using namespace System.Management.Automation.Language
 Register-ArgumentCompleter -Native -CommandName vsce -ScriptBlock {
   param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
-      if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
+      if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {
         continue
       }
       if ($i -isnot [StringConstantExpressionAst] -or
@@ -16,7 +16,7 @@ Register-ArgumentCompleter -Native -CommandName vsce -ScriptBlock {
     }) -join ';'
   $command = switch ($command) {
     'pack' { 'package'; break }
-    Default { $command }
+    default { $command }
   }
 
   $cursorPosition -= $wordToComplete.Length
@@ -26,7 +26,7 @@ Register-ArgumentCompleter -Native -CommandName vsce -ScriptBlock {
     }
     $prev = $i
   }
-  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
+  $prev = $prev -is [StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($command) {
       { $true } {
@@ -108,13 +108,13 @@ Register-ArgumentCompleter -Native -CommandName vsce -ScriptBlock {
         }
         $prev = switch ($prev) {
           '-t' { '--target'; break }
-          Default { $prev }
+          default { $prev }
         }
         switch ($prev) {
           '--target' {
-            @('win32-x64', 'win32-arm64', 'linux-x64',
+            [CompletionResult[]]@('win32-x64', 'win32-arm64', 'linux-x64',
               'linux-arm64', 'linux-armhf', 'darwin-x64',
-              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web').ForEach{ [CompletionResult]::new($_, $_, [CompletionResultType]::ParameterValue, 'unknown') }
+              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web')
             break
           }
         }
@@ -156,13 +156,13 @@ Register-ArgumentCompleter -Native -CommandName vsce -ScriptBlock {
         }
         $prev = switch ($prev) {
           '-t' { '--target'; break }
-          Default { $prev }
+          default { $prev }
         }
         switch ($prev) {
           '--target' {
-            @('win32-x64', 'win32-arm64', 'linux-x64',
+            [CompletionResult[]]@('win32-x64', 'win32-arm64', 'linux-x64',
               'linux-arm64', 'linux-armhf', 'darwin-x64',
-              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web').ForEach{ [CompletionResult]::new($_, $_, [CompletionResultType]::ParameterValue, 'unknown') }
+              'darwin-arm64', 'alpine-x64', 'alpine-arm64', 'web')
             break
           }
         }

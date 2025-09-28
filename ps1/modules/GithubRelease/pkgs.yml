@@ -77,3 +77,7 @@
   repo: localsend/localsend
   tag: v1.17.0
   version: 1.17.0
+- name: xh
+  repo: ducaale/xh
+  tag: v0.25.0
+  version: 0.25.0

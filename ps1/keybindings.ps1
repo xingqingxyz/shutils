@@ -32,7 +32,7 @@ Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -
   if (!$info) {
     return
   }
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, 0, "Show-Command $info # ")
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, 0, "Show-CommandSource $info # ")
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell docs in browser about the command' -ScriptBlock {

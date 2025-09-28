@@ -12,7 +12,7 @@ _fzf_file_widget() {
   mapfile -t items < <(eval "${FZF_CTRL_T_COMMAND:-rg --files}" \
     | FZF_DEFAULT_OPTS+=" $FZF_CTRL_T_OPTS" fzf "${args[@]}") || return
   out=${items[*]@Q}' '
-  READLINE_LINE=${READLINE_LINE:0:READLINE_POINT}$out$READLINE_LINE:READLINE_POINT
+  READLINE_LINE=${READLINE_LINE:0:READLINE_POINT}$out${READLINE_LINE:READLINE_POINT}
   ((READLINE_POINT += ${#out}))
 }
 
@@ -31,7 +31,7 @@ _fzf_history() {
   out=$(fc -lr | awk -f "${BASH_SOURCE[0]%/*}/fzf-hist.awk" \
     | FZF_DEFAULT_OPTS+=" $FZF_CTRL_R_OPTS" fzf "${args[@]}") || return
   out=${out#*$'\t'}
-  READLINE_LINE=$out$READLINE_LINE:READLINE_POINT
+  READLINE_LINE=$out${READLINE_LINE:READLINE_POINT}
   READLINE_POINT=${#out}
 }
 
@@ -54,7 +54,7 @@ _fzf_ident() {
   # alias builtin command keyword variable
   out=$(compgen -abckv -A function -- "$query" | uniq \
     | FZF_DEFAULT_OPTS+=" $FZF_CTRL_O_OPTS" fzf "${args[@]}") || return
-  READLINE_LINE=${READLINE_LINE:0:start}$out$READLINE_LINE:READLINE_POINT
+  READLINE_LINE=${READLINE_LINE:0:start}$out${READLINE_LINE:READLINE_POINT}
   ((READLINE_POINT = start + ${#out}))
 }
 

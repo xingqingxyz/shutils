@@ -1,9 +1,10 @@
-<#
-.SYNOPSIS
-Z, jumps to most frecently used directory.
- #>
 function Invoke-Z {
+  <#
+  .SYNOPSIS
+  Z, jumps to most frecently used directory.
+  #>
   [CmdletBinding(DefaultParameterSetName = 'Main')]
+  [Alias('z')]
   param (
     [Parameter(ParameterSetName = 'Add', Mandatory)][string[]]$Add,
     [Parameter(ParameterSetName = 'Delete', Mandatory)][string[]]$Delete,
@@ -70,7 +71,7 @@ function Invoke-Z {
         $items = $items | Where-Object Path -Like $base$([System.IO.Path]::DirectorySeparatorChar)*
       }
       if (!$items) {
-        return Write-Warning "no matches found for regexp $re"
+        return Write-Error 'no matches'
       }
       $items = @(switch ($true) {
           $Rank { $items | Sort-Object Rank; break }
@@ -110,7 +111,6 @@ function Invoke-Z {
   }
 }
 
-Set-Alias z Invoke-Z
 Set-Variable -Option ReadOnly -Force _z ([pscustomobject]@{
     config   = [pscustomobject]@{
       dataFile        = "$HOME/.z"

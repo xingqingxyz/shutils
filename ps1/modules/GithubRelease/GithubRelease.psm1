@@ -382,6 +382,17 @@ function Install-Release {
       tar -xf $buildDir/$base$ext -C $binDir --strip-components=2
       break
     }
+    xh {
+      $base = 'xh-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/xh$exe $binDir/http$exe
+      Move-Item -LiteralPath $buildDir/$base/doc/xh.1 $dataDir/man/man1
+      Move-Item -LiteralPath $buildDir/$base/completions/_xh.ps1 $env:SHUTILS_ROOT/ps1/completions/http.ps1
+      $null = New-Item -ItemType SymbolicLink -Force -Target http$exe $binDir/https$exe
+      $null = New-Item -ItemType SymbolicLink -Force -Target http.ps1 $env:SHUTILS_ROOT/ps1/completions/https.ps1
+      break
+    }
     localsend {
       if (!$IsLinux) {
         throw 'not implemented'

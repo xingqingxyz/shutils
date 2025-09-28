@@ -7,7 +7,7 @@ Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   zegrep   = 'zegrep', '--color=auto'
   zfgrep   = 'zfgrep', '--color=auto'
   zgrep    = 'zgrep', '--color=auto'
-  ls       = 'ls', '-A', '--color=auto', '--hyperlink=auto'
+  ls       = 'ls', '-Ah', '--color=auto', '--hyperlink=auto'
   tree     = 'tree', '-C', '--gitignore', '--hyperlink'
   plantuml = 'java', '-jar', "$HOME/.local/bin/plantuml.jar"
   tracexec = 'bash', '-ic', 'tracexec "$0" "$@"'
@@ -33,5 +33,12 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   }
   else {
     /usr/bin/env -- $command
+  }
+}
+# PackageKit command-not-found
+$ExecutionContext.InvokeCommand.CommandNotFoundAction = {
+  [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
+  if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
+    /usr/libexec/pk-command-not-found $e.CommandName 2>$null
   }
 }

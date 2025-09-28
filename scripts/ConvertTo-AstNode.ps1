@@ -4,7 +4,7 @@ using namespace System.Management.Automation.Language
 param (
   [Parameter(Mandatory, Position = 0)]
   [string]
-  $ScriptContent
+  $ScriptInput
 )
 
 function getRange ($Obj, [string]$Key = 'Extent') {
@@ -15,14 +15,30 @@ function getRange ($Obj, [string]$Key = 'Extent') {
   $e.EndColumnNumber - 1
 }
 
+class TokenVisitor : AstVisitor2 {
+  hidden [ordered] $nodeMap
+  hidden [Token[]] $tokens
+  TokenVisitor([Ast]$root, [Token[]]$tokens, [System.Collections.Specialized.OrderedDictionary]$nodeMap) {
+    $this.nodeMap = $nodeMap
+    $this.tokens = $tokens
+    $root.Visit($this)
+  }
+  [AstVisitAction] DefaultVisit([Ast]$ast) {
+    $s = $ast.Extent.StartOffset
+    $this.nodeMap.$ast.tokens = $this.tokens.Where{ $ast.Extent.StartOffset -le $_.Extent.StartOffset -and $_.Extent.EndOffset -le $ast.Extent.EndOffset } | Select-Object Kind, TokenFlags, HasError, @{Name = 'range'; Expression = { getRange $_ } }, @{Name = 'textOffsets'; Expression = { $_.Extent.StartOffset - $s, $_.Extent.EndOffset - $s } }
+    return [AstVisitAction]::Continue
+  }
+}
+
 class NodeAstVisitor : AstVisitor2 {
   hidden [ordered] $nodeMap
-  [hashtable] GetNode([Ast]$root) {
+  [hashtable] GetNode([Ast]$root, [Token[]]$tokens) {
     $this.nodeMap = [ordered]@{}
     $root.Visit($this)
+    [TokenVisitor]::new($root, $this.nodeMap, $tokens)
     foreach ($node in $this.nodeMap.Values) {
       foreach ($key in @($node.Keys)) {
-        if ('meta range typeName'.Contains($key)) {
+        if ('meta range typeName tokens'.Contains($key)) {
           continue
         }
         $node.$key = @(foreach ($ast in $node.$key) {
@@ -657,13 +673,7 @@ class NodeAstVisitor : AstVisitor2 {
   }
 }
 
-if ($MyInvocation.InvocationName -ne '.') {
-  return [NodeAstVisitor]::new().GetNode([Parser]::ParseInput($ScriptContent, [ref]$null, [ref]$null))
-}
-
 $tokens = $null
 $pe = $null
 $ast = [Parser]::ParseInput($ScriptContent, [ref]$tokens, [ref]$pe)
-$visitor = [NodeAstVisitor]::new()
-$root = $visitor.GetNode($ast)
-$root
+[NodeAstVisitor]::new().GetNode($ast, $tokens)

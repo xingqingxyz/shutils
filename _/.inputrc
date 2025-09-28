@@ -1,0 +1,9 @@
+set completion-ignore-case on
+set mark-symlinked-directories on
+set visible-stats on
+
+$if mode=emacs
+TAB: menu-complete
+C-SPACE: complete
+"\C-q": "\eb\"\ef\""
+$endif

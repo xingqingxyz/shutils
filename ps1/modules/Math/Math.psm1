@@ -1,4 +1,5 @@
 function hex {
+  [Alias('bin', 'oct')]
   param (
     [switch]$NoPrefix
   )
@@ -60,6 +61,3 @@ function hex {
       })
   }
 }
-
-Set-Alias bin hex
-Set-Alias oct hex

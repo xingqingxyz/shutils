@@ -3,7 +3,7 @@ $baseDir = switch ($true) {
   $IsLinux { "$HOME/.local/share/powershell/PSReadLine"; break }
   default { throw 'not implemented' }
 }
-Get-ChildItem $baseDir/*_history.txt | ForEach-Object {
-  $content = Get-Content -LiteralPath $_.FullName | Select-Object -Unique
-  $content > $_.FullName
+Convert-Path $baseDir/*_history.txt | ForEach-Object {
+  $content = Get-Content -LiteralPath $_ | Select-Object -Unique
+  $content > $_
 }

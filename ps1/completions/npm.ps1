@@ -7,7 +7,7 @@ function npmConfigKeys {
 Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
   param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $commands = @(foreach ($i in $commandAst.CommandElements) {
-      if ($i.Extent.StartOffset -eq 0 -or $i.Extent.EndOffset -eq $cursorPosition) {
+      if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {
         continue
       }
       if ($i -isnot [StringConstantExpressionAst] -or

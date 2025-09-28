@@ -18,11 +18,11 @@ function Repair-GitSymlinks {
   }
 }
 
-<#
-.SYNOPSIS
-Clear outdated modules.
- #>
 function Clear-Module {
+  <#
+  .SYNOPSIS
+  Clear outdated modules.
+   #>
   Get-InstalledModule | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
     $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
   } | ForEach-Object {

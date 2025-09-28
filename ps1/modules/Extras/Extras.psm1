@@ -1,5 +1,6 @@
 function Get-TypeMember {
   [CmdletBinding()]
+  [Alias('gtm')]
   param (
     [ArgumentCompleter({
         param (
@@ -42,11 +43,11 @@ function Get-TypeMember {
   }
 }
 
-<#
-.SYNOPSIS
-Simple impl for surfboard localnet network proxy.
- #>
 function Set-SystemProxy {
+  <#
+  .SYNOPSIS
+  Simple impl for surfboard localnet network proxy.
+   #>
   [CmdletBinding()]
   param (
     [Parameter()]
@@ -209,10 +210,10 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     }
     '^(?:js|cjs|mjs|jsx|tsx|ts|cts|mts|json|jsonc|json5|yml|yaml|htm|html|xhtml|shtml|vue|gql|graphql|css|scss|sass|less|hbs|md|markdown)$' {
       if ($Inplace) {
-        { pnpx prettier -w --ignore-path= `-- $args[0] }
+        { prettier -w --ignore-path= `-- $args[0] }
       }
       else {
-        { pnpx prettier --ignore-path= `-- $args[0] }
+        { prettier --ignore-path= `-- $args[0] }
       }
       break
     }
@@ -279,6 +280,7 @@ function getParser ([string]$Extension, [switch]$Inplace) {
 
 function Invoke-CodeFormatter {
   [CmdletBinding()]
+  [Alias('icf')]
   param (
     [Parameter(Mandatory, Position = 0)]
     [string[]]
@@ -333,6 +335,7 @@ function icat {
 
 function Get-EnvironmentVariable {
   [CmdletBinding()]
+  [Alias('gev')]
   param (
     [ArgumentCompleter({
         param (
@@ -368,6 +371,7 @@ function Get-EnvironmentVariable {
 
 function Set-EnvironmentVariable {
   [CmdletBinding()]
+  [Alias('sev')]
   param (
     [ArgumentCompleter({
         param (
@@ -459,6 +463,7 @@ function Set-EnvironmentVariable {
 }
 
 function Import-EnvironmentVariable {
+  [Alias('ipev')]
   param (
     [string[]]
     $Path = '.env'
@@ -468,9 +473,3 @@ function Import-EnvironmentVariable {
     Set-Item -LiteralPath env:$name $value
   }
 }
-
-Set-Alias gtm Get-TypeMember
-Set-Alias icf Invoke-CodeFormatter
-Set-Alias gev Get-EnvironmentVariable
-Set-Alias sev Set-EnvironmentVariable
-Set-Alias ipev Import-EnvironmentVariable

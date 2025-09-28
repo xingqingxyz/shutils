@@ -1,9 +1,10 @@
-<#
-.SYNOPSIS
-Show or edit command source.
- #>
-function Edit-Command {
+function Show-CommandSource {
+  <#
+  .SYNOPSIS
+  Show or edit command source.
+   #>
   [CmdletBinding()]
+  [Alias('l', 'e')]
   param (
     [ArgumentCompleter({
         param (
@@ -11,8 +12,8 @@ function Edit-Command {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        $([System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)) ??
-        [System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)
+        $([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)) ??
+        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
       })]
     [Parameter(Position = 0)]
     [string[]]
@@ -44,50 +45,55 @@ function Edit-Command {
     $FullName
   )
   begin {
-    $lines = @()
+    $paths = @()
   }
   process {
-    $lines += $FullName ? $FullName : $InputObject
+    if ($FullName) {
+      $paths += $FullName
+    }
   }
   end {
     if ($MyInvocation.ExpectingInput) {
       $ExtraArgs = $Name + $ExtraArgs
-      if ($PSBoundParameters.ContainsKey('FullName')) {
-        Write-Debug "files: $lines"
-        $items = Get-Item -LiteralPath $lines -Force
-        if (!$items) {
+      if ($FullName) {
+        $paths = Convert-Path -LiteralPath $paths
+        if (!$paths) {
           return
         }
         if ($Edit) {
-          Write-Debug "$Editor $items $ExtraArgs"
-          & $Editor $items $ExtraArgs
+          Write-Debug "$Editor $paths $ExtraArgs"
+          & $Editor $paths $ExtraArgs
         }
         else {
-          Write-Debug "lessfilter $ExtraArgs"
-          $items | lessfilter $ExtraArgs
+          Write-Debug "Invoke-Less $ExtraArgs"
+          $paths | Invoke-Less $ExtraArgs
         }
         return
       }
       if ($Edit) {
         Write-Debug "$Editor $ExtraArgs"
-        $lines | & $Editor $ExtraArgs
+        $input | & $Editor $ExtraArgs
       }
       else {
-        Write-Debug "showing help from stdin $lines"
-        $lines | bat -plhelp $ExtraArgs
+        Write-Debug 'showing help from stdin'
+        $input | bat -plhelp $ExtraArgs
       }
       return
     }
     if ($Edit) {
-      $files = if ($Name) {
-        Get-Command $Name | editable
+      $paths = if ($Name) {
+        Get-Command $Name -ea Ignore | editable
       }
       else {
         $MyInvocation.MyCommand.Module.Path
       }
-      if ($files) {
-        Write-Debug "$Editor $files $ExtraArgs"
-        & $Editor $files $ExtraArgs
+      if ($paths) {
+        Write-Debug "$Editor $paths $ExtraArgs"
+        & $Editor $paths $ExtraArgs
+      }
+      else {
+        Write-Debug "fallback: $Editor $Name $ExtraArgs"
+        & $Editor $Name $ExtraArgs
       }
       return
     }
@@ -103,7 +109,7 @@ function Edit-Command {
 filter show ([string[]]$ExtraArgs) {
   $info = $_
   if ($info -is [System.IO.FileSystemInfo]) {
-    return $info | lessfilter $ExtraArgs
+    return $info | Invoke-Less $ExtraArgs
   }
   if ($info -isnot [System.Management.Automation.CommandInfo]) {
     # other PSProvider info, e.g. gi env:PATH
@@ -114,7 +120,7 @@ filter show ([string[]]$ExtraArgs) {
   }
   switch ($info.CommandType) {
     Application {
-      return $info.Source | lessfilter $ExtraArgs # for all other files
+      return $info.Source | Invoke-Less $ExtraArgs # for all other files
     }
     Cmdlet {
       return Get-Help $info.Name -Category Cmdlet -Full | bat -plman $ExtraArgs
@@ -193,8 +199,8 @@ function decompress ([System.IO.FileSystemInfo]$Item) {
   & $cmd $ags
 }
 
-filter lessfilter ([string[]]$ExtraArgs) {
-  [System.IO.FileSystemInfo]$item = $_
+filter Invoke-Less ([string[]]$ExtraArgs) {
+  $item = Get-Item -LiteralPath $_ -Force -ea Stop
   if ($item.LinkType) {
     $item = $item.ResolveLinkTarget($true) ?? $item
   }
@@ -212,7 +218,7 @@ filter lessfilter ([string[]]$ExtraArgs) {
     }
     return
   }
-  $PSStyle.FormatHyperlink($item.FullName, [uri]$item.FullName)
+  $PSStyle.FormatHyperlink($item, [uri]::new($item))
   switch -CaseSensitive -Regex ($item.Name) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if ((decompress $item | file -L -).Contains('troff')) {
@@ -280,7 +286,7 @@ filter lessfilter ([string[]]$ExtraArgs) {
     default {
       switch -CaseSensitive (file -Lb --mime-encoding $item) {
         binary { sh -c 'hexyl "$@" | less' `-- $item $ExtraArgs <# auto close hexyl pipe #>; break }
-        $OutputEncoding.WebName { bat -p $item $ExtraArgs; break }
+        { $_ -ceq $OutputEncoding.WebName -or $_.StartsWith('unknown') } { bat -p $item $ExtraArgs; break }
         default { Get-Content -Encoding ([System.Text.Encoding]::GetEncoding($_)) -LiteralPath $item | bat -p --file-name=$item $ExtraArgs; break }
       }
       break
@@ -379,6 +385,3 @@ function Invoke-Sudo {
     Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory .
   }
 }
-
-Set-Alias l Edit-Command
-Set-Alias e Edit-Command

@@ -3,7 +3,6 @@ export \
   ANDROID_HOME="$HOME/Android/Sdk" \
   DSC_RESOURCE_PATH="$HOME/.local/dsc" \
   EDITOR='msedit' \
-  GTK_IM_MODULE='fcitx' \
   LANG='zh_CN.UTF-8' \
   LESS='-R --quit-if-one-screen --use-color --wordwrap --ignore-case --incsearch --search-options=W' \
   LESSOPEN="||$HOME/.local/bin/lesspipe.sh %s 2>/dev/null" \
@@ -12,14 +11,18 @@ export \
   NODE_PATH+="${NODE_PATH+:}$HOME/.local/share/pnpm/global/5/node_modules" \
   no_proxy='127.0.0.1,localhost,internal.domain,kkgithub.com,raw.githubusercontents.com,mirror.sjtu.edu.cn,mirrors.ustc.edu.cn,mirrors.tuna.tsinghua.edu.cn' \
   PAGER='less' \
-  PSModulePath+="${PSModulePath+:}$HOME/.local/share/powershell/Modules" \
   PNPM_HOME="$HOME/.local/share/pnpm" \
-  QT_IM_MODULE='fcitx' \
   RUSTUP_DIST_SERVER='https://mirrors.tuna.tsinghua.edu.cn/rustup' \
   RUSTUP_UPDATE_ROOT='https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup' \
   SHUTILS_ROOT="$HOME/p/shutils" \
-  SYSTEMD_PAGER= \
-  XMODIFIERS='@im=fcitx'
+  SYSTEMD_PAGER=
+
+# tty or gui
+if [ "$XDG_SESSION_TYPE" = tty ]; then
+  export LC_ALL='en_US.UTF-8'
+else
+  export GTK_IM_MODULE='fcitx' QT_IM_MODULE='fcitx' XMODIFIERS='@im=fcitx'
+fi
 
 # fzf default opts
 MAPFILE=(

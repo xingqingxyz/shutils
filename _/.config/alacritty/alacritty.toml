@@ -1,23 +1,45 @@
 [cursor.style]
-shape    = "Beam"
+shape = "Beam"
 blinking = "On"
 
+[[hints.enabled]]
+command = "xdg-open"
+hyperlinks = true
+post_processing = true
+persist = false
+mouse.enabled = true
+binding = { key = "O", mods = "Control|Shift" }
+regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|go‐pher://|https://|http://|news:|file:|git://|ssh:|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^⟨⟩`\\\\]+|(/[^\\s/]+)+"
+
 [[keyboard.bindings]]
-key    = "n"
-mods   = "Control|Shift"
+key = "N"
+mods = "Control|Shift"
 action = "CreateNewWindow"
 
 [[keyboard.bindings]]
-key    = "Enter"
-mods   = "Alt"
+key = "+"
+mods = "Alt|Shift"
+command = { program = "alacritty", args = [
+  "msg",
+  "create-window",
+  "--hold",
+  "-T",
+  "bash",
+  "-e",
+  "bash",
+] }
+
+[[keyboard.bindings]]
+key = "Enter"
+mods = "Alt"
 action = "ToggleFullscreen"
 
 [[keyboard.bindings]]
-key    = "F11"
+key = "F11"
 action = "ToggleFullscreen"
 
 [[mouse.bindings]]
-mouse  = "Right"
+mouse = "Right"
 action = "Paste"
 
 [mouse]
@@ -25,10 +47,11 @@ hide_when_typing = true
 
 [terminal]
 shell = "pwsh"
+osc52 = "CopyPaste"
 
 [font]
 normal.family = "Adwaita Mono"
-size          = 12
+size = 12
 
 [window]
 resize_increments = true
@@ -36,12 +59,12 @@ decorations_theme_variant = "Dark"
 
 [window.dimensions]
 columns = 90
-lines   = 30
+lines = 30
 
 [bell]
 animation = "EaseOut"
-color     = "#111111"
-duration  = 216
+color = "#111111"
+duration = 216
 
 [general]
 import = ["./theme_dark.toml"]

@@ -1,8 +1,8 @@
-<#
-.FORWARDHELPTARGETNAME Register-ArgumentCompleter
-.FORWARDHELPCATEGORY Cmdlet
-#>
 function Register-ArgumentCompleter {
+  <#
+  .FORWARDHELPTARGETNAME Register-ArgumentCompleter
+  .FORWARDHELPCATEGORY Cmdlet
+  #>
   [CmdletBinding()]
   param (
     [Parameter()]
