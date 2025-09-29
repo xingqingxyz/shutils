@@ -10,7 +10,7 @@ Register-ArgumentCompleter -Native -CommandName ssh -ScriptBlock {
   $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
   @(switch ($prev) {
-      Default {
+      default {
         if ($wordToComplete.StartsWith('-')) {
           @()
         }

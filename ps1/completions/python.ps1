@@ -11,10 +11,10 @@ Register-ArgumentCompleter -Native -CommandName python, py -ScriptBlock {
 
   @(switch ($prev) {
       '-m' {
-        pip list | Select-Object -Skip 2 | ForEach-Object { $_.Split(' ',2)[0] }
+        pip list | Select-Object -Skip 2 | ForEach-Object { $_.Split(' ', 2)[0] }
         break
       }
-      Default {
+      default {
         if ($wordToComplete.StartsWith('-')) {
           if (!$commandAst.GetCommandName().StartsWith('python')) {
             @('-0', '-2', '-3', '-V:', '--list', '-0p', '--list-paths')

@@ -17,14 +17,14 @@ Register-ArgumentCompleter -Native -CommandName pwsh -ScriptBlock {
     '-o' { '-InputFormat'; break }
     '-of' { '-InputFormat'; break }
     '-OutputFormat' { '-InputFormat'; break }
-    Default { $prev }
+    default { $prev }
   }
 
   @(switch ($prev) {
       '-WindowStyle' { @('Normal', 'Minimized', 'Maximized' , 'Hidden'); break }
       '-ExecutionPolicy' { @('AllSigned', 'Bypass', 'Default', 'RemoteSigned', 'Restricted', 'Undefined', 'Unrestricted'); break }
       '-InputFormat' { @('Text', 'XML'); break }
-      Default {
+      default {
         @('-File', '-f', '-Command', '-c', '-CommandWithArgs', '-cwa', '-ConfigurationName', '-config', '-ConfigurationFile', '-CustomPipeName', '-EncodedCommand', '-e', '-ec', '-ExecutionPolicy', '-ex', '-ep', '-InputFormat', '-inp', '-if', '-Interactive', '-i', '-Login', '-l', '-MTA', '-NoExit', '-noe', '-NoLogo', '-nol', '-NonInteractive', '-noni', '-NoProfile', '-nop', '-NoProfileLoadTime', '-OutputFormat', '-o', '-of', '-SettingsFile', '-settings', '-SSHServerMode', '-sshs', '-STA', '-Version', '-v', '-WindowStyle', '-w', '-WorkingDirectory', '-wd', '-Help', '-?', '/?')
       }
     }).Where{ $_ -like "$wordToComplete*" }

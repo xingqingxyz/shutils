@@ -43,7 +43,7 @@ Register-ArgumentCompleter -Native -CommandName fzf -ScriptBlock {
         @('file', 'dir', 'follow', 'hidden').ForEach{ "'$(@(($options | Select-Object -SkipLast 1); $_) -join ',')'" }
         break
       }
-      Default {
+      default {
         if ($wordToComplete.StartsWith('-')) {
           @('-x', '--extended', '-e', '--exact', '-i', '--ignore-case', '--scheme', '--literal', '-n', '--nth', '--with-nth', '-d', '--delimiter', '--track', '--tac', '--disabled', '--tiebreak', '-m', '--multi', '--no-mouse', '--no-sort', '--bind', '--cycle', '--keep-right', '--scroll-off', '--no-hscroll', '--hscroll-off', '--filepath-word', '--jump-labels', '--height', '--min-height', '--layout', '--border', '--border-label', '--border-label-pos', '--margin', '--padding', '--info', '--separator', '--no-separator', '--scrollbar', '--no-scrollbar', '--prompt', '--pointer', '--marker', '--header', '--header-lines', '--header-first', '--ellipsis', '--ansi', '--tabstop', '--color', '--highlight-line', '--no-bold', '--history', '--history-size', '--preview', '--preview-window', '--preview-label', '--preview-label-pos', '-q', '--query', '-1', '--select-1', '-0', '--exit-0', '-f', '--filter', '--print-query', '--expect', '--read0', '--print0', '--sync', '--with-shell', '--listen', '--walker', '--walker-root', '--walker-skip', '--tmux', '--bash', '--zsh', '--fish', '--version', '--help', '--man')
         }

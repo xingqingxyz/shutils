@@ -33,7 +33,7 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
           '--locale' { @('en-US', 'zh-CN', 'zh-TW'); break }
           '--sync' { @('on', 'off'); break }
           '--use-version' { @('stable', 'insiders'); break }
-          Default {
+          default {
             if ($commandAst.CommandElements.Count -le 2) {
               @('ext', 'status', 'version', 'help', 'tunnel', 'serve-web')
             }
@@ -49,7 +49,7 @@ Register-ArgumentCompleter -Native -CommandName code-tunnel -ScriptBlock {
         }
         switch ($prev) {
           '--use-version' { @('stable', 'insiders'); break }
-          Default {
+          default {
             if ($commandAst.CommandElements.Count -le 3) {
               @('list', 'install', 'uninstall', 'update', 'help')
             }

@@ -20,7 +20,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
     'd' { 'doc'; break }
     'r' { 'run'; break }
     't' { 'test'; break }
-    Default { $command }
+    default { $command }
   }
 
   $cursorPosition -= $wordToComplete.Length

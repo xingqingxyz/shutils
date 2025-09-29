@@ -12,6 +12,6 @@ Register-ArgumentCompleter -Native -CommandName pdftohtml -ScriptBlock {
   @(switch ($prev) {
       '-enc' { 'ASCII7', 'Latin1', 'Symbol', 'UTF-16', 'UTF-8' }
       '-fmt' { 'png', 'jpg' }
-      Default { @('-f', '-l', '-q', '-h', '-help', '--help', '-p', '-c', '-s', '-i', '-noframes', '-stdout', '-zoom', '-xml', '-noroundcoord', '-hidden', '-nomerge', '-enc', '-fmt', '-v', '-opw', '-upw', '-nodrm', '-wbt', '-fontfullname') }
+      default { @('-f', '-l', '-q', '-h', '-help', '--help', '-p', '-c', '-s', '-i', '-noframes', '-stdout', '-zoom', '-xml', '-noroundcoord', '-hidden', '-nomerge', '-enc', '-fmt', '-v', '-opw', '-upw', '-nodrm', '-wbt', '-fontfullname') }
     }).Where{ $_ -like "$wordToComplete*" }
 }

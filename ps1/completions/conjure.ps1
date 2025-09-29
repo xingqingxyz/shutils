@@ -11,7 +11,7 @@ Register-ArgumentCompleter -Native -CommandName conjure -ScriptBlock {
 
   @(switch ($prev) {
       '-debug' { @(''); break }
-      Default {
+      default {
         if ($wordToComplete.StartsWith('-')) {
           @('-monitor', '-quiet', '-regard-warnings', '-seed', '-verbose', '-debug', '-help', '-list', '-log', '-version')
         }

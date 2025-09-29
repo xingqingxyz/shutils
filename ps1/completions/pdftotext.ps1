@@ -12,6 +12,6 @@ Register-ArgumentCompleter -Native -CommandName pdftotext -ScriptBlock {
   @(switch ($prev) {
       '-enc' { pdftotext -listenc; break }
       '-eol' { @('unix', 'dos', 'mac'); break }
-      Default { @('-f', '-l', '-r', '-x', '-y', '-W', '-H', '-layout', '-fixed', '-raw', '-nodiag', '-htmlmeta', '-tsv', '-enc', '-listenc', '-eol', '-nopgbrk', '-bbox', '-bbox-layout', '-cropbox', '-colspacing', '-opw', '-upw', '-q', '-v', '-h', '-help', '--help') }
+      default { @('-f', '-l', '-r', '-x', '-y', '-W', '-H', '-layout', '-fixed', '-raw', '-nodiag', '-htmlmeta', '-tsv', '-enc', '-listenc', '-eol', '-nopgbrk', '-bbox', '-bbox-layout', '-cropbox', '-colspacing', '-opw', '-upw', '-q', '-v', '-h', '-help', '--help') }
     }).Where{ $_ -like "$wordToComplete*" }
 }

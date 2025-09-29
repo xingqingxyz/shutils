@@ -122,7 +122,7 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
   }
 
   if ((($Directive -band $ShellCompDirectiveFilterFileExt) -ne 0) -or
-       (($Directive -band $ShellCompDirectiveFilterDirs) -ne 0)) {
+    (($Directive -band $ShellCompDirectiveFilterDirs) -ne 0)) {
     debug 'ShellCompDirectiveFilterFileExt ShellCompDirectiveFilterDirs are not supported'
     # return here to prevent the completion of the extensions
     return
@@ -215,7 +215,7 @@ Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommand
       }
 
       # TabCompleteNext and in case we get something unknown
-      Default {
+      default {
         # Like MenuComplete but we don't want to add a space here because
         # the user need to press space anyway to get the completion.
         # Description will not be shown because that's not possible with TabCompleteNext

@@ -2312,7 +2312,6 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
           [CompletionResult]::new('--verbose', '--verbose', [CompletionResultType]::ParameterName, 'Provide more progress information')
         }
         elseif ($commandAst.CommandElements.Count -le 3) {
-
         }
         break
       }

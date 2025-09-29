@@ -13,6 +13,6 @@ Register-ArgumentCompleter -Native -CommandName identify -ScriptBlock {
       '-alpha' { 'on', 'activate', 'off', 'deactivate', 'set', 'opaque', 'copy', 'transparent', 'extract', 'background', 'shape' }
       '-endian' { 'MSB' , 'LSB' }
       '-features' { 'contrast', 'correlation' }
-      Default { @('-alpha', '-antialias', '-authenticate', '-clip', '-clip-mask', '-clip-path', '-colorspace', '-crop', '-define', '-density', '-depth', '-endian', '-extract', '-features', '-format', '-fuzz', '-gamma', '-interlace', '-interpolate', '-limit', '-matte', '-moments', '-monitor', '-ping', '-precision', '-quiet', '-regard-warnings', '-respect-parentheses', '-sampling-factor', '-seed', '-set', '-size', '-strip', '-unique', '-units', '-verbose', '-virtual-pixel', '-auto-orient', '-channel', '-grayscale', '-negate', '-debug', '-help', '-list', '-log', '-version') }
+      default { @('-alpha', '-antialias', '-authenticate', '-clip', '-clip-mask', '-clip-path', '-colorspace', '-crop', '-define', '-density', '-depth', '-endian', '-extract', '-features', '-format', '-fuzz', '-gamma', '-interlace', '-interpolate', '-limit', '-matte', '-moments', '-monitor', '-ping', '-precision', '-quiet', '-regard-warnings', '-respect-parentheses', '-sampling-factor', '-seed', '-set', '-size', '-strip', '-unique', '-units', '-verbose', '-virtual-pixel', '-auto-orient', '-channel', '-grayscale', '-negate', '-debug', '-help', '-list', '-log', '-version') }
     }).Where{ $_ -like "$wordToComplete*" }
 }

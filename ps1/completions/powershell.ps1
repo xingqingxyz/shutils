@@ -12,13 +12,13 @@ Register-ArgumentCompleter -Native -CommandName powershell -ScriptBlock {
     '-ex' { '-ExecutionPolicy'; break }
     '-ep' { '-ExecutionPolicy'; break }
     '-OutputFormat' { '-InputFormat'; break }
-    Default { $prev }
+    default { $prev }
   }
 
   @(switch ($prev) {
       '-ExecutionPolicy' { @('AllSigned', 'Bypass', 'Default', 'RemoteSigned', 'Restricted', 'Undefined', 'Unrestricted'); break }
       '-InputFormat' { @('Text', 'XML'); break }
-      Default {
+      default {
         @('-PSConsoleFile', '-Version', '-NoLogo', '-NoExit', '-Sta', '-Mta', '-NoProfile', '-NonInteractive', '-InputFormat', '-OutputFormat', '-WindowStyle', '-EncodedCommand', '-ConfigurationName', '-File', '-ExecutionPolicy', '-Command', '-Help', '-?', '/?')
       }
     }).Where{ $_ -like "$wordToComplete*" }
