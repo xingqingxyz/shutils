@@ -21,8 +21,8 @@ function Invoke-Z {
       if ($PWD.Provider.Name -ne 'FileSystem') {
         return
       }
-      Get-Item $Add -ea Ignore | Where-Object { !$_.FullName.Contains("`n") } | ForEach-Object {
-        $path = $_z.config.resolveSymlinks ? $_.ResolvedTarget : $_.FullName
+      Convert-Path $Add -ea Ignore | Where-Object { !$_.Contains("`n") } | ForEach-Object {
+        $path = [System.IO.Path]::TrimEndingDirectorySeparator($_z.config.resolveSymlinks ? (Get-Item -LiteralPath $_).ResolvedTarget : $_)
         foreach ($pat in $_z.config.excludePatterns) {
           if ($path -like $pat) {
             return
@@ -51,8 +51,8 @@ function Invoke-Z {
       break
     }
     'Delete' {
-      Get-Item $Delete -ea Ignore | ForEach-Object {
-        $path = $_z.config.resolveSymlinks ? $_.ResolvedTarget : $_.FullName
+      Convert-Path $Delete -ea Ignore | ForEach-Object {
+        $path = [System.IO.Path]::TrimEndingDirectorySeparator($_z.config.resolveSymlinks ? (Get-Item -LiteralPath $_).ResolvedTarget : $_)
         $item = $_z.itemsMap.$path
         if ($item) {
           $_z.itemsMap.Remove($path)
@@ -67,21 +67,20 @@ function Invoke-Z {
       }
       $items = $_z.itemsMap.Values | Where-Object Path -Like *$($Queries -join '*')*
       if ($Cwd) {
-        $base = $_z.config.resolveSymlinks ? (Get-Item -LiteralPath .).ResolvedTarget : (Get-Item -LiteralPath .).FullName
-        $items = $items | Where-Object Path -Like $base$([System.IO.Path]::DirectorySeparatorChar)*
+        $items = $items | Where-Object Path -Like (Join-Path ( $_z.config.resolveSymlinks ? (Get-Item -LiteralPath .).ResolvedTarget : (Convert-Path -LiteralPath .)) '*')
       }
       if (!$items) {
         return Write-Error 'no matches'
       }
-      $items = @(switch ($true) {
-          $Rank { $items | Sort-Object Rank; break }
-          $Time { $items | Sort-Object Time; break }
-          default {
-            [double]$now = Get-Date -UFormat '%s'
-            $items | Sort-Object { 10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25)) }
-            break
-          }
-        })
+      $items = switch ($true) {
+        $Rank { $items | Sort-Object Rank; break }
+        $Time { $items | Sort-Object Time; break }
+        default {
+          [double]$now = Get-Date -UFormat '%s'
+          $items | Sort-Object { 10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25)) }
+          break
+        }
+      }
       if ($List) {
         return $items
       }
@@ -95,7 +94,7 @@ function Invoke-Z {
           break
         }
         catch {
-          Write-Warning ('Set-Location failed, removing it: ' + $item.Path)
+          Write-Warning "Set-Location failed, removing it: $($item.Path)"
           $_z.itemsMap.Remove($item.Path)
           $sum -= $item.Rank
         }

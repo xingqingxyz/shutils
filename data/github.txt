@@ -2,8 +2,3 @@ https://docs.github.com/public/fpt/schema.docs.graphql
 aria2c https://github.com/xingqingxyz/mvext/archive/refs/heads/main.zip
 aria2c https://github.com/xingqingxyz/mvext/blob/HEAD/README.md
 aria2c https://github.com/xingqingxyz/mvext/raw/refs/heads/main/README.md
-curl -f https://zed.dev/install.sh | sh
-curl -fsSL https://bun.sh/install | bash
-curl -fsSL https://deno.land/install.sh | sh
-sudo dnf install -y https://github.com/PowerShell/PowerShell/releases/download/v7.5.2/powershell-7.5.2-1.rh.x86_64.rpm
-sudo dnf install -y https://update.code.visualstudio.com/latest/linux-rpm-x64/stable

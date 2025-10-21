@@ -71,7 +71,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
   $history = switch ($true) {
     $IsWindows { "$env:APPDATA/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt"; break }
     $IsLinux { "$HOME/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
-    default { throw 'not implemented' }
+    default { throw [System.NotImplementedException]::new() }
   }
   $text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
@@ -122,7 +122,7 @@ Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -S
         . .venv/Scripts/Activate.ps1
       }
       else {
-        . .venv/bin/Activate.ps1
+        . .venv/bin/activate.ps1
       }
       [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
     }

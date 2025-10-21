@@ -46,5 +46,5 @@ elseif ($IsLinux) {
   notify-send $statusText $message
 }
 else {
-  throw 'not implemented'
+  throw [System.NotImplementedException]::new()
 }

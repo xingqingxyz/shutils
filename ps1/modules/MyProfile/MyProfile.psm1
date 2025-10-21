@@ -46,16 +46,20 @@ function Show-CommandSource {
   )
   begin {
     $paths = @()
+    $inputs = @()
   }
   process {
     if ($FullName) {
       $paths += $FullName
     }
+    else {
+      $inputs += $InputObject
+    }
   }
   end {
     if ($MyInvocation.ExpectingInput) {
       $ExtraArgs = $Name + $ExtraArgs
-      if ($FullName) {
+      if ($paths) {
         $paths = Convert-Path -LiteralPath $paths
         if (!$paths) {
           return
@@ -72,11 +76,11 @@ function Show-CommandSource {
       }
       if ($Edit) {
         Write-Debug "$Editor $ExtraArgs"
-        $input | & $Editor $ExtraArgs
+        $inputs | & $Editor $ExtraArgs
       }
       else {
         Write-Debug 'showing help from stdin'
-        $input | bat -plhelp $ExtraArgs
+        $inputs | bat -plhelp $ExtraArgs
       }
       return
     }
@@ -128,10 +132,10 @@ filter show ([string[]]$ExtraArgs) {
     Configuration {
       return & $info
     }
-    { @('ExternalScript', 'Script').Contains($_.ToString()) } {
+    { $_ -ceq 'ExternalScript' -or $_ -ceq 'Script' } {
       return bat -plps1 $info.Source $ExtraArgs
     }
-    { @('Filter', 'Function').Contains($_.ToString()) } {
+    { $_ -ceq 'Filter' -or $_ -ceq 'Function' } {
       return $info.Definition | bat -plps1 $ExtraArgs
     }
   }
@@ -152,11 +156,11 @@ filter editable {
       }
       break
     }
-    { @('ExternalScript', 'Script').Contains($_.ToString()) } {
+    { $_ -ceq 'ExternalScript' -or $_ -ceq 'Script' } {
       $info.Source
       break
     }
-    { @('Cmdlet', 'Configuration', 'Filter', 'Function').Contains($_.ToString()) } {
+    { $_ -ceq 'Cmdlet' -or $_ -ceq 'Configuration' -or $_ -ceq 'Filter' -or $_ -ceq 'Function' } {
       if ($info.Module) {
         $info.Module.Path
       }
@@ -194,7 +198,7 @@ function decompress ([System.IO.FileSystemInfo]$Item) {
       '.br' { 'brotli -dc'; break }
       '.xz' { 'xz -dc'; break }
       '.lzma' { 'xz -dc'; break }
-      default { throw 'not implemented' }
+      default { throw [System.NotImplementedException]::new() }
     }).Split(' ') + @($Item)
   & $cmd $ags
 }
@@ -337,37 +341,36 @@ function Invoke-Npx {
 
 $pwshExe, $sudoExe = (Get-Command pwsh, sudo -Type Application -TotalCount 1 -ea Ignore).Source
 function Invoke-Sudo {
-  $extraArgs = @(if ($args[0] -is [scriptblock]) {
-      $args[0] = $args[0].ToString()
-      @($pwshExe, '-nop', '-cwa')
+  [string[]]$ags = $args
+  if ($args[0] -is [scriptblock]) {
+    $ags = $pwshExe, '-nop', '-cwa' + $ags
+  }
+  else {
+    $info = Get-Command $ags[0] -ea Ignore
+    if ($info.CommandType -ceq 'Alias') {
+      $info = $info.ResolvedCommand
+    }
+    if (!$info) {
+      # fallback to handle sudo options
+    }
+    elseif ($info.CommandType -ceq 'Application') {
+      $ags[0] = $info.Source
     }
     else {
-      $info = Get-Command $args[0] -ea Ignore
-      if ($info.CommandType -eq 'Alias') {
-        $info = $info.ResolvedCommand
+      if ($_ -ceq 'ExternalScript') {
+        $ags[0] = $info.Source
       }
-      if (!$info) {
-        # fallback to handle sudo options
-      }
-      elseif ($info.CommandType -eq 'Application') {
-        $args[0] = $info.Source
-      }
-      elseif ($info.CommandType -eq 'ExternalScript') {
-        $args[0] = $info.Source
-        @($pwshExe, '-nop')
+      elseif ($info.Module) {
+        $ags[0] = $info.Source + '\' + $info.Name
       }
       else {
-        if ($info.Module) {
-          $args[0] = $info.Source + '\' + $info.Name
-        }
-        else {
-          Write-Warning "running a no module $($info.CommandType) $info"
-        }
-        @($pwshExe, '-nop', '-c')
+        Write-Warning "running a no module $($info.CommandType) $info"
       }
-    })
+      $ags[0] = ($MyInvocation.ExpectingInput ? '$input | ' : '') + '& ''' + [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($ags[0]) + "'"
+      $ags = $pwshExe, '-nop', '-cwa' + $ags
+    }
+  }
   if ($sudoExe) {
-    $ags = $extraArgs + $args
     Write-Debug "$sudoExe $ags"
     if ($MyInvocation.ExpectingInput) {
       $input | & $sudoExe $ags
@@ -375,13 +378,11 @@ function Invoke-Sudo {
     else {
       & $sudoExe $ags
     }
+    return
   }
-  else {
-    $cmd, $ags = $extraArgs + $args
-    if ($MyInvocation.ExpectingInput) {
-      Write-Warning 'ignored stdin'
-    }
-    Write-Debug "$cmd $ags"
-    Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory .
+  Write-Debug "$ags"
+  if ($MyInvocation.ExpectingInput) {
+    Write-Warning 'ignored stdin'
   }
+  Start-Process -FilePath $ags[0] -ArgumentList $ags[1..($ags.Count - 1)] -Verb RunAs -WorkingDirectory .
 }

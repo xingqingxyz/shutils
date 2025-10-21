@@ -458,7 +458,7 @@ function Set-EnvironmentVariable {
     }
   }
   else {
-    throw 'not implemented'
+    throw [System.NotImplementedException]::new()
   }
 }
 

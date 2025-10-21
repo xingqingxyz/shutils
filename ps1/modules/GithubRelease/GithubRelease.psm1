@@ -86,7 +86,7 @@ function rustenv {
     default { 'unknown clib'; break }
   }
   $target = if (Get-Command rustc -Type Application -ea Ignore) {
-    (rustc -vV | Select-String -Raw host:).Split(' ', 2)[1]
+    (rustc -vV | Select-String -Raw -SimpleMatch host:).Split(' ', 2)[1]
   }
   else {
     @(
@@ -107,9 +107,9 @@ function rustenv {
 }
 
 function execute {
+  Write-Debug "$args"
   $cmd, $ags = $args
   $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
-  Write-Debug "$args"
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $ags
   }
@@ -121,8 +121,12 @@ function execute {
 function getLocalVersion ($Meta) {
   try {
     switch ($Meta.name) {
+      dsc { (execute dsc -V).Split([char[]]' -', 3)[1]; break }
       fzf { (execute fzf --version).Split(' ', 2)[0]; break }
-      go { (execute go version).Split(' ', 4)[2]; break }
+      flutter { (execute flutter --version)[0].Split(' ', 3)[1]; break }
+      dotnet { (execute dotnet --version).Split('-', 2)[0]; break }
+      go { (execute go version).Split(' ', 4)[2].Substring(2); break }
+      goreleaser { (execute goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
       pastel { (execute pastel -V).Split(' ', 3)[1]; break }
       mold { (execute mold -v).Split(' ', 3)[1]; break }
       jq { (execute jq -V).Split('-', 2)[1]; break }
@@ -140,23 +144,56 @@ function getLocalVersion ($Meta) {
 }
 
 function updateLatestVersion ($Meta) {
-  $extraArgs = @(if (!$Meta.allowPrerelease) {
-      '--exclude-pre-releases'
-    }) + @(switch ($Meta.name) {
-      node { '-L5', '--json', 'tagName,isLatest', '-q', '.[] | select(.isLatest) | .tagName'; break }
-      default { '-L1', '--json', 'tagName', '-q', '.[0].tagName'; break }
-    })
-  $tag = $Meta.tag = execute gh release list -R $Meta.repo --exclude-drafts @extraArgs
-  try {
-    [version]$version = $Meta.version = switch ($Meta.name) {
-      jq { $tag.Split('-', 2)[1]; break }
-      default { $tag -replace '^v', ''; break }
+  switch ($Meta.name) {
+    dotnet { $Meta.version = '99.0.0'; break }
+    go {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $data = Invoke-RestMethod 'https://golang.google.cn/dl/?mode=json'
+      $Meta.tag = $data[0].version
+      $Meta.version = $Meta.tag.Substring(2)
+      $Meta.sha256 = ($data[0].files | Where-Object filename -CEQ ('{0}.{1}-{2}.tar.gz' -f $Meta.tag, $go.os, $go.arch)).sha256
+      break
     }
-    if ($version -gt (getLocalVersion $Meta)) {
+    flutter {
+      $os = switch ($true) {
+        $IsWindows { 'windows'; break }
+        $IsLinux { 'linux'; break }
+        $IsMacOS { 'macos'; break }
+      }
+      $data = Invoke-RestMethod "https://storage.flutter-io.cn/flutter_infra_release/releases/releases_$os.json"
+      $release = $data.releases | Where-Object hash -CEQ $data.current_release.($Meta.prerelease ? 'beta' : 'stable')
+      $Meta.file = $release.archive
+      $Meta.version = $release.version
+      $Meta.sha256 = $release.sha256
+      break
+    }
+    default {
+      [string[]]$extraArgs = if (!$Meta.prerelease) {
+        '--exclude-pre-releases'
+      }
+      $extraArgs += switch ($Meta.name) {
+        node { '-L5', '--json', 'tagName,isLatest', '-q', 'first(.[] | select(.isLatest)) | .tagName'; break }
+        zed { '-L5', '--json', 'tagName', '-q', 'first(.[].tagName | select(startswith("v")))'; break }
+        default { '-L1', '--json', 'tagName', '-q', '.[0].tagName'; break }
+      }
+      $tag = $Meta.tag = execute gh release list -R $Meta.repo --exclude-drafts @extraArgs
+      $Meta.version = switch ($Meta.name) {
+        bun { $tag.Substring(5); break }
+        dsc { $tag.Split('-', 2)[0]; break }
+        jq { $tag.Split('-', 2)[1]; break }
+        default { $tag -replace '^v', ''; break }
+      }
+      break
+    }
+  }
+  try {
+    if ([version]$Meta.version -gt (getLocalVersion $Meta)) {
       $Meta
     }
     else {
-      Write-Debug "pkg $($Meta.name) already newest for $tag"
+      Write-Warning "pkg $($Meta.name) is already newer than $($Meta.tag)"
     }
   }
   catch {
@@ -176,7 +213,13 @@ function downloadFile ([string]$Url, [string]$Path) {
   }
   $null = New-Item -Type Directory -Force $dir
   Remove-Item -LiteralPath $Path -Force -ea Ignore
-  execute aria2c $Url -d $dir -o $file -l $buildDir/aria2c.log
+  $null = execute aria2c $Url -d $dir -o $file -l $buildDir/aria2c.log
+}
+
+function checkFileHash ([string]$Path, [string]$Sha256) {
+  if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256) -cne $Sha256) {
+    throw "file hash not match ($Path): $Sha256"
+  }
 }
 
 function New-EmptyDir ([string]$Path) {
@@ -195,23 +238,146 @@ function Install-Release {
   if (!$PSCmdlet.ShouldProcess("$($Meta.name)@$($Meta.version)", 'install')) {
     return
   }
-  Write-Information "Installing $($Meta.name)@$($Meta.version) by tag $($Meta.tag)"
+  Write-Debug "Installing $($Meta.name)@$($Meta.version) by tag $($Meta.tag)"
   function downloadRelease ([string]$Pattern) {
     execute gh release download -R $Meta.repo -p $Pattern -D $buildDir --skip-existing $Meta.tag
   }
   switch ($Meta.name) {
+    binocle {
+      $base = 'binocle-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/binocle$exe $binDir -Force
+      break
+    }
+    bun {
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      if (Get-Command bun -CommandType Application -TotalCount 1 -ea Ignore) {
+        execute bun upgrade
+        break
+      }
+      curl -fsSL 'https://bun.sh/install' | bash
+      break
+    }
+    code {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $pkgManager = $pkgType -ceq 'rpm' ? 'dnf' : 'apt'
+      sudo $pkgManager install -y "https://update.code.visualstudio.com/latest/linux-$pkgType-x64/stable"
+      break
+    }
+    deno {
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      if (Get-Command deno -CommandType Application -TotalCount 1 -ea Ignore) {
+        execute deno upgrade
+        break
+      }
+      curl -fsSL 'https://deno.land/install.sh' | sh; break
+      break
+    }
+    diskus {
+      $base = 'diskus-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/diskus$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/diskus.1 $dataDir/man/man1 -Force
+      break
+    }
+    dotnet {
+      $ChannelQuality = $Meta.prerelease ? '10.0/preview' : 'STS'
+      $os, $fileExt = switch ($true) {
+        $IsWindows { 'win', '.exe'; break }
+        $IsLinux { 'linux', '.tar.gz'; break }
+        $IsMacOS { 'osx', '.pkg'; break }
+      }
+      $file = 'dotnet-sdk-{0}-{1}{2}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(), $fileExt
+      downloadFile "https://aka.ms/dotnet/$ChannelQuality/$file"
+      if (!$IsLinux) {
+        Invoke-Item $buildDir/$file
+        break
+      }
+      sudo rm -rf $sudoDataDir/dotnet
+      sudo mkdir -p $sudoDataDir/dotnet
+      sudo tar -xf $buildDir/$file -C $sudoDataDir/dotnet --no-same-owner
+      sudo ln -sf $sudoDataDir/dotnet/dotnet $sudoDataDir/dotnet/dnx $sudoBinDir
+      break
+    }
+    dsc {
+      $base = if ($IsLinux) {
+        'DSC-{0}-{1}-linux' -f $Meta.version, $rust.arch
+      }
+      else {
+        'DSC-{0}-{1}' -f $Meta.version, $rust.target
+      }
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
+      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/dsc/dsc$exe $binDir/dsc$exe
+      break
+    }
+    flutter {
+      $file = $Meta.file
+      downloadFile $file
+      checkFileHash $buildDir/$file $Meta.sha256
+      tar -xf $buildDir/$file -C (New-EmptyDir ~/flutter)
+      $scriptExe = $IsWindows ? '.bat' : ''
+      $null = New-Item -ItemType SymbolicLink -Force -Target ~/flutter/bin/flutter$scriptExe $binDir/flutter$scriptExe
+      $null = New-Item -ItemType SymbolicLink -Force -Target ~/flutter/bin/dart$scriptExe $binDir/dart$scriptExe
+      break
+    }
     fzf {
       $base = 'fzf-{0}-{1}_{2}' -f $Meta.version, $go.os, $go.arch
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $binDir
       break
     }
-    yq {
-      $base = 'yq_{0}_{1}' -f $go.os, $go.arch
+    go {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $file = '{0}.{1}-{2}.tar.gz' -f $Meta.tag, $go.os, $go.arch
+      downloadFile "https://golang.google.cn/dl/$file"
+      checkFileHash $buildDir/$file $Meta.sha256
+      sudo rm -rf $sudoPrefixDir/go
+      sudo tar -xf $buildDir/$file -C $sudoPrefixDir --no-same-owner
+      sudo ln -sf $sudoPrefixDir/go/bin/go $sudoPrefixDir/go/bin/gofmt $sudoBinDir
+      break
+    }
+    goreleaser {
+      $os = switch ($true) {
+        $IsWindows { 'Windows'; break }
+        $IsLinux { 'Linux'; break }
+        $IsMacOS { 'Darwin'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $base = 'goreleaser_{0}_{1}' -f $os, $rust.arch
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base$exe $binDir/yq$exe -Force
-      Move-Item -LiteralPath $buildDir/yq.1 $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/goreleaser$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/manpages/goreleaser.1.gz $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/completions/goreleaser.bash $dataDir/bash-completion/completions -Force
+      break
+    }
+    grex {
+      $clib = switch ($true) {
+        $IsWindows { 'msvc'; break }
+        $IsLinux { 'musl'; break }
+      }
+      $base = 'grex-{0}-{1}-{2}-{3}' -f $Meta.tag, $rust.arch, $rust.platform, (@($rust.os; $clib) -join '-')
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $binDir
+      break
+    }
+    hexyl {
+      $base = 'hexyl-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $dataDir/man/man1 -Force
       break
     }
     jq {
@@ -225,177 +391,14 @@ function Install-Release {
       downloadRelease $file
       Move-Item -LiteralPath $buildDir/$file $binDir/jq$exe -Force
       if (!$IsWindows) {
-        chmod +x $binDir/jq$exe
+        chmod +x $binDir/jq
       }
       downloadFile https://github.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $dataDir/man/man1/jq.1
       break
     }
-    nerdfonts {
-      downloadRelease 0xProto.zip
-      if ($IsLinux) {
-        Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $dataDir/fonts/truetype
-        sudo fc-cache -v
-      }
-      elseif ($IsWindows) {
-        sudo tar -xf $buildDir/0xProto.zip -C C:\Windows\Fonts
-      }
-      else {
-        throw 'not implemented'
-      }
-      break
-    }
-    dsc {
-      $base = if ($IsLinux) {
-        'DSC-{0}-{1}-linux' -f $Meta.version, $rust.arch
-      }
-      else {
-        'DSC-{0}-{1}' -f $Meta.version, $rust.target
-      }
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
-      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/dsc/dsc $binDir/dsc
-      break
-    }
-    node {
-      $arch = switch ([RuntimeInformation]::OSArchitecture) {
-        'X64' { 'x64'; break }
-        'Arm64' { 'arm64'; break }
-        default { throw "not supported arch $_" }
-      }
-      $file = switch ($true) {
-        $IsWindows { "node-$($Meta.tag)-$arch.msi"; break }
-        $IsLinux { "node-$($Meta.tag)-linux-$arch.tar.xz"; break }
-        $IsMacOS { "node-$($Meta.tag).pkg"; break }
-        default { throw 'not implemented'; break }
-      }
-      downloadFile https://nodejs.org/dist/$($Meta.tag)/$file
-      if ($IsLinux) {
-        $root = "$prefixDir/nodejs/$($Meta.tag)"
-        tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
-        $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/node $binDir/node
-        $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/npm $binDir/npm
-      }
-      else {
-        Invoke-Item -LiteralPath $buildDir/$file
-      }
-      break
-    }
-    pwsh {
-      switch -CaseSensitive -Wildcard ($PSVersionTable.OS) {
-        'Fedora Linux*' {
-          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $Meta.version, $go.arch
-          downloadRelease $file
-          sudo dnf install -y $buildDir/$file
-          break
-        }
-        'Ubuntu *' {
-          $file = 'powershell-{0}.{1}.deb' -f $Meta.version, $go.arch
-          downloadRelease $file
-          sudo dpkg -i $buildDir/$file
-          break
-        }
-      }
-      break
-    }
-    grex {
-      $clib = switch ($true) {
-        $IsWindows { 'msvc'; break }
-        $IsLinux { 'musl'; break }
-      }
-      $base = 'grex-{0}-{1}-{2}-{3}' -f $Meta.tag, $rust.arch, $rust.platform, (@($rust.os; $clib) -join '-')
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $binDir
-      break
-    }
-    tracexec {
-      if (!$IsLinux) {
-        throw 'not implemented'
-      }
-      $base = 'tracexec-{0}' -f $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/tracexec$exe $binDir -Force
-      break
-    }
-    rga {
-      $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      $files = 'rga rga-fzf rga-fzf-open rga-preproc'.Split(' ').ForEach{ "$buildDir/$_$exe" }
-      Move-Item -LiteralPath $files $binDir -Force
-      break
-    }
-    binocle {
-      $base = 'binocle-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
-      Move-Item -LiteralPath $buildDir/binocle$exe $binDir -Force
-      break
-    }
-    diskus {
-      $base = 'diskus-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
-      Move-Item -LiteralPath $buildDir/diskus$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/diskus.1 $dataDir/man/man1 -Force
-      break
-    }
-    hexyl {
-      $base = 'hexyl-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $dataDir/man/man1 -Force
-      break
-    }
-    mdbook {
-      $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $binDir
-      break
-    }
-    mold {
-      if (!$IsLinux) {
-        throw 'not implemented'
-      }
-      $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
-      downloadRelease $base$ext
-      sudo tar -xf $buildDir/$base$ext -C $sudoPrefixDir --no-same-owner --strip-components=1
-      break
-    }
-    plantuml {
-      $file = 'plantuml-gplv2-{0}.jar' -f $Meta.version
-      downloadRelease $file
-      Move-Item -LiteralPath $buildDir/$file $binDir/plantuml.jar -Force
-      break
-    }
-    numbat {
-      $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
-      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/numbat/numbat $binDir/numbat
-      break
-    }
-    pastel {
-      $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $binDir --strip-components=2
-      break
-    }
-    xh {
-      $base = 'xh-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/xh$exe $binDir/http$exe
-      Move-Item -LiteralPath $buildDir/$base/doc/xh.1 $dataDir/man/man1
-      Move-Item -LiteralPath $buildDir/$base/completions/_xh.ps1 $env:SHUTILS_ROOT/ps1/completions/http.ps1
-      $null = New-Item -ItemType SymbolicLink -Force -Target http$exe $binDir/https$exe
-      $null = New-Item -ItemType SymbolicLink -Force -Target http.ps1 $env:SHUTILS_ROOT/ps1/completions/https.ps1
-      break
-    }
     localsend {
       if (!$IsLinux) {
-        throw 'not implemented'
+        throw [System.NotImplementedException]::new()
       }
       $base = 'LocalSend-{0}-{1}-x86-64' -f $Meta.version, $rust.os
       downloadRelease $base$ext
@@ -416,10 +419,158 @@ StartupWMClass=localsend_app
       update-desktop-database
       break
     }
-    default {
-      throw "install method for $_ not implemented"
+    mdbook {
+      $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $binDir
       break
     }
+    mold {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
+      downloadRelease $base$ext
+      sudo tar -xf $buildDir/$base$ext -C $sudoPrefixDir --no-same-owner --strip-components=1
+      break
+    }
+    nerdfonts {
+      downloadRelease 0xProto.zip
+      if ($IsLinux) {
+        Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $dataDir/fonts/truetype
+        sudo fc-cache -v
+      }
+      elseif ($IsWindows) {
+        sudo tar -xf $buildDir/0xProto.zip -C C:\Windows\Fonts
+      }
+      else {
+        throw [System.NotImplementedException]::new()
+      }
+      break
+    }
+    node {
+      $arch = switch ([RuntimeInformation]::OSArchitecture) {
+        'X64' { 'x64'; break }
+        'Arm64' { 'arm64'; break }
+        default { throw "not supported arch $_" }
+      }
+      $file = switch ($true) {
+        $IsWindows { "node-$($Meta.tag)-$arch.msi"; break }
+        $IsLinux { "node-$($Meta.tag)-linux-$arch.tar.xz"; break }
+        $IsMacOS { "node-$($Meta.tag).pkg"; break }
+        default { throw [System.NotImplementedException]::new(); break }
+      }
+      downloadFile "https://nodejs.org/dist/$($Meta.tag)/$file"
+      if (!$IsLinux) {
+        Invoke-Item $buildDir/$file
+        break
+      }
+      $root = "$prefixDir/nodejs/$($Meta.tag)"
+      tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
+      $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/node $binDir/node
+      $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/npm $binDir/npm
+      break
+    }
+    numbat {
+      $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
+      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/numbat/numbat$exe $binDir/numbat$exe
+      break
+    }
+    pastel {
+      $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/pastel$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$base/autocomplete/pastel.bash $dataDir/bash-completion/completions -Force
+      Move-Item -LiteralPath $buildDir/$base/autocomplete/_pastel.ps1 $ps1CompletionDir -Force
+      Move-Item $buildDir/$base/man/* $dataDir/man/man1 -Force
+      break
+    }
+    plantuml {
+      $file = 'plantuml-gplv2-{0}.jar' -f $Meta.version
+      downloadRelease $file
+      Move-Item -LiteralPath $buildDir/$file $binDir/plantuml.jar -Force
+      break
+    }
+    pwsh {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      switch ($pkgType) {
+        'rpm' {
+          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $Meta.version, $go.arch
+          downloadRelease $file
+          sudo dnf install -y $buildDir/$file
+          break
+        }
+        'deb' {
+          $file = 'powershell-{0}.{1}.deb' -f $Meta.version, $go.arch
+          downloadRelease $file
+          sudo dpkg -i $buildDir/$file
+          break
+        }
+      }
+      break
+    }
+    rga {
+      $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      [string[]]$files = 'rga', 'rga-fzf', 'rga-fzf-open', 'rga-preproc'
+      $files = $files.ForEach{ "$buildDir/$_$exe" }
+      Move-Item -LiteralPath $files $binDir -Force
+      break
+    }
+    tracexec {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $base = 'tracexec-{0}' -f $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/tracexec$exe $binDir -Force
+      break
+    }
+    uv {
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      if (Get-Command uv -CommandType Application -TotalCount 1 -ea Ignore) {
+        execute uv self update
+        break
+      }
+      curl -LsSf 'https://astral.sh/uv/install.sh' | sh
+      break
+    }
+    xh {
+      $base = 'xh-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/xh$exe $binDir/http$exe -Force
+      Move-Item -LiteralPath $buildDir/$base/doc/xh.1 $dataDir/man/man1 -Force
+      $null = New-Item -ItemType SymbolicLink -Force -Target http$exe $binDir/https$exe
+      break
+    }
+    yq {
+      $base = 'yq_{0}_{1}' -f $go.os, $go.arch
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base$exe $binDir/yq$exe -Force
+      Move-Item -LiteralPath $buildDir/yq.1 $dataDir/man/man1 -Force
+      break
+    }
+    zed {
+      if (!$IsWindows) {
+        curl -f 'https://zed.dev/install.sh' | sh
+        break
+      }
+      downloadRelease zed.zip
+      tar -xf $buildDir/zed.zip -C $binDir
+      break
+    }
+    default { throw "no install method for $_" }
   }
 }
 
@@ -432,53 +583,36 @@ function Update-Release {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        (Get-Content -Raw $PSScriptRoot/pkgs.yml | ConvertFrom-Yaml).name |
-          Where-Object { $_ -like "$WordToComplete*" }
+        (Get-Content -Raw -LiteralPath $PSScriptRoot/pkgs.yml | ConvertFrom-Yaml | Where-Object name -Like $WordToComplete*).name
       })]
     [Parameter(Position = 0)]
     [string[]]
     $Name
   )
-  $pkgsFile = "$PSScriptRoot/pkgs.yml"
   $pkgMap = @{}
-  $pkgs = Get-Content -Raw $pkgsFile | ConvertFrom-Yaml
-  $pkgs.ForEach{ $pkgMap[$_.name] = $_ }
-  $Name ??= $pkgs.Keys
-  $Name.ForEach{
-    $pkg = $pkgMap.$_
-    if (!$pkg) {
-      return Write-Warning "unknown pkg $_"
+  Get-Content -Raw -LiteralPath $PSScriptRoot/pkgs.yml | ConvertFrom-Yaml | ForEach-Object { $pkgMap[$_.name] = $_ }
+  $Name ??= $pkgMap.Keys
+  $Name | ForEach-Object {
+    if (!$pkgMap.Contains($_)) {
+      throw "unknown pkg $_"
     }
-    updateLatestVersion $pkg
-  }.ForEach{
-    try {
-      Install-Release $_
-    }
-    catch {
-      Write-Error $_
-    }
-  }
-  $pkgs | ConvertTo-Yaml > $pkgsFile
-}
-
-function Install-Golang ([version]$Version) {
-  if (!$IsLinux) {
-    throw 'not implemented'
-  }
-  $file = 'go{0}.{1}-{2}.tar.gz' -f $Version, $go.os, $go.arch
-  downloadFile https://golang.google.cn/dl/$file
-  sudo rm -rf $sudoPrefixDir/go
-  sudo tar -xf $buildDir/$file -C $sudoPrefixDir --no-same-owner
-  sudo ln -sf $sudoPrefixDir/go/bin/go $sudoPrefixDir/go/bin/gofmt $sudoBinDir
+    updateLatestVersion $pkgMap[$_]
+  } | ForEach-Object { Install-Release $_ } -ea 'Continue'
+  $pkgMap.Values | ConvertTo-Yaml > $PSScriptRoot/pkgs.yml
 }
 
 $go = goenv
 $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
+$ps1CompletionDir = "$env:SHUTILS_ROOT/ps1/completions"
+if ($IsLinux) {
+  $pkgType = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=') ? 'rpm' : 'deb'
+}
+
 $prefixDir = $IsWindows ? "$env:LOCALAPPDATA/Programs" : "$HOME/.local"
 $binDir = $IsWindows ? "$HOME/tools" : "$prefixDir/bin"
-$dataDir = $IsWindows ? $env:APPDATA : "$prefixDir/share"
+$dataDir = "$prefixDir/share"
 
 $sudoPrefixDir = $IsWindows ? $env:ProgramData : '/usr/local'
 $sudoBinDir = $IsWindows ? 'C:/tools' : "$sudoPrefixDir/bin"
-# $sudoDataDir = $IsWindows ? $env:ProgramData : "$sudoPrefixDir/share"
+$sudoDataDir = "$sudoPrefixDir/share"
