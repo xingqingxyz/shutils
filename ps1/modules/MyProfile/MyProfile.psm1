@@ -318,6 +318,24 @@ function Invoke-Npm {
   }
 }
 
+function Write-CommandDebug {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [ValidateNotNullOrEmpty()]
+    [string]
+    $CommandName,
+    [Parameter(Position = 1)]
+    [string[]]
+    $ArgumentList
+  )
+  $CommandName = (@($CommandName) + $ArgumentList).ForEach{
+    $text = [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_)
+    $text -ceq $_ ? $text : "'$text'"
+  } -join ' '
+  Write-Debug $CommandName
+}
+
 function Invoke-Npx {
   $cmd, $ags = $args
   $cmd = (Get-Command ./node_modules/.bin/$cmd, $cmd -Type Application -TotalCount 1 -ea Ignore)?[0].Source

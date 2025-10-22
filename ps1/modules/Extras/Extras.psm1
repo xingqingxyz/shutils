@@ -560,21 +560,3 @@ function Import-EnvironmentVariable {
     [System.Environment]::SetEnvironmentVariable($name, $value)
   }
 }
-
-function Write-CommandDebug {
-  [CmdletBinding()]
-  param (
-    [Parameter(Mandatory, Position = 0)]
-    [ValidateNotNullOrEmpty()]
-    [string]
-    $CommandName,
-    [Parameter(Position = 1)]
-    [string[]]
-    $ArgumentList
-  )
-  $CommandName = (@($CommandName) + $ArgumentList).ForEach{
-    $text = [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_)
-    $text -ceq $_ ? $text : "'$text'"
-  } -join ' '
-  Write-Debug $CommandName
-}
