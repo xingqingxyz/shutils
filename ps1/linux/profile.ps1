@@ -1,3 +1,7 @@
+function mkdir {
+  New-Item -ItemType Directory $args
+}
+
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   egrep    = 'egrep', '--color=auto'
   grep     = 'grep', '--color=auto'

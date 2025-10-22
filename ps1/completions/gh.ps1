@@ -1,4 +1,4 @@
-Register-ArgumentCompleter -Native -CommandName (Split-Path -LeafBase $PSCommandPath) -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName 'gh glow goreleaser tstoy'.Split(' ') -ScriptBlock {
   # powershell completion for cobra drived cli tools
   param (
     [string]$wordToComplete,

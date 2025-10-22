@@ -68,5 +68,5 @@ elseif ($IsWindows) {
   }
 }
 else {
-  throw 'not implemented'
+  throw [System.NotImplementedException]::new()
 }

@@ -12,8 +12,7 @@ Register-ArgumentCompleter -Native -CommandName code, code-insiders -ScriptBlock
         break
       }
       $i.Value
-    }) -join ';'
-
+    }) -join ' '
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
     if ($i.Extent.StartOffset -ge $cursorPosition) {
@@ -26,94 +25,105 @@ Register-ArgumentCompleter -Native -CommandName code, code-insiders -ScriptBlock
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          @('-d', '--diff', '-m', '--merge', '-a', '--add', '-g', '--goto', '-n', '--new-window', '-r', '--reuse-window', '-w', '--wait', '--locale', '--user-data-dir', '--profile', '--extensions-dir', '--list-extensions', '--show-versions', '--category', '--install-extension', '--force', '--pre-release', '--install-extension', '--uninstall-extension', '--update-extensions', '--enable-proposed-api', '-v', '--version', '--verbose', '--log', '-s', '--status', '--prof-startup', '--disable-extensions', '--disable-extension', '--sync', '--inspect-extensions', '--inspect-brk-extensions', '--disable-lcd-text', '--disable-gpu', '--disable-chromium-sandbox', '--telemetry', '-h', '--help')
+          '-d', '--diff', '-m', '--merge', '-a', '--add', '--remove', '-g', '--goto', '-n', '--new-window', '-r', '--reuse-window', '-w', '--wait', '--locale', '--user-data-dir', '--profile', '--extensions-dir', '--list-extensions', '--show-versions', '--category', '--install-extension', '--force', '--pre-release', '--uninstall-extension', '--update-extensions', '--enable-proposed-api', '--add-mcp', '--verbose', '--log', '-s', '--status', '--prof-startup', '--disable-extensions', '--disable-extension', '--sync', '--inspect-extensions', '--inspect-brk-extensions', '--disable-lcd-text', '--disable-gpu', '--disable-chromium-sandbox', '--locate-shell-integration-path', '--telemetry', '-v', '--version', '-h', '--help'
           break
         }
         switch ($prev) {
-          '--sync' { @('on', 'off'); break }
-          '--locale' { @('en-US', 'zh-CN', 'zh-TW'); break }
-          '--log' { @('critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'); break }
+          '--sync' { 'on', 'off'; break }
+          '--locale' { 'en-US', 'zh-CN', 'zh-TW'; break }
+          '--log' { 'critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'; break }
           '--category' {
-            @('builtin', 'deprecated', 'disabled', 'enabled', 'featured', 'installed', 'popular', 'recentlyPublished', 'recommended', 'updates', 'workspaceUnsupported', 'ext:', 'id:', 'tag:', 'sort:installs', 'sort:name', 'sort:publishedDate', 'sort:rating', 'sort:updateDate') +
-            @(@('ai', 'azure', 'chat', 'data science', 'debuggers', 'education', 'extension packs', 'formatters', 'keymaps', 'language packs', 'linters', 'notebooks', 'machine learning', 'others', 'programming languages', 'scm providers', 'snippets', 'testing', 'themes', 'visualization') | ForEach-Object { "category:`"$_`"" })
+            'builtin', 'deprecated', 'disabled', 'enabled', 'featured', 'installed', 'popular', 'recentlyPublished', 'recommended', 'updates', 'workspaceUnsupported', 'ext:', 'id:', 'tag:', 'sort:installs', 'sort:name', 'sort:publishedDate', 'sort:rating', 'sort:updateDate'
+            @('ai', 'azure', 'chat', 'data science', 'debuggers', 'education', 'extension packs', 'formatters', 'keymaps', 'language packs', 'linters', 'notebooks', 'machine learning', 'others', 'programming languages', 'scm providers', 'snippets', 'testing', 'themes', 'visualization').ForEach{ "category:`"$_`"" }
             break
           }
+          '--locate-shell-integration-path' { 'bash', 'pwsh', 'zsh', 'fish'; break }
+          { @('--inspect-extensions', '--inspect-brk-extensions').Contains($_) } { '9037', '5000'; break }
           { @('--disable-extension', '--install-extension', '--uninstall-extension', '--enable-proposed-api').Contains($_) } {
-            code --list-extensions
+            & (Split-Path -LeafBase $commandAst.GetCommandName()) --list-extensions
             break
           }
           default {
             if ($commandAst.CommandElements.Count -le 2) {
-              @('tunnel', 'serve-web')
+              'chat', 'tunnel', 'serve-web'
             }
             break
           }
         }
         break
       }
-      'serve-web' {
+      'chat' {
         if ($wordToComplete.StartsWith('-')) {
-          @('--host', '--socket-path', '--port', '--connection-token', '--connection-token-file', '--without-connection-token', '--accept-server-license-terms', '--server-base-path', '--server-data-dir', '--user-data-dir', '--extensions-dir', '--cli-data-dir', '--verbose', '--log', '-h', '--help')
+          '-m', '--mode', '-a', '--add-file', '--maximize', '-r', '--reuse-window', '-n', '--new-window'
           break
         }
         switch ($prev) {
-          '--log' { @('trace', 'debug', 'info', 'warn', 'error', 'critical', 'off'); break }
-          '--host' { @('localhost', '0.0.0.0'); break }
-          '--port' { @('8000'); break }
+          '--mode' { 'ask', 'edit', 'agent'; break }
         }
         break
       }
-      { $_.Split(';')[0] -eq 'tunnel' } {
+      'serve-web' {
         if ($wordToComplete.StartsWith('-')) {
-          @('--cli-data-dir', '--verbose', '--log', '-h', '--help')
+          '--host', '--socket-path', '--port', '--connection-token', '--connection-token-file', '--without-connection-token', '--accept-server-license-terms', '--server-base-path', '--server-data-dir', '--user-data-dir', '--extensions-dir', '--cli-data-dir', '--verbose', '--log', '-h', '--help'
+          break
         }
-        elseif ($prev -eq '--log') {
-          @('trace', 'debug', 'info', 'warn', 'error', 'critical', 'off')
+        switch ($prev) {
+          '--log' { 'trace', 'debug', 'info', 'warn', 'error', 'critical', 'off'; break }
+          '--host' { 'localhost', '0.0.0.0'; break }
+          '--port' { '8000'; break }
+        }
+        break
+      }
+      { $_ -clike 'tunnel *' } {
+        if ($wordToComplete.StartsWith('-')) {
+          '--cli-data-dir', '--verbose', '--log', '-h', '--help'
+        }
+        elseif ($prev -ceq '--log') {
+          'trace', 'debug', 'info', 'warn', 'error', 'critical', 'off'
           break
         }
       }
       'tunnel' {
         if ($wordToComplete.StartsWith('-')) {
-          @('--install-extension', '--server-data-dir', '--extensions-dir', '--random-name', '--no-sleep', '--name', '--accept-server-license-terms')
+          '--install-extension', '--server-data-dir', '--extensions-dir', '--random-name', '--no-sleep', '--name', '--accept-server-license-terms'
         }
         elseif ($commandAst.CommandElements.Count -le 3) {
-          @('prune', 'kill', 'restart', 'status', 'rename', 'unregister', 'user', 'service', 'help')
+          'prune', 'kill', 'restart', 'status', 'rename', 'unregister', 'user', 'service', 'help'
         }
         break
       }
-      'tunnel;user' {
+      'tunnel user' {
         if ($commandAst.CommandElements.Count -le 4) {
-          @('login', 'logout', 'show', 'help')
+          'login', 'logout', 'show', 'help'
         }
         break
       }
-      'tunnel;service' {
+      'tunnel service' {
         if ($commandAst.CommandElements.Count -le 4) {
-          @('install', 'uninstall', 'log', 'help')
+          'install', 'uninstall', 'log', 'help'
         }
         break
       }
-      'tunnel;user;login' {
+      'tunnel user login' {
         if ($wordToComplete.StartsWith('-')) {
-          @('--access-token', '--refresh-token', '--provider')
+          '--access-token', '--refresh-token', '--provider'
         }
         elseif ($prev -eq '--provider') {
-          @('microsoft', 'github')
+          'microsoft', 'github'
         }
         break
       }
-      'tunnel;service;install' {
+      'tunnel service install' {
         if ($wordToComplete.StartsWith('-')) {
-          @('--name', '--accept-server-license-terms')
+          '--name', '--accept-server-license-terms'
         }
         break
       }
-      'tunnel;help' {
+      'tunnel help' {
         if ($commandAst.CommandElements.Count -le 4) {
-          @('prune', 'kill', 'restart', 'status', 'rename', 'unregister', 'user', 'service', 'help')
+          'prune', 'kill', 'restart', 'status', 'rename', 'unregister', 'user', 'service', 'help'
         }
         break
       }
-    }
-  ).Where{ $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }
