@@ -36,6 +36,9 @@ function env {
       Set-Item -LiteralPath env:$($_.Key) $_.Value
     }
   }
+  if ($LASTEXITCODE) {
+    throw "exit status $LASTEXITCODE"
+  }
 }
 #endregion
 
