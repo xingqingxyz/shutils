@@ -65,17 +65,18 @@ function Show-CommandSource {
           return
         }
         if ($Edit) {
-          Write-Debug "$Editor $paths $ExtraArgs"
-          & $Editor $paths $ExtraArgs
+          $ExtraArgs = $paths + $ExtraArgs
+          Write-CommandDebug $Editor $ExtraArgs
+          & $Editor $ExtraArgs
         }
         else {
-          Write-Debug "Invoke-Less $ExtraArgs"
-          $paths | Invoke-Less $ExtraArgs
+          Write-CommandDebug showFile $ExtraArgs
+          $paths | showFile $ExtraArgs
         }
         return
       }
       if ($Edit) {
-        Write-Debug "$Editor $ExtraArgs"
+        Write-CommandDebug $Editor $ExtraArgs
         $inputs | & $Editor $ExtraArgs
       }
       else {
@@ -92,13 +93,13 @@ function Show-CommandSource {
         $MyInvocation.MyCommand.Module.Path
       }
       if ($paths) {
-        Write-Debug "$Editor $paths $ExtraArgs"
-        & $Editor $paths $ExtraArgs
+        $ExtraArgs = $paths + $ExtraArgs
       }
       else {
-        Write-Debug "fallback: $Editor $Name $ExtraArgs"
-        & $Editor $Name $ExtraArgs
+        $ExtraArgs = $Name + $ExtraArgs
       }
+      Write-CommandDebug $Editor $ExtraArgs
+      & $Editor $ExtraArgs
       return
     }
     $Name ??= '.'
@@ -113,7 +114,7 @@ function Show-CommandSource {
 filter show ([string[]]$ExtraArgs) {
   $info = $_
   if ($info -is [System.IO.FileSystemInfo]) {
-    return $info | Invoke-Less $ExtraArgs
+    return $info | showFile $ExtraArgs
   }
   if ($info -isnot [System.Management.Automation.CommandInfo]) {
     # other PSProvider info, e.g. gi env:PATH
@@ -124,7 +125,7 @@ filter show ([string[]]$ExtraArgs) {
   }
   switch ($info.CommandType) {
     Application {
-      return $info.Source | Invoke-Less $ExtraArgs # for all other files
+      return $info.Source | showFile $ExtraArgs # for all other files
     }
     Cmdlet {
       return Get-Help $info.Name -Category Cmdlet -Full | bat -plman $ExtraArgs
@@ -203,7 +204,7 @@ function decompress ([System.IO.FileSystemInfo]$Item) {
   & $cmd $ags
 }
 
-filter Invoke-Less ([string[]]$ExtraArgs) {
+filter showFile ([string[]]$ExtraArgs) {
   $item = Get-Item -LiteralPath $_ -Force -ea Stop
   if ($item.LinkType) {
     $item = $item.ResolveLinkTarget($true) ?? $item
@@ -330,7 +331,7 @@ function Invoke-Npx {
       }) + $args
     $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
   }
-  Write-Debug "$cmd $ags"
+  Write-CommandDebug $cmd $ags
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $ags
   }
@@ -371,7 +372,7 @@ function Invoke-Sudo {
     }
   }
   if ($sudoExe) {
-    Write-Debug "$sudoExe $ags"
+    Write-CommandDebug $sudoExe $ags
     if ($MyInvocation.ExpectingInput) {
       $input | & $sudoExe $ags
     }
@@ -380,9 +381,10 @@ function Invoke-Sudo {
     }
     return
   }
-  Write-Debug "$ags"
   if ($MyInvocation.ExpectingInput) {
     Write-Warning 'ignored stdin'
   }
-  Start-Process -FilePath $ags[0] -ArgumentList $ags[1..($ags.Count - 1)] -Verb RunAs -WorkingDirectory .
+  [string]$cmd, $ags = $ags
+  Write-CommandDebug $cmd $ags
+  Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory .
 }

@@ -6,7 +6,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 function goenv {
   if (Get-Command go -Type Application -ea Ignore) {
     $os, $arch = go env GOOS GOARCH
-    return [pscustomobject]@{
+    return [psobject]@{
       os   = $os
       arch = $arch
     }
@@ -32,9 +32,9 @@ function goenv {
     'Arm64' { 'arm64'; break }
     'Arm' { 'armv7'; break }
     'LoongArch64' { 'loong64'; break }
-    default { throw "not implemented arch $_" }
+    default { throw [System.NotImplementedException]::new("arch $_") }
   }
-  [pscustomobject]@{
+  [psobject]@{
     os   = $os
     arch = $arch
   }
@@ -96,7 +96,7 @@ function rustenv {
       $clib
     ) -join '-'
   }
-  [pscustomobject]@{
+  [psobject]@{
     arch       = $arch
     platform   = $platform
     os         = $os
@@ -107,9 +107,9 @@ function rustenv {
 }
 
 function execute {
-  Write-Debug "$args"
   $cmd, $ags = $args
   $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
+  Write-CommandDebug $cmd $ags
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $ags
   }
@@ -121,20 +121,20 @@ function execute {
 function getLocalVersion ($Meta) {
   try {
     switch ($Meta.name) {
-      dsc { (execute dsc -V).Split([char[]]' -', 3)[1]; break }
-      fzf { (execute fzf --version).Split(' ', 2)[0]; break }
-      flutter { (execute flutter --version)[0].Split(' ', 3)[1]; break }
-      dotnet { (execute dotnet --version).Split('-', 2)[0]; break }
-      go { (execute go version).Split(' ', 4)[2].Substring(2); break }
-      goreleaser { (execute goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
-      pastel { (execute pastel -V).Split(' ', 3)[1]; break }
-      mold { (execute mold -v).Split(' ', 3)[1]; break }
-      jq { (execute jq -V).Split('-', 2)[1]; break }
+      dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
+      fzf { (fzf --version).Split(' ', 2)[0]; break }
+      flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
+      dotnet { (dotnet --version).Split('-', 2)[0]; break }
+      go { (go version).Split(' ', 4)[2].Substring(2); break }
+      goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
+      pastel { (pastel -V).Split(' ', 3)[1]; break }
+      mold { (mold -v).Split(' ', 3)[1]; break }
+      jq { (jq -V).Split('-', 2)[1]; break }
       plantuml {
-        (execute java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
+        (java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
         break
       }
-      default { (execute $_ --version).Split(' ')[-1] -replace '^v', ''; break }
+      default { (& $_ --version).Split(' ')[-1] -replace '^v', ''; break }
     }
   }
   catch {
@@ -164,19 +164,25 @@ function updateLatestVersion ($Meta) {
       }
       $data = Invoke-RestMethod "https://storage.flutter-io.cn/flutter_infra_release/releases/releases_$os.json"
       $release = $data.releases | Where-Object hash -CEQ $data.current_release.($Meta.prerelease ? 'beta' : 'stable')
-      $Meta.file = $release.archive
+      $Meta.file = 'https://storage.flutter-io.cn/flutter_infra_release/releases/' + $release.archive
       $Meta.version = $release.version
       $Meta.sha256 = $release.sha256
       break
     }
     default {
-      [string[]]$extraArgs = if (!$Meta.prerelease) {
-        '--exclude-pre-releases'
+      [string[]]$extraArgs = if ($Meta.prerelease) {
+        switch ($Meta.name) {
+          default { '-L5', '--json', 'tagName,isPrerelease', '-q', 'first(.[] | select(.isPrerelease)) | .tagName'; break }
+        }
       }
-      $extraArgs += switch ($Meta.name) {
-        node { '-L5', '--json', 'tagName,isLatest', '-q', 'first(.[] | select(.isLatest)) | .tagName'; break }
-        zed { '-L5', '--json', 'tagName', '-q', 'first(.[].tagName | select(startswith("v")))'; break }
-        default { '-L1', '--json', 'tagName', '-q', '.[0].tagName'; break }
+      else {
+        '--exclude-pre-releases'
+        switch ($Meta.name) {
+          node { '-L5', '--json', 'tagName,isLatest', '-q', 'first(.[] | select(.isLatest)) | .tagName'; break }
+          pwsh { '-L5', '--json', 'tagName,isPrerelease', '-q', 'first(.[] | select(.isPrerelease)) | .tagName'; break }
+          zed { '-L5', '--json', 'tagName', '-q', 'first(.[].tagName | select(startswith("v")))'; break }
+          default { '-L1', '--json', 'tagName', '-q', '.[0].tagName'; break }
+        }
       }
       $tag = $Meta.tag = execute gh release list -R $Meta.repo --exclude-drafts @extraArgs
       $Meta.version = switch ($Meta.name) {
@@ -213,7 +219,7 @@ function downloadFile ([string]$Url, [string]$Path) {
   }
   $null = New-Item -Type Directory -Force $dir
   Remove-Item -LiteralPath $Path -Force -ea Ignore
-  $null = execute aria2c $Url -d $dir -o $file -l $buildDir/aria2c.log
+  execute aria2c $Url -d $dir -o $file >> $buildDir/aria2c.log
 }
 
 function checkFileHash ([string]$Path, [string]$Sha256) {
@@ -225,6 +231,14 @@ function checkFileHash ([string]$Path, [string]$Sha256) {
 function New-EmptyDir ([string]$Path) {
   Remove-Item -Recurse -Force -ea Ignore -LiteralPath $Path
   New-Item -ItemType Directory -Force $Path
+}
+
+function installBinary ([string[]]$Path) {
+  if ($IsWindows) {
+    $Path.ForEach{ "@`"$_`" %*" > $binDir\$(Split-Path -LeafBase $_).cmd }
+    return
+  }
+  ln -sf $Path $binDir
 }
 
 function Install-Release {
@@ -255,7 +269,7 @@ function Install-Release {
         throw [System.NotImplementedException]::new()
       }
       if (Get-Command bun -CommandType Application -TotalCount 1 -ea Ignore) {
-        execute bun upgrade
+        bun upgrade
         break
       }
       curl -fsSL 'https://bun.sh/install' | bash
@@ -274,7 +288,7 @@ function Install-Release {
         throw [System.NotImplementedException]::new()
       }
       if (Get-Command deno -CommandType Application -TotalCount 1 -ea Ignore) {
-        execute deno upgrade
+        deno upgrade
         break
       }
       curl -fsSL 'https://deno.land/install.sh' | sh; break
@@ -316,17 +330,17 @@ function Install-Release {
       }
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
-      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/dsc/dsc$exe $binDir/dsc$exe
+      installBinary $prefixDir/dsc/dsc$exe
       break
     }
     flutter {
-      $file = $Meta.file
-      downloadFile $file
+      downloadFile $Meta.file
+      $file = Split-Path -Leaf $Meta.file
       checkFileHash $buildDir/$file $Meta.sha256
-      tar -xf $buildDir/$file -C (New-EmptyDir ~/flutter)
-      $scriptExe = $IsWindows ? '.bat' : ''
-      $null = New-Item -ItemType SymbolicLink -Force -Target ~/flutter/bin/flutter$scriptExe $binDir/flutter$scriptExe
-      $null = New-Item -ItemType SymbolicLink -Force -Target ~/flutter/bin/dart$scriptExe $binDir/dart$scriptExe
+      Remove-Item -LiteralPath $prefixDir/flutter
+      tar -xf $buildDir/$file -C $prefixDir
+      $bat = $IsWindows ? '.bat' : ''
+      installBinary @('flutter', 'flutter-dev', 'dart').ForEach{ "$prefixDir/flutter/bin/$_$bat" }
       break
     }
     fzf {
@@ -367,7 +381,7 @@ function Install-Release {
         $IsWindows { 'msvc'; break }
         $IsLinux { 'musl'; break }
       }
-      $base = 'grex-{0}-{1}-{2}-{3}' -f $Meta.tag, $rust.arch, $rust.platform, (@($rust.os; $clib) -join '-')
+      $base = 'grex-{0}-{1}-{2}-{3}' -f $Meta.tag, $rust.arch, $rust.platform, ($rust.os + '-' + $clib)
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $binDir
       break
@@ -437,7 +451,7 @@ StartupWMClass=localsend_app
     nerdfonts {
       downloadRelease 0xProto.zip
       if ($IsLinux) {
-        Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $dataDir/fonts/truetype
+        Expand-Archive -LiteralPath $buildDir/0xProto.zip $dataDir/fonts/truetype -Force
         sudo fc-cache -v
       }
       elseif ($IsWindows) {
@@ -467,15 +481,14 @@ StartupWMClass=localsend_app
       }
       $root = "$prefixDir/nodejs/$($Meta.tag)"
       tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
-      $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/node $binDir/node
-      $null = New-Item -ItemType SymbolicLink -Force -Target $root/bin/npm $binDir/npm
+      installBinary $root/bin/node $root/bin/npm
       break
     }
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
-      $null = New-Item -ItemType SymbolicLink -Force -Target $prefixDir/numbat/numbat$exe $binDir/numbat$exe
+      installBinary $prefixDir/numbat/numbat$exe
       break
     }
     pastel {
@@ -500,13 +513,13 @@ StartupWMClass=localsend_app
       }
       switch ($pkgType) {
         'rpm' {
-          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $Meta.version, $go.arch
+          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $Meta.tag.Substring(1), $go.arch
           downloadRelease $file
           sudo dnf install -y $buildDir/$file
           break
         }
         'deb' {
-          $file = 'powershell-{0}.{1}.deb' -f $Meta.version, $go.arch
+          $file = 'powershell-{0}.{1}.deb' -f $Meta.tag.Substring(1), $go.arch
           downloadRelease $file
           sudo dpkg -i $buildDir/$file
           break
@@ -538,7 +551,7 @@ StartupWMClass=localsend_app
         throw [System.NotImplementedException]::new()
       }
       if (Get-Command uv -CommandType Application -TotalCount 1 -ea Ignore) {
-        execute uv self update
+        uv self update
         break
       }
       curl -LsSf 'https://astral.sh/uv/install.sh' | sh
@@ -562,12 +575,10 @@ StartupWMClass=localsend_app
       break
     }
     zed {
-      if (!$IsWindows) {
-        curl -f 'https://zed.dev/install.sh' | sh
-        break
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
       }
-      downloadRelease zed.zip
-      tar -xf $buildDir/zed.zip -C $binDir
+      curl -f 'https://zed.dev/install.sh' | sh
       break
     }
     default { throw "no install method for $_" }
@@ -609,10 +620,10 @@ if ($IsLinux) {
   $pkgType = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=') ? 'rpm' : 'deb'
 }
 
-$prefixDir = $IsWindows ? "$env:LOCALAPPDATA/Programs" : "$HOME/.local"
-$binDir = $IsWindows ? "$HOME/tools" : "$prefixDir/bin"
-$dataDir = "$prefixDir/share"
+$prefixDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local"
+$binDir = $IsWindows ? "$HOME\tools" : "$prefixDir/bin"
+$dataDir = Join-Path $prefixDir share
 
 $sudoPrefixDir = $IsWindows ? $env:ProgramData : '/usr/local'
-$sudoBinDir = $IsWindows ? 'C:/tools' : "$sudoPrefixDir/bin"
-$sudoDataDir = "$sudoPrefixDir/share"
+$sudoBinDir = $IsWindows ? 'C:\tools' : "$sudoPrefixDir/bin"
+$sudoDataDir = Join-Path $sudoPrefixDir share

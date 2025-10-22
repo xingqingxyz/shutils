@@ -11,9 +11,9 @@
   tag: v0.16.0
   version: 0.16.0
 - name: zed
-  repo: deevus/zed-windows-builds
-  tag: v0.206.7
-  version: 0.206.7
+  repo: zed-industries/zed
+  tag: v0.208.5
+  version: 0.208.5
 - name: numbat
   repo: sharkdp/numbat
   tag: v1.16.0
@@ -113,3 +113,4 @@
   version: 2.40.4
 - name: pwsh
   repo: PowerShell/PowerShell
+  prerelease: true

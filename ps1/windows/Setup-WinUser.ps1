@@ -1,14 +1,16 @@
 #region env
 @{
-  ANDROID_HOME       = "$HOME\Android\Sdk"
-  EDITOR             = 'edit'
-  LESS               = '-R --quit-if-one-screen --use-color --wordwrap --ignore-case --incsearch --search-options=W'
-  PAGER              = 'C:\Program Files\Git\usr\bin\less.exe'
-  PNPM_HOME          = "$env:LOCALAPPDATA\pnpm"
-  RUSTUP_DIST_SERVER = 'https://mirrors.tuna.tsinghua.edu.cn/rustup'
-  RUSTUP_UPDATE_ROOT = 'https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup'
-  SHUTILS_ROOT       = 'D:\p\shutils'
-  FZF_DEFAUT_OPTS    = @'
+  ANDROID_HOME             = "$HOME\Android\Sdk"
+  EDITOR                   = 'code'
+  FLUTTER_STORAGE_BASE_URL = 'https://storage.flutter-io.cn'
+  LESS                     = '-R --quit-if-one-screen --use-color --wordwrap --ignore-case --incsearch --search-options=W'
+  PAGER                    = 'C:\Program Files\Git\usr\bin\less.exe'
+  PNPM_HOME                = "$env:LOCALAPPDATA\pnpm"
+  PUB_HOSTED_URL           = 'https://pub.flutter-io.cn'
+  RUSTUP_DIST_SERVER       = 'https://mirrors.tuna.tsinghua.edu.cn/rustup'
+  RUSTUP_UPDATE_ROOT       = 'https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup'
+  SHUTILS_ROOT             = 'D:\p\shutils'
+  FZF_DEFAUT_OPTS          = @'
 --cycle
 --bind=alt-+:change-multi
 --bind=alt-J:jump
@@ -26,7 +28,7 @@
 --bind=ctrl-\:preview-top
 --bind=ctrl-/:preview-bottom
 '@.ReplaceLineEndings(' ')
-  no_proxy           = @'
+  no_proxy                 = @'
 127.0.0.1
 localhost
 internal.domain
@@ -38,7 +40,7 @@ mirrors.tuna.tsinghua.edu.cn
 '@.ReplaceLineEndings(',')
 }.GetEnumerator().ForEach{
   [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'User')
-  Set-Item -LiteralPath env:$($_.Key) $_.Value
+  [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
 }
 # PATH like envs
 @{
@@ -65,11 +67,16 @@ $env:SHUTILS_ROOT\scripts
 # pwsh PSRepository
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 # pwsh modules
-Install-Module Yayaml, PSToml, Pester
+Install-Module Yayaml, PSToml, Pester, PSScriptAnalyzer
 # pwsh scripts
 Install-Script Refresh-EnvironmentVariables
 # alacritty startup
-$null = New-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -Value 'C:\Program Files\Alacritty\alacritty.exe' -PropertyType String -Force
+if (Get-Command alacritty -Type Application -TotalCount 1 -ea Ignore) {
+  $null = New-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -Value 'C:\Program Files\Alacritty\alacritty.exe' -PropertyType String -Force
+}
+else {
+  Remove-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -ea Ignore
+}
 
 function Set-DarkMode ([switch]$On) {
   Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'SystemUsesLightTheme' -Value (1 - $On.IsPresent) -Type DWord

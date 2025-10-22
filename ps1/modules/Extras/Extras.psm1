@@ -1,6 +1,7 @@
 function Get-TypeMember {
   [CmdletBinding()]
   [Alias('gtm')]
+  [OutputType([System.Reflection.MemberInfo[]])]
   param (
     [ArgumentCompleter({
         param (
@@ -21,7 +22,7 @@ function Get-TypeMember {
           [System.Management.Automation.Language.CommandAst]$CommandAst,
           [System.Collections.IDictionary]$FakeBoundParameters
         )
-        (([type]$FakeBoundParameters.InputObject).GetMembers() | Where-Object Name -Like "$WordToComplete*").Name
+        (([type]$FakeBoundParameters.InputObject).GetMembers() | Where-Object Name -Like $WordToComplete*).Name
       })]
     [Parameter(Position = 0)]
     [string[]]
@@ -32,14 +33,10 @@ function Get-TypeMember {
     $MemberType = 'All'
   )
   process {
-    $InputObject.GetMembers().Where{
-      $item = $_
-      $(switch ($_.MemberType) {
-          Method { !$item.IsSpecialName; break }
-          Constructor { $false; break }
-          default { $MemberType.HasFlag($_); break }
-        }) -and $_.Name -like $Name
-    } | Select-Object Name, MemberType, @{Name = 'Definition'; Expression = { $_.ToString() } }
+    $InputObject.GetMembers() | Where-Object {
+      $MemberType.HasFlag($_.MemberType) -and $_.Name -like $Name -and
+      ($_.MemberType -cne 'Method' -or !$_.IsSpecialName)
+    }
   }
 }
 
@@ -97,10 +94,10 @@ function Set-Region {
     [AllowNull()]
     [string[]]
     $Value,
-    [Parameter(Mandatory, Position = 2, ParameterSetName = 'Path')]
+    [Parameter(Mandatory, Position = 2, ParameterSetName = 'LiteralPath')]
     [string]
-    $Path,
-    [Parameter(ParameterSetName = 'Path')]
+    $LiteralPath,
+    [Parameter(ParameterSetName = 'LiteralPath')]
     [switch]
     $Inplace,
     [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
@@ -117,8 +114,8 @@ function Set-Region {
     $lines += $InputObject
   }
   end {
-    if ($Path) {
-      $lines = Get-Content $Path -ea Stop
+    if ($LiteralPath) {
+      $lines = Get-Content -LiteralPath $LiteralPath -ea Stop
     }
     $found = 0
     $newLines = $lines.ForEach{
@@ -149,7 +146,7 @@ function Set-Region {
       )
     }
     if ($Inplace) {
-      $newLines > $Path
+      $newLines > $LiteralPath
     }
     else {
       $newLines
@@ -158,14 +155,17 @@ function Set-Region {
 }
 
 function Test-Administrator {
-  $IsWindows ? [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) : (id -u).Equals('0')
+  $IsWindows ? [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) : ((id -u) -ceq '0')
 }
 
-function getParser ([string]$Extension, [switch]$Inplace) {
-  switch -CaseSensitive -Regex ($Extension.Substring(1)) {
+function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
+  switch -CaseSensitive -Regex ([System.IO.Path]::GetExtension($Path).Substring(1)) {
     '^(?:c|m|mm|cpp|cc|cp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|inl|ipp)$' {
       if ($Inplace) {
         { clang-format -i --style=LLVM `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | clang-format --style=LLVM --assume-filename=$args[0] }
       }
       else {
         { clang-format --style=LLVM `-- $args[0] }
@@ -176,6 +176,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
       if ($Inplace) {
         { dart format `-- $args[0] }
       }
+      elseif ($Stdin) {
+        { $input | dart format }
+      }
       else {
         { dart format -o show --show none --summary none `-- $args[0] }
       }
@@ -184,6 +187,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     '^(?:cs|csx|fs|fsi|fsx|vb)$' {
       if ($Inplace) {
         { dotnet format }
+      }
+      elseif ($Stdin) {
+        { $input | dotnet format }
       }
       else {
         { <# dotnet format; #> Get-Content -AsByteStream -LiteralPath $args[0] }
@@ -194,6 +200,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
       if ($Inplace) {
         { gofmt -w `-- $args[0] }
       }
+      elseif ($Stdin) {
+        { $input | gofmt }
+      }
       else {
         { gofmt `-- $args[0] }
       }
@@ -202,6 +211,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     '^(?:java)$' {
       if ($Inplace) {
         {}
+      }
+      elseif ($Stdin) {
+        { $input }
       }
       else {
         {}
@@ -212,6 +224,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
       if ($Inplace) {
         { prettier -w --ignore-path= `-- $args[0] }
       }
+      elseif ($Stdin) {
+        { $input | prettier --ignore-path= --stdin-filepath=$args[0] }
+      }
       else {
         { prettier --ignore-path= `-- $args[0] }
       }
@@ -220,6 +235,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     '^(?:ps1|psm1|psd1)$' {
       if ($Inplace) {
         { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings $env:SHUTILS_ROOT/CodeFormatting.psd1 | Out-File -NoNewline $args[0] }
+      }
+      elseif ($Stdin) {
+        { PSScriptAnalyzer\Invoke-Formatter $input -Settings $env:SHUTILS_ROOT/CodeFormatting.psd1 }
       }
       else {
         { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings $env:SHUTILS_ROOT/CodeFormatting.psd1 }
@@ -230,6 +248,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
       if ($Inplace) {
         { ruff format -n `-- $args[0] }
       }
+      elseif ($Stdin) {
+        { $input | ruff format -n --stdin-filename $args[0] }
+      }
       else {
         { Get-Content -AsByteStream -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
       }
@@ -238,6 +259,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     '^(?:rs)$' {
       if ($Inplace) {
         { rustfmt `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | rustfmt --emit stdout }
       }
       else {
         { rustfmt --emit stdout `-- $args[0] }
@@ -248,6 +272,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
       if ($Inplace) {
         { shfmt -i 2 -bn -ci -sr `-- $args[0] }
       }
+      elseif ($Stdin) {
+        { $input | shfmt -i 2 -bn -ci -sr --filename $args[0] }
+      }
       else {
         { Get-Content -AsByteStream -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
       }
@@ -256,6 +283,9 @@ function getParser ([string]$Extension, [switch]$Inplace) {
     '^(?:lua)$' {
       if ($Inplace) {
         { stylua `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | stylua }
       }
       else {
         { Get-Content -AsByteStream -LiteralPath $args[0] | stylua }
@@ -266,39 +296,56 @@ function getParser ([string]$Extension, [switch]$Inplace) {
       if ($Inplace) {
         {}
       }
+      elseif ($Stdin) {
+        { $input }
+      }
       else {
         {}
       }
       break
     }
     default {
-      Get-Content -AsByteStream -LiteralPath $args[0]
+      if ($Stdin) {
+        { $input }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] }
+      }
       break
     }
   }
 }
 
 function Invoke-CodeFormatter {
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName = 'Path')]
   [Alias('icf')]
   param (
-    [Parameter(Mandatory, Position = 0)]
+    [Parameter(Mandatory, Position = 0, ParameterSetName = 'Path')]
+    [ValidateNotNullOrEmpty()]
+    [SupportsWildcards()]
     [string[]]
-    $Path
+    $Path,
+    [Parameter(Mandatory, ParameterSetName = 'LiteralPath')]
+    [Alias('PSPath')]
+    [ValidateNotNullOrEmpty()]
+    [string[]]
+    $LiteralPath
   )
-  Get-Item -Force $Path | ForEach-Object {
-    & (getParser $_.Extension -Inplace) $_.FullName
-  }
+  $Path + $LiteralPath | ForEach-Object { & (getParser $_ -Inplace) $_ }
 }
 
-function batf {
-  if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
-    return Get-Item -Force $args | ForEach-Object {
-      & (getParser $_.Extension) $_.FullName
+function batf ([string]$Name) {
+  if ($MyInvocation.ExpectingInput) {
+    if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
+      return $input | & (getParser $Name -Stdin) $Name
     }
+    return $input | & (getParser $Name -Stdin) $Name | bat -p --file-name=$Name
   }
-  Get-Item -Force $args | ForEach-Object {
-    & (getParser $_.Extension) $_.FullName | bat -p --color=always --file-name=$_
+  if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
+    return Convert-Path -Force $args | ForEach-Object { & (getParser $_) $_ }
+  }
+  Convert-Path -Force $args | ForEach-Object {
+    & (getParser $_) $_ | bat -p --color=always --file-name=$_
   } | & $env:PAGER
 }
 
@@ -336,6 +383,7 @@ function icat {
 function Get-EnvironmentVariable {
   [CmdletBinding()]
   [Alias('gev')]
+  [OutputType([System.Collections.DictionaryEntry[]])]
   param (
     [ArgumentCompleter({
         param (
@@ -462,14 +510,71 @@ function Set-EnvironmentVariable {
   }
 }
 
+function Set-EnvironmentVariablePath {
+  <#
+  .SYNOPSIS
+  Creates a new environment seperator seperated path based on the actual env value, then set it back.
+   #>
+  [CmdletBinding()]
+  [OutputType([string])]
+  [Alias('sevp')]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [Parameter()]
+    [System.EnvironmentVariableTarget]
+    $Scope = 'Process',
+    [Parameter()]
+    [string[]]
+    $Prepend,
+    [Parameter()]
+    [string[]]
+    $Append,
+    [Parameter()]
+    [string[]]
+    $Delete,
+    [Parameter()]
+    [switch]
+    $PassThru
+  )
+  [string]$value = [System.Environment]::GetEnvironmentVariable($Name, $Scope)
+  $value = $Prepend + $value.Split([System.IO.Path]::PathSeparator).Where{ !$Delete.Contains($_) } + $Append | Select-Object -Unique | Join-String -Separator ([System.IO.Path]::PathSeparator)
+  [System.Environment]::SetEnvironmentVariable($Name, $value, $Scope)
+  if ($PassThru) {
+    $value
+  }
+}
+
 function Import-EnvironmentVariable {
+  [CmdletBinding()]
   [Alias('ipev')]
   param (
+    [Parameter(Position = 0)]
+    [SupportsWildcards()]
     [string[]]
     $Path = '.env'
   )
-  Get-Content $Path | ForEach-Object {
+  Get-Content -LiteralPath $Path | ForEach-Object {
     $name, $value = $_.Split('=', 2)
-    Set-Item -LiteralPath env:$name $value
+    [System.Environment]::SetEnvironmentVariable($name, $value)
   }
+}
+
+function Write-CommandDebug {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [ValidateNotNullOrEmpty()]
+    [string]
+    $CommandName,
+    [Parameter(Position = 1)]
+    [string[]]
+    $ArgumentList
+  )
+  $CommandName = (@($CommandName) + $ArgumentList).ForEach{
+    $text = [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_)
+    $text -ceq $_ ? $text : "'$text'"
+  } -join ' '
+  Write-Debug $CommandName
 }

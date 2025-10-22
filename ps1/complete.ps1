@@ -1,3 +1,5 @@
+#Requires -Version 7.6.0
+
 function Register-ArgumentCompleter {
   <#
   .FORWARDHELPTARGETNAME Register-ArgumentCompleter
@@ -36,7 +38,7 @@ function Get-ArgumentCompleter ([string]$CommandName) {
 }
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}
-Microsoft.PowerShell.Core\Register-ArgumentCompleter -CommandName (Split-Path -Resolve -LeafBase $PSScriptRoot/completions/*) -Native -ScriptBlock {
+Microsoft.PowerShell.Core\Register-ArgumentCompleter -NativeFallback -ScriptBlock {
   param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $commandName = Split-Path -LeafBase $commandAst.GetCommandName()
   & (Get-ArgumentCompleter $commandName) @PSBoundParameters

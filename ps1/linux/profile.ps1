@@ -12,13 +12,13 @@ Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   zfgrep   = 'zfgrep', '--color=auto'
   zgrep    = 'zgrep', '--color=auto'
   ls       = 'ls', '-Ah', '--color=auto', '--hyperlink=auto'
+  rg       = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=vscode://file{wslprefix}{path}' : '--hyperlink-format=vscode')
   tree     = 'tree', '-C', '--gitignore', '--hyperlink'
   plantuml = 'java', '-jar', "$HOME/.local/bin/plantuml.jar"
   tracexec = 'bash', '-ic', 'tracexec "$0" "$@"'
 }
-if ($env:TERM_PROGRAM -notlike 'vscode*') {
+if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
   $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
-  $_executableAliasMap.rg = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=file://{wslprefix}{path}' : '--hyperlink-format=default')
 }
 Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   # prevent . invoke variable add
@@ -30,13 +30,13 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     return Write-Error "alias not set $command"
   }
   # flat iterator args for native passing
-  $command = @($_executableAliasMap.$command; $args.ForEach{ $_ })
-  Write-Debug "/usr/bin/env -- $command"
+  $command = @('--', $_executableAliasMap.$command; $args.ForEach{ $_ })
+  Write-CommandDebug /usr/bin/env $command
   if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env -- $command
+    $input | /usr/bin/env $command
   }
   else {
-    /usr/bin/env -- $command
+    /usr/bin/env $command
   }
 }
 # PackageKit command-not-found

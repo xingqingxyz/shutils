@@ -1,29 +1,34 @@
 #region cross
 function env {
   $environment = @{}
-  $reEnv = [regex]::new('^\w+\+?=')
+  [regex]$reEnv = [regex]::new('^\w+\+?=')
   # flat iterator args for native passing
   # note: replace token -- with `-- to escape function passing
-  $cmd, $ags = foreach ($arg in [string[]]$args.ForEach{ $_ }) {
+  [string[]]$ags = foreach ($arg in [string[]]$args.ForEach{ $_ }) {
     if (!$reEnv.IsMatch($arg)) {
-      @($arg; $foreach)
+      $arg
+      $foreach
       break
     }
-    [string]$key, $value = $arg.Split('=', 2)
+    [string]$key, [string]$value = $arg.Split('=', 2)
     if ($key.EndsWith('+')) {
       $key = $key.TrimEnd('+')
       $value = [System.Environment]::GetEnvironmentVariable($key) + $value
     }
     $environment.$key = $value
   }
-  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
+  $ags[0] = (Get-Command $ags[0] -Type Application -TotalCount 1 -ea Stop).Source
   $saveEnvironment = @{}
   $environment.GetEnumerator().ForEach{
-    $saveEnvironment[$_.Key] = [System.Environment]::GetEnvironmentVariable($_.Key)
+    [string]$value = [System.Environment]::GetEnvironmentVariable($_.Key)
+    if (![string]::IsNullOrEmpty($value)) {
+      $saveEnvironment[$_.Key] = $value
+    }
     [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
   }
-  Write-Debug "$($environment.GetEnumerator()) $cmd $ags"
+  Write-Debug "$($environment.GetEnumerator()) $ags"
   try {
+    [string]$cmd, $ags = $ags
     if ($MyInvocation.ExpectingInput) {
       $input | & $cmd $ags
     }
@@ -33,7 +38,7 @@ function env {
   }
   finally {
     $saveEnvironment.GetEnumerator().ForEach{
-      Set-Item -LiteralPath env:$($_.Key) $_.Value
+      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
     }
   }
   if ($LASTEXITCODE) {
@@ -41,7 +46,3 @@ function env {
   }
 }
 #endregion
-
-if ($IsLinux) {
-  . $PSScriptRoot/Linux.ps1
-}

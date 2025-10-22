@@ -1,12 +1,10 @@
-# utf-8 process
-[System.Console]::InputEncoding = [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   grep     = 'grep', '--color=auto'
-  plantuml = 'java', '-jar', "$HOME/tools/plantuml.jar"
+  plantuml = 'java', '-jar', "$HOME\tools\plantuml.jar"
+  rg       = 'rg', '--hyperlink-format=vscode'
 }
-if ($env:TERM_PROGRAM -notlike 'vscode*') {
+if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
   $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
-  $_executableAliasMap.rg = 'rg', '--hyperlink-format=default'
 }
 Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   # prevent . invoke variable add
@@ -19,8 +17,8 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   }
   # flat iterator args for native passing
   $cmd, $ags = @($_executableAliasMap.$cmd; $args.ForEach{ $_ })
-  $cmd = Get-Command $cmd -Type Application -TotalCount 1 -ea Stop
-  Write-Debug "$($cmd.Source) $ags"
+  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
+  Write-CommandDebug $cmd $ags
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $ags
   }

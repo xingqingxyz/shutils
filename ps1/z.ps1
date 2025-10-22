@@ -28,7 +28,7 @@ function Invoke-Z {
             return
           }
         }
-        $item = ($_z.itemsMap.$path ??= ([pscustomobject]@{
+        $item = ($_z.itemsMap.$path ??= ([psobject]@{
               Path = $path
               Rank = 0.0
               Time = 0
@@ -110,8 +110,8 @@ function Invoke-Z {
   }
 }
 
-Set-Variable -Option ReadOnly -Force _z ([pscustomobject]@{
-    config   = [pscustomobject]@{
+Set-Variable -Option ReadOnly -Force _z ([psobject]@{
+    config   = [psobject]@{
       dataFile        = "$HOME/.z"
       dataSeperator   = '|'
       resolveSymlinks = $true
@@ -128,7 +128,7 @@ Set-Variable -Option ReadOnly -Force _z ([pscustomobject]@{
   }
   Get-Content -LiteralPath $_z.config.dataFile -ea Ignore | ForEach-Object {
     $path, [double]$rank, [int]$time = $_.Split($_z.config.dataSeperator)
-    $_z.itemsMap.Add($path, [pscustomobject]@{
+    $_z.itemsMap.Add($path, [psobject]@{
         Path = $path
         Rank = $rank
         Time = $time

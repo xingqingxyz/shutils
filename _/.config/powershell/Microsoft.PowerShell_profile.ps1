@@ -1,16 +1,14 @@
 #Requires -Version 7.5.2
-& {
-  # let user select dotnet tools path order while pwsh run as a dotnet tool
-  $first, $second = $env:PATH.Split([System.IO.Path]::PathSeparator, 2)
-  if ((Convert-Path -LiteralPath ~/.dotnet/tools -ea Ignore) -ceq $first) {
-    $env:PATH = $second
-  }
-  $exe = $IsWindows ? '.exe' : ''
-  Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff$exe
-  Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format$exe
+if ($IsWindows) {
+  Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff.exe
+  Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format.exe
+}
+else {
+  Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff
+  Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format
 }
 # init scripts
-Get-ChildItem -LiteralPath $env:SHUTILS_ROOT/ps1 -File -ea Ignore | ForEach-Object { . $_.FullName }
+Convert-Path -Force $env:SHUTILS_ROOT/ps1/*.ps1 | ForEach-Object { . $_ }
 # platform code
 . $env:SHUTILS_ROOT/ps1/$($IsWindows ? 'windows' : 'linux')/profile.ps1
 # aliases overrides exist commands must be explicitly set, due to module lazy
