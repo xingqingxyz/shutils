@@ -25,18 +25,18 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   if ($MyInvocation.InvocationName -eq '.') {
     return & $MyInvocation.MyCommand $args
   }
-  $command = $MyInvocation.MyCommand.Name
-  if (!$_executableAliasMap.Contains($command)) {
-    return Write-Error "alias not set $command"
+  [string]$commandName = $MyInvocation.MyCommand.Name
+  if (!$_executableAliasMap.Contains($commandName)) {
+    return Write-Error "alias not set $commandName"
   }
   # flat iterator args for native passing
-  $command = @('--', $_executableAliasMap.$command; $args.ForEach{ $_ })
-  Write-CommandDebug /usr/bin/env $command
+  [string[]]$ags = @('--') + $_executableAliasMap.$commandName + $args.ForEach{ $_ }
+  Write-CommandDebug /usr/bin/env $ags
   if ($MyInvocation.ExpectingInput) {
-    $input | /usr/bin/env $command
+    $input | /usr/bin/env $ags
   }
   else {
-    /usr/bin/env $command
+    /usr/bin/env $ags
   }
 }
 # PackageKit command-not-found

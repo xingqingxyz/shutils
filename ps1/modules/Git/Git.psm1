@@ -25,9 +25,7 @@ function Clear-Module {
    #>
   Get-InstalledModule | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
     $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
-  } | ForEach-Object {
-    Uninstall-Module $_.Name -MaximumVersion $_.Version
-  }
+  } | ForEach-Object { Uninstall-Module $_.Name -MaximumVersion $_.Version }
 }
 
 function howto {
@@ -117,4 +115,122 @@ function ijq {
     [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent((Convert-Path -LiteralPath $file)))
   $query
   [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($query)
+}
+
+function Update-Software {
+  [CmdletBinding()]
+  param (
+    [Parameter()]
+    [ArgumentCompleter({
+        param (
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        (Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/globalTools.yml | ConvertFrom-Yaml).Keys.Where{ $_ -like "$WordToComplete*" }
+      })]
+    [string[]]
+    $Category,
+    [Parameter()]
+    [switch]
+    $Global,
+    [Parameter()]
+    [switch]
+    $Force
+  )
+  $pkgMap = Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/globalTools.yml | ConvertFrom-Yaml
+  if (!$Global) {
+    switch ($Category) {
+      bun { bun update; continue }
+      cargo { cargo update; continue }
+      flutter { flutter pub upgrade; continue }
+      pnpm { pnpm self-update; pnpm update; continue }
+      uv { uv sync --upgrade; continue }
+      go {
+        [string[]]$pkgs = go list
+        go get $pkgs.ForEach{ "$_@latest" }
+        continue
+      }
+      default { throw [System.NotImplementedException]::new() }
+    }
+    return
+  }
+  switch ($Category) {
+    code { code --update-extensions; continue }
+    go { go install $pkgMap.go.ForEach{ "$_@latest" }; continue }
+    bun {
+      bun upgrade -g
+      if ($Force) {
+        bun add -g $pkgMap.bun
+      }
+      continue
+    }
+    dnf {
+      sudo dnf upgrade -y
+      if ($Force) {
+        sudo dnf install -y $pkgMap.dnf
+      }
+      continue
+    }
+    flutter {
+      [string[]]$pkgs = flutter pub global list
+      if ($Force) {
+        $pkgs += $pkgMap.flutter
+      }
+      flutter pub global activate $pkgs.ForEach{ "$_@latest" }
+      continue
+    }
+    gh {
+      gh extension upgrade --all
+      if ($Force) {
+        gh extension install $pkgMap.gh
+      }
+      continue
+    }
+    rustup {
+      rustup update
+      if ($Force) {
+        rustup toolchain install $pkgMap.rustup.toolchains --component ($pkgMap.rustup.components -join ',') --target ($pkgMap.rustup.targets)
+      }
+      continue
+    }
+    cargo {
+      cargo install-update --all
+      if ($Force) {
+        cargo install $pkgMap.cargo
+      }
+      continue
+    }
+    pnpm {
+      pnpm self-update
+      pnpm update -g
+      if ($Force) {
+        pnpm add -g $pkgMap.pnpm
+      }
+      continue
+    }
+    psm1 {
+      Update-Module
+      Clear-Module
+      if ($Force) {
+        Install-Module $pkgMap.psm1
+      }
+      continue
+    }
+    ps1 {
+      Update-Script
+      if ($Force) {
+        Install-Script $pkgMap.ps1
+      }
+    }
+    uv {
+      uv self update
+      uv tool upgrade
+      if ($Force) {
+        uv tool install $pkgMap.uv
+      }
+      continue
+    }
+    default { throw [System.NotImplementedException]::new() }
+  }
 }

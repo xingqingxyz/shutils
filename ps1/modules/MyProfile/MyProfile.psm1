@@ -16,7 +16,7 @@ function Show-CommandSource {
         [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
       })]
     [Parameter(Position = 0)]
-    [string[]]
+    [string]
     $Name,
     [Parameter(Position = 1, ValueFromRemainingArguments)]
     [string[]]
@@ -45,8 +45,8 @@ function Show-CommandSource {
     $FullName
   )
   begin {
-    $paths = @()
-    $inputs = @()
+    [string[]]$paths = @()
+    [string[]]$inputs = @()
   }
   process {
     if ($FullName) {
@@ -58,9 +58,9 @@ function Show-CommandSource {
   }
   end {
     if ($MyInvocation.ExpectingInput) {
-      $ExtraArgs = $Name + $ExtraArgs
+      $ExtraArgs = @($Name; $ExtraArgs)
       if ($paths) {
-        $paths = Convert-Path -LiteralPath $paths
+        $paths = Convert-Path -LiteralPath $paths | fsPath
         if (!$paths) {
           return
         }
@@ -92,34 +92,32 @@ function Show-CommandSource {
       else {
         $MyInvocation.MyCommand.Module.Path
       }
-      if ($paths) {
-        $ExtraArgs = $paths + $ExtraArgs
-      }
-      else {
-        $ExtraArgs = $Name + $ExtraArgs
-      }
+      $ExtraArgs = $paths ? (($paths | fsPath) + $ExtraArgs) : @($Name; $ExtraArgs)
       Write-CommandDebug $Editor $ExtraArgs
       & $Editor $ExtraArgs
       return
     }
-    $Name ??= '.'
-    $Name.ForEach{
-      # wildcard produces infos
-      (Get-Item $_ -Force -ea Ignore) ?? (Get-Command $_ -ea Ignore) ??
-      (Write-Error "command not found: $_")
-    } | show $ExtraArgs
+    if (!$Name) {
+      $Name = '.'
+    }
+    $item = (Convert-Path $Name -Force -ea Ignore | fsPath) ?? (Get-Command $Name -ea Ignore)
+    if (!$item) {
+      return Write-Error "command not found: $Name"
+    }
+    Write-CommandDebug show $ExtraArgs
+    $item | show $ExtraArgs
   }
 }
 
 filter show ([string[]]$ExtraArgs) {
-  $info = $_
-  if ($info -is [System.IO.FileSystemInfo]) {
-    return $info | showFile $ExtraArgs
+  if ($_ -is [string]) {
+    return $_ | showFile $ExtraArgs
   }
-  if ($info -isnot [System.Management.Automation.CommandInfo]) {
+  if ($_ -isnot [System.Management.Automation.CommandInfo]) {
     # other PSProvider info, e.g. gi env:PATH
-    return $info
+    return $_
   }
+  [System.Management.Automation.CommandInfo]$info = $_
   if ($info.CommandType -eq 'Alias') {
     $info = $info.ResolvedCommand
   }
@@ -139,6 +137,16 @@ filter show ([string[]]$ExtraArgs) {
     { $_ -ceq 'Filter' -or $_ -ceq 'Function' } {
       return $info.Definition | bat -plps1 $ExtraArgs
     }
+  }
+}
+
+filter fsPath {
+  if ($IsWindows) {
+    $item = (Get-Item -LiteralPath $_ -ea Stop)
+    $item.ResolvedTarget ?? $item.FullName
+  }
+  else {
+    realpath `-- $_
   }
 }
 
@@ -173,8 +181,8 @@ filter editable {
   }
 }
 
-function shouldEdit ([string]$Path) {
-  $item = Get-Item -LiteralPath $Path -Force
+filter shouldEdit {
+  $item = Get-Item -LiteralPath $_ -Force
   if ($item.Length -gt 0x300000) {
     return $false # gt 3M
   }
@@ -190,109 +198,106 @@ function shouldEdit ([string]$Path) {
   return $i -ge $Len
 }
 
-function decompress ([System.IO.FileSystemInfo]$Item) {
-  $cmd, $ags = $(switch ($Item.Extension) {
-      '.gz' { 'gzip -dc'; break }
-      '.bz2' { 'bzip2 -dc'; break }
-      '.lz' { 'lzip -dc'; break }
+filter decompress {
+  [string]$cmd, [string[]]$ags = @(switch ([System.IO.Path]::GetExtension($_)) {
+      '.gz' { 'gzip', '-dc'; break }
+      '.bz2' { 'bzip2', '-dc'; break }
+      '.lz' { 'lzip', '-dc'; break }
       '.zst' { 'zstd -dcq'; break }
-      '.br' { 'brotli -dc'; break }
-      '.xz' { 'xz -dc'; break }
-      '.lzma' { 'xz -dc'; break }
+      '.br' { 'brotli', '-dc'; break }
+      '.xz' { 'xz', '-dc'; break }
+      '.lzma' { 'xz', '-dc'; break }
       default { throw [System.NotImplementedException]::new() }
-    }).Split(' ') + @($Item)
+    }) + $_
   & $cmd $ags
 }
 
 filter showFile ([string[]]$ExtraArgs) {
-  $item = Get-Item -LiteralPath $_ -Force -ea Stop
-  if ($item.LinkType) {
-    $item = $item.ResolveLinkTarget($true) ?? $item
-  }
-  if ($item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
+  [string]$path = $_ | fsPath
+  if (Test-Path -LiteralPath $path -PathType Container) {
     if (!$IsWindows) {
-      return env ls -lah --color=always --hyperlink=always $item $ExtraArgs | less
+      return env ls -lah --color=always --hyperlink=always $path $ExtraArgs | less
     }
     $oldValue = $PSStyle.OutputRendering
     $PSStyle.OutputRendering = 'Ansi'
     try {
-      Get-ChildItem -LiteralPath $item | less
+      Get-ChildItem -LiteralPath $path -ea Stop | less
     }
     finally {
       $PSStyle.OutputRendering = $oldValue
     }
     return
   }
-  $PSStyle.FormatHyperlink($item, [uri]::new($item))
-  switch -CaseSensitive -Regex ($item.Name) {
+  $PSStyle.FormatHyperlink($path, [uri]::new($path))
+  switch -CaseSensitive -Regex ($path) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
-      if ((decompress $item | file -L -).Contains('troff')) {
-        decompress $item | & ('man') -l - 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
+      if (($path | decompress | file -L -).Contains('troff')) {
+        $path | decompress | & ('man') -l - 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
       }
       else {
-        bat -p $item $ExtraArgs
+        bat -p $path $ExtraArgs
       }
       break
     }
     '\.(?:[1-9n]|[1-9]x|man)$' {
-      if ((file -L $item).Contains('troff')) {
-        & ('man') -l $item 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
+      if ((file -L $path).Contains('troff')) {
+        & ('man') -l $path 2>$null | sed 's/\x1b\[[0-9;]*m\|.\x08//g' | bat -plman $ExtraArgs
       }
       else {
-        bat -p $item $ExtraArgs
+        bat -p $path $ExtraArgs
       }
       break
     }
     '\.(?:tar|tgz|tbz2)$' {
-      tar -tvf $item | less
+      tar -tvf $path | less
       break
     }
     '\.tar\.(?:bz2|[glx]z|[zZ]|lzma|br)$' {
-      tar -tvf $item | less
+      tar -tvf $path | less
       break
     }
     '\.tar\.zst$' {
-      tar --zstd -tvf $item | less
+      tar --zstd -tvf $path | less
       break
     }
     '\.tar\.lz$' {
-      tar --lzip -tvf $item | less
+      tar --lzip -tvf $path | less
       break
     }
     '\.(?:zip|jar|nbm)$' {
       if ($IsWindows) {
-        tar -tvf $item | less
+        tar -tvf $path | less
       }
       else {
-        zipinfo $item | less
+        zipinfo $path | less
       }
       break
     }
     '\.(?:[glx]z|bz2|zst|br|lzma)$' {
-      decompress $item | bat -p --file-name=$(Split-Path -LeafBase $item) $ExtraArgs
+      decompress $path | bat -p --file-name=$(Split-Path -LeafBase $path) $ExtraArgs
       break
     }
     '\.rpm$' {
-      rpm -qpivl --changelog --nomanifest $item | less
+      rpm -qpivl --changelog --nomanifest $path | less
       break
     }
     '\.cpio?$' {
-      Get-Content -AsByteStream -LiteralPath $item | cpio -itv | less
+      Get-Content -AsByteStream -LiteralPath $path | cpio -itv | less
       break
     }
     '\.gpg$' {
-      gpg -d $item | less
+      gpg -d $path | less
       break
     }
     '\.(?:gif|jpeg|jpg|pcd|png|tga|tiff|tif)$' {
-      icat $item
+      icat $path
       break
     }
     default {
-      switch -CaseSensitive (file -Lb --mime-encoding $item) {
-        binary { sh -c 'hexyl "$@" | less' `-- $item $ExtraArgs <# auto close hexyl pipe #>; break }
-        { $_ -ceq $OutputEncoding.WebName -or $_.StartsWith('unknown') } { bat -p $item $ExtraArgs; break }
-        default { Get-Content -Encoding ([System.Text.Encoding]::GetEncoding($_)) -LiteralPath $item | bat -p --file-name=$item $ExtraArgs; break }
+      switch -CaseSensitive (file -Lb --mime-encoding $path) {
+        binary { sh -c 'hexyl "$@" | less' `-- $path $ExtraArgs <# auto close hexyl pipe #>; break }
+        { $_ -ceq $OutputEncoding.WebName -or $_.StartsWith('unknown') } { bat -p $path $ExtraArgs; break }
+        default { Get-Content -Encoding ([System.Text.Encoding]::GetEncoding($_)) -LiteralPath $path | bat -p --file-name=$path $ExtraArgs; break }
       }
       break
     }
@@ -318,22 +323,10 @@ function Invoke-Npm {
   }
 }
 
-function Write-CommandDebug {
-  [CmdletBinding()]
-  param (
-    [Parameter(Mandatory, Position = 0)]
-    [ValidateNotNullOrEmpty()]
-    [string]
-    $CommandName,
-    [Parameter(Position = 1)]
-    [string[]]
-    $ArgumentList
-  )
-  $CommandName = (@($CommandName) + $ArgumentList).ForEach{
-    $text = [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_)
-    $text -ceq $_ ? $text : "'$text'"
-  } -join ' '
-  Write-Debug $CommandName
+function Write-CommandDebug ([string]$CommandName, [string[]]$ArgumentList) {
+  Write-Debug ((@($CommandName) + $ArgumentList).ForEach{
+      $_ -cmatch '\s' ? "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'" : $_
+    } -join ' ')
 }
 
 function Invoke-Npx {
@@ -358,7 +351,7 @@ function Invoke-Npx {
   }
 }
 
-$pwshExe, $sudoExe = (Get-Command pwsh, sudo -Type Application -TotalCount 1 -ea Ignore).Source
+[string]$pwshExe, [string]$sudoExe = (Get-Command pwsh, sudo -Type Application -TotalCount 1 -ea Ignore).Source
 function Invoke-Sudo {
   [string[]]$ags = $args
   if ($args[0] -is [scriptblock]) {

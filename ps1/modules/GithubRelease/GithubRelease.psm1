@@ -118,6 +118,40 @@ function execute {
   }
 }
 
+function downloadFile ([string]$Url, [string]$Path) {
+  if ($Path) {
+    $dir = Split-Path $Path
+    $file = Split-Path -Leaf $Path
+  }
+  else {
+    $dir = $buildDir
+    $file = Split-Path -Leaf $Url
+    $Path = "$dir/$file"
+  }
+  $null = New-Item -Type Directory -Force $dir
+  Remove-Item -LiteralPath $Path -Force -ea Ignore
+  execute aria2c $Url -d $dir -o $file >> $buildDir/aria2c.log
+}
+
+function checkFileHash ([string]$Path, [string]$Sha256) {
+  if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash -ne $Sha256) {
+    throw "file hash not match ($Path): $Sha256"
+  }
+}
+
+function New-EmptyDir ([string]$Path) {
+  Remove-Item -Recurse -Force -ea Ignore -LiteralPath $Path
+  New-Item -ItemType Directory -Force $Path
+}
+
+function installBinary ([string[]]$Path) {
+  if ($IsWindows) {
+    $Path.ForEach{ "@`"$_`" %*" > $binDir\$(Split-Path -LeafBase $_).cmd }
+    return
+  }
+  ln -sf $Path $binDir
+}
+
 function getLocalVersion ($Meta) {
   try {
     switch ($Meta.name) {
@@ -125,6 +159,7 @@ function getLocalVersion ($Meta) {
       fzf { (fzf --version).Split(' ', 2)[0]; break }
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
       dotnet { (dotnet --version).Split('-', 2)[0]; break }
+      gh { (gh version)[0].Split(' ', 4)[2]; break }
       go { (go version).Split(' ', 4)[2].Substring(2); break }
       goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
       pastel { (pastel -V).Split(' ', 3)[1]; break }
@@ -207,40 +242,6 @@ function updateLatestVersion ($Meta) {
   }
 }
 
-function downloadFile ([string]$Url, [string]$Path) {
-  if ($Path) {
-    $dir = Split-Path $Path
-    $file = Split-Path -Leaf $Path
-  }
-  else {
-    $dir = $buildDir
-    $file = Split-Path -Leaf $Url
-    $Path = "$dir/$file"
-  }
-  $null = New-Item -Type Directory -Force $dir
-  Remove-Item -LiteralPath $Path -Force -ea Ignore
-  execute aria2c $Url -d $dir -o $file >> $buildDir/aria2c.log
-}
-
-function checkFileHash ([string]$Path, [string]$Sha256) {
-  if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256) -cne $Sha256) {
-    throw "file hash not match ($Path): $Sha256"
-  }
-}
-
-function New-EmptyDir ([string]$Path) {
-  Remove-Item -Recurse -Force -ea Ignore -LiteralPath $Path
-  New-Item -ItemType Directory -Force $Path
-}
-
-function installBinary ([string[]]$Path) {
-  if ($IsWindows) {
-    $Path.ForEach{ "@`"$_`" %*" > $binDir\$(Split-Path -LeafBase $_).cmd }
-    return
-  }
-  ln -sf $Path $binDir
-}
-
 function Install-Release {
   [CmdletBinding(SupportsShouldProcess)]
   param (
@@ -281,17 +282,6 @@ function Install-Release {
       }
       $pkgManager = $pkgType -ceq 'rpm' ? 'dnf' : 'apt'
       sudo $pkgManager install -y "https://update.code.visualstudio.com/latest/linux-$pkgType-x64/stable"
-      break
-    }
-    deno {
-      if ($IsWindows) {
-        throw [System.NotImplementedException]::new()
-      }
-      if (Get-Command deno -CommandType Application -TotalCount 1 -ea Ignore) {
-        deno upgrade
-        break
-      }
-      curl -fsSL 'https://deno.land/install.sh' | sh; break
       break
     }
     diskus {
@@ -347,6 +337,15 @@ function Install-Release {
       $base = 'fzf-{0}-{1}_{2}' -f $Meta.version, $go.os, $go.arch
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $binDir
+      break
+    }
+    gh {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $file = 'gh_{0}_{1}_{2}.{3}' -f $Meta.version, $go.os, $go.arch, $pkgType
+      downloadRelease $file
+      sudo $pkgManager install -y $buildDir/$file
       break
     }
     go {
@@ -511,20 +510,39 @@ StartupWMClass=localsend_app
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
       }
-      switch ($pkgType) {
-        'rpm' {
-          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $Meta.tag.Substring(1), $go.arch
-          downloadRelease $file
-          sudo dnf install -y $buildDir/$file
-          break
-        }
-        'deb' {
-          $file = 'powershell-{0}.{1}.deb' -f $Meta.tag.Substring(1), $go.arch
-          downloadRelease $file
-          sudo dpkg -i $buildDir/$file
-          break
+      $id = $Meta.tag.Substring(1)
+      if ($Meta.prerelease) {
+        $id = 'preview-' + $id.Replace('-', '_')
+      }
+      $file = switch ($pkgType) {
+        'rpm' { 'powershell-{0}-1.rh.{1}.rpm' -f $id, $rust.arch; break }
+        'deb' { 'powershell-{0}.{1}.deb' -f $id, $go.arch; break }
+      }
+      downloadRelease $file
+      if ($Meta.prerelease) {
+        switch ($pkgManager) {
+          dnf { sudo dnf remove -y powershell; break }
+          deb { sudo deb uninstall -y powershell; break }
         }
       }
+      else {
+        switch ($pkgManager) {
+          dnf { sudo dnf remove -y powershell-preview; break }
+          deb { sudo deb uninstall -y powershell-preview; break }
+        }
+      }
+      sudo $pkgManager install -y $buildDir/$file
+      break
+    }
+    rg {
+      $base = 'ripgrep-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base$ext
+      downloadRelease $base$ext`.sha256
+      checkFileHash $buildDir/$base$ext (Get-Content -Raw -LiteralPath $buildDir/$base$ext`.sha256).Split(' ', 2)[0]
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/rg$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$base/doc/rg.1 $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/$base/complete/rg.bash $dataDir/bash-completion/completions -Force
       break
     }
     rga {
@@ -574,13 +592,6 @@ StartupWMClass=localsend_app
       Move-Item -LiteralPath $buildDir/yq.1 $dataDir/man/man1 -Force
       break
     }
-    zed {
-      if ($IsWindows) {
-        throw [System.NotImplementedException]::new()
-      }
-      curl -f 'https://zed.dev/install.sh' | sh
-      break
-    }
     default { throw "no install method for $_" }
   }
 }
@@ -594,14 +605,14 @@ function Update-Release {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        (Get-Content -Raw -LiteralPath $PSScriptRoot/pkgs.yml | ConvertFrom-Yaml | Where-Object name -Like $WordToComplete*).name
+        (Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/releases.yml | ConvertFrom-Yaml | Where-Object name -Like $WordToComplete*).name
       })]
     [Parameter(Position = 0)]
     [string[]]
     $Name
   )
   $pkgMap = @{}
-  Get-Content -Raw -LiteralPath $PSScriptRoot/pkgs.yml | ConvertFrom-Yaml | ForEach-Object { $pkgMap[$_.name] = $_ }
+  Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/releases.yml | ConvertFrom-Yaml | ForEach-Object { $pkgMap[$_.name] = $_ }
   $Name ??= $pkgMap.Keys
   $Name | ForEach-Object {
     if (!$pkgMap.Contains($_)) {
@@ -609,7 +620,7 @@ function Update-Release {
     }
     updateLatestVersion $pkgMap[$_]
   } | ForEach-Object { Install-Release $_ } -ea 'Continue'
-  $pkgMap.Values | ConvertTo-Yaml > $PSScriptRoot/pkgs.yml
+  $pkgMap.Values | ConvertTo-Yaml > $env:SHUTILS_ROOT/data/releases.yml
 }
 
 $go = goenv
@@ -617,7 +628,12 @@ $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
 $ps1CompletionDir = "$env:SHUTILS_ROOT/ps1/completions"
 if ($IsLinux) {
-  $pkgType = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=') ? 'rpm' : 'deb'
+  $pkgType, $pkgManager = if ((Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=')) {
+    'rpm', 'dnf'
+  }
+  else {
+    'deb', 'apt'
+  }
 }
 
 $prefixDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local"

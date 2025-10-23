@@ -1,0 +1,56 @@
+bun: []
+cargo:
+  - cargo-generate
+  - cargo-update
+  - taplo
+  - wasm-pack
+code: []
+dnf:
+  - alacritty
+  - aria2
+  - clang
+  - cmake
+  - containerd
+  - fd-find
+  - bat
+  - ripgrep
+  - hyperfine
+  - jq
+  - yq
+  - docker-cli
+  - gcc
+  - gnome-shell-extension-appindicator
+  - gnome-shell-extension-dash-to-dock
+  - ninja-build
+  - runc
+  - shellcheck
+  - shfmt
+  - xclip
+  - xsel
+flutter: []
+gh:
+  - github/gh-copilot
+  - yusukebe/gh-markdown-preview
+go:
+  - golang.org/x/tools/cmd/stringer
+pnpm:
+  - "@vscode/vsce"
+  - generator-code
+  - prettier
+  - tree-sitter-cli
+  - tsx
+  - yo
+ps1: []
+psm1:
+  - Pester
+  - PSScriptAnalyzer
+  - PSToml
+  - Yayaml
+rustup:
+  components:
+    - clippy
+  targets:
+    - wasm32-unknown-unknown
+  toolchains:
+    - default
+uv: []

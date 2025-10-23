@@ -334,12 +334,13 @@ function Invoke-CodeFormatter {
   $Path + $LiteralPath | ForEach-Object { & (getParser $_ -Inplace) $_ }
 }
 
-function batf ([string]$Name) {
+function batf {
   if ($MyInvocation.ExpectingInput) {
+    $name = $args[0]
     if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
-      return $input | & (getParser $Name -Stdin) $Name
+      return $input | & (getParser $name -Stdin) $name
     }
-    return $input | & (getParser $Name -Stdin) $Name | bat -p --file-name=$Name
+    return $input | & (getParser $name -Stdin) $name | bat -p --file-name=$name
   }
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
     return Convert-Path -Force $args | ForEach-Object { & (getParser $_) $_ }
@@ -459,8 +460,8 @@ function Set-EnvironmentVariable {
       '+=' { [System.Environment]::GetEnvironmentVariable($key, $Scope) + $Matches[3]; break }
       default { '1'; break }
     }
-    $environment.$key = $value
-    [System.Environment]::SetEnvironmentVariable($key, $value)
+    $environment[$key] = $value
+    Set-Item -LiteralPath env:$key $value
   }
   Write-Debug "setting env $($environment.GetEnumerator())"
   if ($Scope -eq 'Process') {
@@ -474,7 +475,7 @@ function Set-EnvironmentVariable {
       else {
         $path = $Scope -eq 'Machine' ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
         Write-Debug "remove $($_.Key) on $path"
-        Remove-ItemProperty -LiteralPath $path $_.Key
+        Remove-ItemProperty -LiteralPath $path $_.Key -ea Ignore
       }
     }
   }
@@ -502,6 +503,9 @@ function Set-EnvironmentVariable {
     $environment.GetEnumerator().ForEach{
       if ($_.Value) {
         [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+      }
+      else {
+        throw [System.NotImplementedException]::new()
       }
     }
   }

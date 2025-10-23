@@ -23,8 +23,7 @@ Register-ArgumentCompleter -Native -CommandName env -ScriptBlock {
     $astList = $commandAst.CommandElements | Select-Object -Skip $i
     $commandName = Split-Path -LeafBase $astList[0].Value
     $cursorPosition -= $astList[0].Extent.StartOffset
-    $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput("$astList", $cursorPosition)
-    $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
+    $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
     return & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
   }
   if (!$IsWindows -and $wordToComplete.StartsWith('-')) {

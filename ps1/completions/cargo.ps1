@@ -13,7 +13,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         break
       }
       $i.Value
-    }) -join ';'
+    }) -join ' '
   $command = switch ($command) {
     'b' { 'build'; break }
     'c' { 'check'; break }
@@ -35,7 +35,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          @('-V', '--version', '--list', '--explain', '-v', '--verbose', '-q', '--quiet', '--color', '--locked', '--offline', '--frozen', '--config', '-h', '--help').ForEach{ [CompletionResult]::new($_) }
+          '-V', '--version', '--list', '--explain', '-v', '--verbose', '-q', '--quiet', '--color', '--locked', '--offline', '--frozen', '--config', '-h', '--help' | ForEach-Object { [CompletionResult]::new($_) }
           break
         }
         [CompletionResult]::new('add', 'add', [CompletionResultType]::ParameterValue, 'Add dependencies to a Cargo.toml manifest file')
@@ -84,6 +84,11 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('verify-project', 'verify-project', [CompletionResultType]::ParameterValue, 'Check correctness of crate manifest')
         [CompletionResult]::new('version', 'version', [CompletionResultType]::ParameterValue, 'Show version information')
         [CompletionResult]::new('yank', 'yank', [CompletionResultType]::ParameterValue, 'Remove a pushed crate from the index')
+        cargo install --list | ForEach-Object {
+          if ($_.StartsWith('    cargo-')) {
+            [CompletionResult]::new($_.Substring(10))
+          }
+        }
         break
       }
       'clean' {
@@ -764,7 +769,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
         break
       }
-      'read-manifest.txt' {
+      'read-manifest' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
         [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
         [CompletionResult]::new('-q', 'q', [CompletionResultType]::ParameterValue, 'Do not print cargo log messages')
@@ -825,7 +830,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
       'report_future-incompatibilities' {
         switch ($prev) {
           '--color' {
-            @('auto', 'always', 'never').ForEach{ [CompletionResult]::new($_) }.ForEach{ [CompletionResult]::new($_) }
+            'auto', 'always', 'never' | ForEach-Object { [CompletionResult]::new($_) }
             break
           }
           '-Z' {
@@ -1204,7 +1209,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
         break
       }
-      'verify-project.txt' {
+      'verify-project' {
         [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
         [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterValue, 'Use verbose output (-vv very verbose/build.rs output)')
         [CompletionResult]::new('-q', 'q', [CompletionResultType]::ParameterValue, 'Do not print cargo log messages')
@@ -1253,6 +1258,16 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('--frozen', 'frozen', [CompletionResultType]::ParameterValue, 'Require Cargo.lock and cache are up to date')
         [CompletionResult]::new('--locked', 'locked', [CompletionResultType]::ParameterValue, 'Require Cargo.lock is up to date')
         [CompletionResult]::new('--offline', 'offline', [CompletionResultType]::ParameterValue, 'Run without accessing the network')
+        break
+      }
+      default {
+        if (!$_.Contains(' ')) {
+          $astList = $commandAst.CommandElements | Select-Object -Skip 1
+          $commandName = 'cargo-' + (Split-Path -LeafBase $astList[0].Value)
+          $cursorPosition -= $astList[0].Extent.StartOffset
+          $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition | ForEach-Object { [CompletionResult]::new($_) }
+        }
         break
       }
     }) | Where-Object CompletionText -Like "$wordToComplete*"

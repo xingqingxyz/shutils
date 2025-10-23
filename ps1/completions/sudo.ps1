@@ -23,7 +23,6 @@ Register-ArgumentCompleter -Native -CommandName sudo -ScriptBlock {
   $astList = $commandAst.CommandElements | Select-Object -Skip 1
   $commandName = Split-Path -LeafBase $astList[0].Value
   $cursorPosition -= $astList[0].Extent.StartOffset
-  $tuple = [System.Management.Automation.CommandCompletion]::MapStringInputToParsedInput("$astList", $cursorPosition)
-  $commandAst = $tuple.Item1.EndBlock.Statements[0].PipelineElements[0]
+  $commandAst = [System.Management.Automation.Language.Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
   & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
 }

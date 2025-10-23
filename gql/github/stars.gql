@@ -1,0 +1,9 @@
+query {
+  user(login: "xingqingxyz") {
+    starredRepositories {
+      nodes {
+        nameWithOwner
+      }
+    }
+  }
+}
