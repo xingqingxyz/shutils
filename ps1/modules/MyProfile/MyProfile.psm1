@@ -58,7 +58,9 @@ function Show-CommandSource {
   }
   end {
     if ($MyInvocation.ExpectingInput) {
-      $ExtraArgs = @($Name; $ExtraArgs)
+      if ($Name) {
+        $ExtraArgs = @($Name) + $ExtraArgs
+      }
       if ($paths) {
         $paths = Convert-Path -LiteralPath $paths | fsPath
         if (!$paths) {

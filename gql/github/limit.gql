@@ -1,4 +1,4 @@
-query getRemain {
+query {
   rateLimit {
     limit
     remaining

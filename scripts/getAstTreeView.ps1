@@ -29,12 +29,12 @@ class MyVisitor : AstVisitor2 {
     return [AstVisitAction]::Continue
   }
 
-  [psobject] getNode() {
+  [pscustomobject] getNode() {
     return $this.getNode($this.scriptBlockAst)
   }
 
-  [psobject] getNode([Ast]$ast) {
-    $node = [psobject]@{
+  [pscustomobject] getNode([Ast]$ast) {
+    $node = [pscustomobject]@{
       _range      = @(
         $ast.Extent.StartLineNumber - 1
         $ast.Extent.StartColumnNumber - 1
@@ -45,7 +45,7 @@ class MyVisitor : AstVisitor2 {
       endOffset   = $ast.Extent.EndOffset
       text        = $ast.ToString()
       type        = $ast.GetType().Name
-      children    = [List[psobject]]::new()
+      children    = [List[pscustomobject]]::new()
     }
     foreach ($childAst in $this.typeMap[$ast]) {
       $node.children.Add($this.getNode($childAst))

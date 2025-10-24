@@ -14,7 +14,7 @@ function getRange ([IScriptExtent]$Extent) {
 }
 
 function newAstNode ([Ast]$ast, [psobject[]]$Children, [string]$FieldName, [hashtable]$Meta) {
-  [psobject]@{
+  [pscustomobject]@{
     Id        = $Script:id++ -as [string]
     Children  = $Children
     FieldName = $FieldName
@@ -25,7 +25,7 @@ function newAstNode ([Ast]$ast, [psobject[]]$Children, [string]$FieldName, [hash
 }
 
 function normalizeToken ([Token]$token) {
-  [psobject]@{
+  [pscustomobject]@{
     HasError   = $token.HasError
     Kind       = $token.Kind.ToString()
     Range      = getRange $token.Extent
@@ -89,7 +89,7 @@ function visitAst ([string]$fieldName, [Ast]$ast) {
 
 function visit ([string]$text) {
   [ScriptBlockAst]$ast = [Parser]::ParseInput($text, [ref]$tokens, [ref]$null)
-  [psobject]@{
+  [pscustomobject]@{
     Root   = visitAst ScriptFile $ast
     Tokens = $tokens.ForEach{ normalizeToken $_ }
   }

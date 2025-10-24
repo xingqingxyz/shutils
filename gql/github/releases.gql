@@ -1,0 +1,11 @@
+query ($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    latestRelease {
+      releaseAssets(first: 30) {
+        nodes {
+          name
+        }
+      }
+    }
+  }
+}

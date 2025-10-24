@@ -6,7 +6,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 function goenv {
   if (Get-Command go -Type Application -ea Ignore) {
     $os, $arch = go env GOOS GOARCH
-    return [psobject]@{
+    return [pscustomobject]@{
       os   = $os
       arch = $arch
     }
@@ -34,7 +34,7 @@ function goenv {
     'LoongArch64' { 'loong64'; break }
     default { throw [System.NotImplementedException]::new("arch $_") }
   }
-  [psobject]@{
+  [pscustomobject]@{
     os   = $os
     arch = $arch
   }
@@ -96,7 +96,7 @@ function rustenv {
       $clib
     ) -join '-'
   }
-  [psobject]@{
+  [pscustomobject]@{
     arch       = $arch
     platform   = $platform
     os         = $os
@@ -258,6 +258,13 @@ function Install-Release {
     execute gh release download -R $Meta.repo -p $Pattern -D $buildDir --skip-existing $Meta.tag
   }
   switch ($Meta.name) {
+    bat {
+      $base = 'bat-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/bat$exe $binDir -Force
+      break
+    }
     binocle {
       $base = 'binocle-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
