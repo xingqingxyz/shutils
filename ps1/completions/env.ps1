@@ -13,7 +13,7 @@ Register-ArgumentCompleter -Native -CommandName env -ScriptBlock {
     }
     if ($el -is [StringConstantExpressionAst]) {
       [string]$text = $el.Value
-      if (!$text.StartsWith('-') -and $text -notmatch '^\w+=') {
+      if (!$text.StartsWith('-') -and $text -cnotmatch '^\w+=') {
         $shouldPassive = $true
         break
       }
@@ -29,9 +29,9 @@ Register-ArgumentCompleter -Native -CommandName env -ScriptBlock {
   if (!$IsWindows -and $wordToComplete.StartsWith('-')) {
     return @('-a', '--argv0=', '-i', '--ignore-environment', '-0', '--null', '-u', '--unset=', '-C', '--chdir=', '-S', '--split-string=', '--block-signal', '--block-signal=', '--default-signal', '--default-signal=', '--ignore-signal', '--ignore-signal=', '--list-signal-handling', '-v', '--debug', '--help', '--version').Where{ $_ -like "$wordToComplete*" }
   }
-  if ($wordToComplete -match '^\w+=?') {
-    Get-Item env:$wordToComplete* -ea Ignore | ForEach-Object { $_.Name + '=' }
+  if ($wordToComplete -cmatch '^\w+=?') {
+    Get-Item env:$($wordToComplete.TrimEnd('='))* -ea Ignore | ForEach-Object { [System.Management.Automation.CompletionResult]::new($_.Name + '=') }
   }
-  $([System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)) ??
-  [System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)
+  @([System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)) ??
+  @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete))
 }

@@ -258,6 +258,15 @@ function Install-Release {
     execute gh release download -R $Meta.repo -p $Pattern -D $buildDir --skip-existing $Meta.tag
   }
   switch ($Meta.name) {
+    balenaEtcher {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $file = $pkgType -ceq 'rpm' ? "balena-etcher-$($Meta.version)-1.x86_64.rpm" : "balena-etcher_$($Meta.version)_amd64.deb"
+      downloadRelease $file
+      sudo $pkgManager install -y $file
+      break
+    }
     bat {
       $base = 'bat-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
@@ -273,14 +282,24 @@ function Install-Release {
       break
     }
     bun {
-      if ($IsWindows) {
+      if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
       }
       if (Get-Command bun -CommandType Application -TotalCount 1 -ea Ignore) {
         bun upgrade
         break
       }
-      curl -fsSL 'https://bun.sh/install' | bash
+      $arch = switch ([RuntimeInformation]::OSArchitecture) {
+        'Arm64' { 'aarch64'; break }
+        'X64' { 'x64'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $file = 'bun-{0}-{1}.zip' -f $go.os, $arch
+      downloadRelease $file
+      downloadRelease SHASUMS256.txt
+      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
+      Expand-Archive -LiteralPath $buildDir/$file $buildDir
+      Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file) $binDir
       break
     }
     code {
@@ -289,6 +308,21 @@ function Install-Release {
       }
       $pkgManager = $pkgType -ceq 'rpm' ? 'dnf' : 'apt'
       sudo $pkgManager install -y "https://update.code.visualstudio.com/latest/linux-$pkgType-x64/stable"
+      break
+    }
+    deno {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      if (Get-Command deno -CommandType Application -TotalCount 1 -ea Ignore) {
+        deno upgrade
+        break
+      }
+      $file = 'deno-{0}.zip' -f $rust.target
+      downloadRelease $file
+      downloadRelease $file`.sha256sum
+      checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
+      Expand-Archive $buildDir/$file $binDir
       break
     }
     diskus {
@@ -368,12 +402,7 @@ function Install-Release {
       break
     }
     goreleaser {
-      $os = switch ($true) {
-        $IsWindows { 'Windows'; break }
-        $IsLinux { 'Linux'; break }
-        $IsMacOS { 'Darwin'; break }
-        default { throw [System.NotImplementedException]::new() }
-      }
+      $os = $go.os.Substring(0, 1).ToUpperInvariant() + $go.os.Substring(1)
       $base = 'goreleaser_{0}_{1}' -f $os, $rust.arch
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
@@ -529,13 +558,13 @@ StartupWMClass=localsend_app
       if ($Meta.prerelease) {
         switch ($pkgManager) {
           dnf { sudo dnf remove -y powershell; break }
-          deb { sudo deb uninstall -y powershell; break }
+          deb { sudo apt uninstall -y powershell; break }
         }
       }
       else {
         switch ($pkgManager) {
           dnf { sudo dnf remove -y powershell-preview; break }
-          deb { sudo deb uninstall -y powershell-preview; break }
+          deb { sudo apt uninstall -y powershell-preview; break }
         }
       }
       sudo $pkgManager install -y $buildDir/$file
@@ -597,6 +626,13 @@ StartupWMClass=localsend_app
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base$exe $binDir/yq$exe -Force
       Move-Item -LiteralPath $buildDir/yq.1 $dataDir/man/man1 -Force
+      break
+    }
+    zed {
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      curl -f 'https://zed.dev/install.sh' | sh
       break
     }
     default { throw "no install method for $_" }

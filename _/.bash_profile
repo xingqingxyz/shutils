@@ -42,10 +42,10 @@ MAPFILE=(
   ctrl-y:preview-up
   ctrl-f:preview-page-down
   ctrl-b:preview-page-up
-  ctrl-\\:preview-top
+  'ctrl-\\:preview-top'
   ctrl-/:preview-bottom
 )
-export FZF_DEFAUT_OPTS="--cycle ${MAPFILE[*]/*/--bind=&}"
+export FZF_DEFAULT_OPTS="--cycle ${MAPFILE[*]/*/--bind=&}"
 
 # PATH
 mapfile -t << EOF
@@ -64,7 +64,3 @@ fi
 
 #region UserEnv
 #endregion
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"

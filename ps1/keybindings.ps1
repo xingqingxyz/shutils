@@ -1,7 +1,6 @@
 # editing
 if (!$IsWindows) {
   Set-PSReadLineOption -EditMode Windows
-  Set-PSReadLineKeyHandler -Chord Ctrl+c -Function CancelLine
 }
 Set-PSReadLineKeyHandler -Chord Alt+H -Function WhatIsKey
 Set-PSReadLineKeyHandler -Chord Alt+o -Function InsertLineAbove
@@ -10,29 +9,31 @@ Set-PSReadLineKeyHandler -Chord Ctrl+d -Function DeleteCharOrExit
 Set-PSReadLineKeyHandler -Chord Ctrl+Delete -Function KillWord
 Set-PSReadLineKeyHandler -Chord Ctrl+e -Function ViEditVisually
 Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardWord
-Set-PSReadLineKeyHandler -Chord Ctrl+g -Function GotoBrace
-Set-PSReadLineKeyHandler -Chord Ctrl+k -Function DeleteLine
+Set-PSReadLineKeyHandler -Chord Ctrl+k -Function KillLine
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function BackwardKillLine
 # custom
-Set-PSReadLineKeyHandler -Chord Alt+A -Description 'Comment inputs and accept' -ScriptBlock {
+Set-PSReadLineKeyHandler -Chord Ctrl+c -Description 'Add line to PSReadLine history then cancel' -ScriptBlock {
   $text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, ($text.Split("`n").ForEach{ "# $_" } -join "`n"))
-  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+  [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($text)
+  [Microsoft.PowerShell.PSConsoleReadLine]::CancelLine()
 }
 Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -ScriptBlock {
   $cursor = 0
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
-  $name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
+  [string]$name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
+  if (!$name) {
+    return
+  }
   $info = Get-Command $name -ea Ignore
-  if ($info.CommandType -eq 'Alias') {
+  if ($info.CommandType -ceq 'Alias') {
     $info = $info.ResolvedCommand
   }
   if (!$info) {
     return
   }
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, 0, "Show-CommandSource $info # ")
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $name.Length, "Show-CommandSource $name #")
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell docs in browser about the command' -ScriptBlock {
@@ -58,15 +59,6 @@ Set-PSReadLineKeyHandler -Chord Ctrl+t -Description 'Fzf select relative files t
       "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'"
     } -join ' ')
 }
-Set-PSReadLineKeyHandler -Chord Alt+c -Description 'Fzf select sub directories to cd' -ScriptBlock {
-  # note: expects "`n" not in path
-  $dir = fzf '--walker=dir,hidden'
-  if (!$dir) {
-    return
-  }
-  Set-Location -LiteralPath $dir
-  [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
-}
 Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history files to replace command line' -ScriptBlock {
   $history = switch ($true) {
     $IsWindows { "$env:APPDATA/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt"; break }
@@ -81,12 +73,35 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
   }
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, $history)
 }
+Set-PSReadLineKeyHandler -Chord Alt+c -Description 'Fzf select sub directories to cd' -ScriptBlock {
+  # note: expects "`n" not in path
+  $dir = fzf '--walker=dir,hidden'
+  if (!$dir) {
+    return
+  }
+  Set-Location -LiteralPath $dir
+  [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+}
+Set-PSReadLineKeyHandler -Chord Alt+C -Description 'Fzf select parent directories to cd' -ScriptBlock {
+  # note: expects "`n" not in path
+  [string]$dir = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath
+  [string[]]$dirs = while ($dir) {
+    $dir
+    $dir = [System.IO.Path]::GetDirectoryName($dir)
+  }
+  $dir = $dirs | fzf --scheme=path
+  if (!$dir) {
+    return
+  }
+  Set-Location -LiteralPath $dir
+  [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+}
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
   $dir = (Invoke-Z -List).Path | fzf --scheme=path
   if (!$dir) {
     return
   }
-  Set-Location -LiteralPath $dir
+  Invoke-Z $dir
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Alt+s -Description 'Add sudo to command line and accept it' -ScriptBlock {
@@ -105,7 +120,7 @@ Set-PSReadLineKeyHandler -Chord Alt+s -Description 'Add sudo to command line and
 Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -ScriptBlock {
   $pythonVenvActivate = Test-Path -LiteralPath .venv/
   if (Test-Path -LiteralPath Function:\deactivate) {
-    if ([System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation, '.venv') -eq $env:VIRTUAL_ENV) {
+    if ([System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath, '.venv') -eq $env:VIRTUAL_ENV) {
       $pythonVenvActivate = $false
     }
     else {

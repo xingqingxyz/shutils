@@ -1,4 +1,4 @@
-#Requires -Version 7.5.2 -Modules PowerShellEditorServices.Commands
+#Requires -Version 7.5 -Modules PowerShellEditorServices.Commands
 
 class TextDocument {
   hidden [string] $text

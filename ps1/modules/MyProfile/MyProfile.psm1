@@ -159,7 +159,7 @@ filter editable {
   }
   switch ($info.CommandType) {
     Application {
-      if (shouldEdit $info.Source) {
+      if ($info.Source | shouldEdit) {
         $info.Source
       }
       else {

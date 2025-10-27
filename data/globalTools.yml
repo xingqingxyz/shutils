@@ -5,6 +5,7 @@ cargo:
   - taplo
   - wasm-pack
 code: []
+deno: []
 dnf:
   - alacritty
   - aria2

@@ -1,4 +1,4 @@
-#Requires -Version 7.5.2 -Modules Pester
+#Requires -Version 7.5 -Modules Pester
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true

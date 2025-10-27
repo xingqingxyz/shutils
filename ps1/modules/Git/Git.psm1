@@ -54,17 +54,25 @@ function howto {
     if ($executeCommandFile.Length -le 0) {
       return
     }
-    $executeCommand = (Get-Content -LiteralPath $executeCommandFile -Raw).Trim()
+    $executeCommand = (Get-Content -Raw -LiteralPath $executeCommandFile).Trim()
     # Insert command into PowerShell up/down arrow key history
     [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($executeCommand)
-    # Execute command
-    if ($PSCmdlet.ShouldProcess('execute', $executeCommand)) {
-      Invoke-Expression $executeCommand
+    if (!$PSCmdlet.ShouldProcess('execute', $executeCommand)) {
+      return
     }
+    # Execute command
+    $now = Get-Date
+    Invoke-Expression $executeCommand
+    Add-History ([pscustomobject]@{
+        CommandLine        = $executeCommand
+        StartExecutionTime = $now
+        EndExecutionTime   = Get-Date
+        ExecutionStatus    = [System.Management.Automation.Runspaces.PipelineState]::NotStarted
+      })
   }
   clean {
     # Clean up temporary file used to store potential command user wants to execute when exiting
-    Remove-Item -Path $executeCommandFile
+    Remove-Item -LiteralPath $executeCommandFile
     # Restore GH_* environment variables to their original value
     $env:GH_DEBUG = $envGhDebug
   }
@@ -143,8 +151,9 @@ function Update-Software {
     switch ($Category) {
       bun { bun update; continue }
       cargo { cargo update; continue }
+      deno { deno update; continue }
       flutter { flutter pub upgrade; continue }
-      pnpm { pnpm self-update; pnpm update; continue }
+      pnpm { pnpm self-update; pnpm update; "a`ny`n" | pnpm approve-builds; continue }
       uv { uv sync --upgrade; continue }
       go {
         [string[]]$pkgs = go list
@@ -162,6 +171,13 @@ function Update-Software {
       bun upgrade -g
       if ($Force) {
         bun add -g $pkgMap.bun
+      }
+      continue
+    }
+    deno {
+      deno jupyter --install
+      if ($Force) {
+        deno install --global $pkgMap.deno
       }
       continue
     }
@@ -204,6 +220,7 @@ function Update-Software {
     pnpm {
       pnpm self-update
       pnpm update -g
+      "a`ny`n" | pnpm approve-builds -g
       if ($Force) {
         pnpm add -g $pkgMap.pnpm
       }

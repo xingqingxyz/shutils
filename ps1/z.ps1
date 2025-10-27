@@ -70,7 +70,7 @@ function Invoke-Z {
       }
       $items = $_z.itemsMap.Values | Where-Object Path -Like *$($Queries -join '*')*
       if ($Cwd) {
-        [string]$pattern = [System.IO.Path]::Join([System.Environment]::CurrentDirectory, '*')
+        [string]$pattern = [System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath, '*')
         $items = $items | Where-Object Path -Like $pattern
       }
       if (!$items) {

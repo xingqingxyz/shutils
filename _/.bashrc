@@ -26,13 +26,12 @@ alias cls=clear \
   r='fc -s' \
   l='ls --color=auto --hyperlink=auto' \
   ls='ls --color=auto --hyperlink=auto -lah' \
+  rg='rg --hyperlink-format=vscode' \
   tree='tree -C --hyperlink --gitignore'
 
 if [[ $TERM_PROGRAM != vscode* ]]; then
   alias fd='fd --hyperlink=auto'
   if declare -xp WSL_DISTRO_NAME &> /dev/null; then
-    alias rg='rg --hyperlink-format=file://{wslprefix}{path}'
-  else
-    alias rg='rg --hyperlink-format=default'
+    alias rg='rg --hyperlink-format=vscode://file/{wslprefix}{path}:{line}:{column}'
   fi
 fi
