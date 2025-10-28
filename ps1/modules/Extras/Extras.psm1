@@ -63,7 +63,7 @@ function Set-SystemProxy {
       Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyOverride -Value (@($env:no_proxy.Split(',').ForEach{ "https://$_" }; '<local>') -join ';') -Type String
     }
   }
-  elseif ($IsLinux -and $env:XDG_CURRENT_DESKTOP -ceq 'GNOME') {
+  elseif ($IsLinux -and ($env:XDG_SESSION_DESKTOP -ceq 'gnome' -or $env:XDG_SESSION_DESKTOP -ceq 'ubuntu')) {
     $mode = $On ? 'manual' : 'none'
     gsettings set org.gnome.system.proxy mode $mode
     if ($On -and (gsettings get org.gnome.system.proxy.http host).Trim("'") -ne $hostName) {
@@ -108,14 +108,14 @@ function Set-Region {
     $LineComment
   )
   begin {
-    $lines = @()
+    [string[]]$lines = @()
   }
   process {
     $lines += $InputObject
   }
   end {
     if ($LiteralPath) {
-      $lines = Get-Content -LiteralPath $LiteralPath -ea Stop
+      $lines = (Get-Content -LiteralPath $LiteralPath -ea Ignore) ?? ''
     }
     $found = 0
     $newLines = $lines.ForEach{
@@ -485,12 +485,7 @@ function Set-EnvironmentVariable {
     }
     switch ($Scope) {
       'User' {
-        Set-Region $RegionName $lines $(if (Test-Path ~/.bash_profile) {
-            "$HOME/.bash_profile"
-          }
-          else {
-            "$HOME/.profile"
-          }) -Inplace
+        Set-Region $RegionName $lines ~/.bashrc -Inplace
         break
       }
       'Machine' {
@@ -547,20 +542,5 @@ function Set-EnvironmentVariablePath {
   [System.Environment]::SetEnvironmentVariable($Name, $value, $Scope)
   if ($PassThru) {
     $value
-  }
-}
-
-function Import-EnvironmentVariable {
-  [CmdletBinding()]
-  [Alias('ipev')]
-  param (
-    [Parameter(Position = 0)]
-    [SupportsWildcards()]
-    [string[]]
-    $Path = '.env'
-  )
-  Get-Content -LiteralPath $Path | ForEach-Object {
-    $name, $value = $_.Split('=', 2)
-    [System.Environment]::SetEnvironmentVariable($name, $value)
   }
 }

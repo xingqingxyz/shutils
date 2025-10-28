@@ -1,8 +1,31 @@
+apt:
+  - aria2
+  - build-essential
+  - cmake
+  - curl
+  - containerd
+  - fd-find
+  - fzf
+  - bat
+  - ripgrep
+  - hyperfine
+  - docker.io
+  - gcc
+  - gnome-shell-extension-appindicator
+  - libncurses-dev
+  - libopenssl-dev
+  - libpcre2-dev
+  - ninja-build
+  - runc
+  - shellcheck
+  - shfmt
+  - xclip
+  - xsel
 bun: []
 cargo:
   - cargo-generate
   - cargo-update
-  - taplo
+  - taplo-cli
   - wasm-pack
 code: []
 deno: []
@@ -29,6 +52,7 @@ dnf:
   - shfmt
   - xclip
   - xsel
+  - openssl-devel
 flutter: []
 gh:
   - github/gh-copilot

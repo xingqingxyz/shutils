@@ -165,6 +165,15 @@ function Update-Software {
     return
   }
   switch ($Category) {
+    apt {
+      sudo apt update
+      sudo apt install -f
+      sudo apt upgrade -y --auto-remove
+      if ($Force) {
+        sudo apt install -y $pkgMap.apt
+      }
+      continue
+    }
     code { code --update-extensions; continue }
     go { go install $pkgMap.go.ForEach{ "$_@latest" }; continue }
     bun {
@@ -220,10 +229,10 @@ function Update-Software {
     pnpm {
       pnpm self-update
       pnpm update -g
-      "a`ny`n" | pnpm approve-builds -g
       if ($Force) {
         pnpm add -g $pkgMap.pnpm
       }
+      pnpm approve-builds -g
       continue
     }
     psm1 {

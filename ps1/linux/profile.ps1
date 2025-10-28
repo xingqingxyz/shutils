@@ -2,6 +2,7 @@ function mkdir {
   New-Item -ItemType Directory $args
 }
 
+Import-EnvironmentVariable $env:SHUTILS_ROOT/_/.env
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   egrep    = 'egrep', '--color=auto'
   grep     = 'grep', '--color=auto'

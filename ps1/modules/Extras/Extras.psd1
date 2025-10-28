@@ -69,7 +69,7 @@
   # NestedModules = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('batf', 'icat', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Import-EnvironmentVariable')
+  FunctionsToExport    = @('batf', 'icat', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -78,7 +78,7 @@
   VariablesToExport    = @()
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-  AliasesToExport      = @('gtm', 'icf', 'gev', 'sev', 'sevp', 'ipev')
+  AliasesToExport      = @('gtm', 'icf', 'gev', 'sev', 'sevp')
 
   # DSC resources to export from this module
   # DscResourcesToExport = @()

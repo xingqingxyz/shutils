@@ -50,7 +50,7 @@ shell = "pwsh"
 osc52 = "CopyPaste"
 
 [font]
-normal.family = "Adwaita Mono"
+normal.family = "Noto Mono"
 size = 12
 
 [window]
@@ -59,7 +59,7 @@ decorations_theme_variant = "Dark"
 
 [window.dimensions]
 columns = 90
-lines = 30
+lines = 33
 
 [bell]
 animation = "EaseOut"

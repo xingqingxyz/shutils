@@ -108,7 +108,7 @@ function rustenv {
 
 function execute {
   $cmd, $ags = $args
-  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
+  $cmd = (Get-Command $cmd -Type Application -TotalCount 1).Source
   Write-CommandDebug $cmd $ags
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd $ags
@@ -155,6 +155,7 @@ function installBinary ([string[]]$Path) {
 function getLocalVersion ($Meta) {
   try {
     switch ($Meta.name) {
+      bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
       fzf { (fzf --version).Split(' ', 2)[0]; break }
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
@@ -163,6 +164,7 @@ function getLocalVersion ($Meta) {
       go { (go version).Split(' ', 4)[2].Substring(2); break }
       goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
       pastel { (pastel -V).Split(' ', 3)[1]; break }
+      less { (less --version 2>$null)[0].Split(' ', 3)[1]; break }
       mold { (mold -v).Split(' ', 3)[1]; break }
       jq { (jq -V).Split('-', 2)[1]; break }
       plantuml {
@@ -180,6 +182,7 @@ function getLocalVersion ($Meta) {
 
 function updateLatestVersion ($Meta) {
   switch ($Meta.name) {
+    bash { $Meta.version = '5.3'; break }
     dotnet { $Meta.version = '99.0.0'; break }
     go {
       if (!$IsLinux) {
@@ -223,6 +226,7 @@ function updateLatestVersion ($Meta) {
       $Meta.version = switch ($Meta.name) {
         bun { $tag.Substring(5); break }
         dsc { $tag.Split('-', 2)[0]; break }
+        less { $tag.Substring(6); break }
         jq { $tag.Split('-', 2)[1]; break }
         default { $tag -replace '^v', ''; break }
       }
@@ -254,17 +258,57 @@ function Install-Release {
     return
   }
   Write-Debug "Installing $($Meta.name)@$($Meta.version) by tag $($Meta.tag)"
-  function downloadRelease ([string]$Pattern) {
-    execute gh release download -R $Meta.repo -p $Pattern -D $buildDir --skip-existing $Meta.tag
+  function downloadRelease ([string[]]$Pattern) {
+    execute gh release download -R $Meta.repo $Pattern.ForEach{ "-p$_" } -D $buildDir --skip-existing $Meta.tag
   }
   switch ($Meta.name) {
-    balenaEtcher {
+    alacritty {
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
       }
-      $file = $pkgType -ceq 'rpm' ? "balena-etcher-$($Meta.version)-1.x86_64.rpm" : "balena-etcher_$($Meta.version)_amd64.deb"
-      downloadRelease $file
-      sudo $pkgManager install -y $file
+      cargo install alacritty@$($Meta.version)
+      downloadRelease 'Alacritty.svg', 'alacritty.1.gz', 'alacritty-msg.1.gz', 'alacritty.5.gz', 'alacritty-bindings.5.gz', 'alacritty.bash', 'Alacritty.desktop'
+      Move-Item -LiteralPath $buildDir/alacritty.1.gz, $buildDir/alacritty-msg.1.gz, $buildDir/alacritty.5.gz, $buildDir/alacritty-bindings.5.gz $dataDir/man/man1
+      Move-Item -LiteralPath $buildDir/alacritty.bash $dataDir/bash-completion/completions
+      Move-Item -LiteralPath $buildDir/Alacritty.desktop $dataDir/applications
+      update-desktop-database $dataDir/applications
+      sudo mv $buildDir/Alacritty.svg /usr/share/pixmaps
+      break
+    }
+    balenaEtcher {
+      switch ($true) {
+        $IsFedora {
+          $file = "balena-etcher-$($Meta.version)-1.x86_64.rpm"
+          downloadRelease $file
+          sudo dnf install -y $buildDir/$file
+          break
+        }
+        $IsUbuntu {
+          $file = "balena-etcher_$($Meta.version)_amd64.deb"
+          downloadRelease $file
+          sudo dpkg -i $buildDir/$file
+          break
+        }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      break
+    }
+    bash {
+      $base = 'bash-{0}' -f $Meta.version
+      $file = "$base.tar.gz"
+      downloadFile "https://mirrors.ustc.edu.cn/gnu/bash/$file"
+      downloadFile "https://mirrors.ustc.edu.cn/gnu/bash/$file.sig"
+      gpg --verify $buildDir/$file`.sig $buildDir/$file
+      tar -xf $buildDir/$file -C $buildDir
+      Push-Location -LiteralPath $buildDir/$base
+      try {
+        ./configure
+        make
+        sudo make install
+      }
+      finally {
+        Pop-Location
+      }
       break
     }
     bat {
@@ -272,13 +316,6 @@ function Install-Release {
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/bat$exe $binDir -Force
-      break
-    }
-    binocle {
-      $base = 'binocle-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
-      Move-Item -LiteralPath $buildDir/binocle$exe $binDir -Force
       break
     }
     bun {
@@ -295,19 +332,26 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
       $file = 'bun-{0}-{1}.zip' -f $go.os, $arch
-      downloadRelease $file
-      downloadRelease SHASUMS256.txt
+      downloadRelease $file, SHASUMS256.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       Expand-Archive -LiteralPath $buildDir/$file $buildDir
       Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file) $binDir
       break
     }
     code {
-      if (!$IsLinux) {
-        throw [System.NotImplementedException]::new()
+      switch ($true) {
+        $IsFedora {
+          sudo dnf install -y 'https://update.code.visualstudio.com/latest/linux-rpm-x64/stable'
+          break
+        }
+        $IsUbuntu {
+          downloadFile 'https://update.code.visualstudio.com/latest/linux-deb-x64/stable'
+          $file = Split-Path -Resolve -Leaf $buildDir/code_$($Meta.version)-*.deb
+          sudo dpkg -i $buildDir/$file
+          break
+        }
+        default { throw [System.NotImplementedException]::new() }
       }
-      $pkgManager = $pkgType -ceq 'rpm' ? 'dnf' : 'apt'
-      sudo $pkgManager install -y "https://update.code.visualstudio.com/latest/linux-$pkgType-x64/stable"
       break
     }
     deno {
@@ -319,8 +363,7 @@ function Install-Release {
         break
       }
       $file = 'deno-{0}.zip' -f $rust.target
-      downloadRelease $file
-      downloadRelease $file`.sha256sum
+      downloadRelease $file, $file`.sha256sum
       checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
       Expand-Archive $buildDir/$file $binDir
       break
@@ -362,6 +405,25 @@ function Install-Release {
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
       installBinary $prefixDir/dsc/dsc$exe
+      break
+    }
+    edit {
+      switch ($true) {
+        $IsLinux {
+          $base = 'edit-{0}-{1}-linux-gnu' -f $Meta.version, $rust.arch
+          downloadRelease $base`.tar.zst
+          tar -xf $buildDir/$base`.tar.zst --zstd -C $buildDir
+          break
+        }
+        $IsWindows {
+          $base = 'edit-{0}-{1}-windows' -f $Meta.version, $rust.arch
+          downloadRelease $base`.zip
+          Expand-Archive -LiteralPath $buildDir/$base`.zip -DestinationPath $buildDir
+          break
+        }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      Move-Item -LiteralPath $buildDir/edit$exe $binDir
       break
     }
     flutter {
@@ -411,16 +473,6 @@ function Install-Release {
       Move-Item -LiteralPath $buildDir/completions/goreleaser.bash $dataDir/bash-completion/completions -Force
       break
     }
-    grex {
-      $clib = switch ($true) {
-        $IsWindows { 'msvc'; break }
-        $IsLinux { 'musl'; break }
-      }
-      $base = 'grex-{0}-{1}-{2}-{3}' -f $Meta.tag, $rust.arch, $rust.platform, ($rust.os + '-' + $clib)
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $binDir
-      break
-    }
     hexyl {
       $base = 'hexyl-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
       downloadRelease $base$ext
@@ -445,6 +497,26 @@ function Install-Release {
       downloadFile https://github.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $dataDir/man/man1/jq.1
       break
     }
+    less {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $base = 'less-{0}' -f $Meta.version
+      downloadFile "http://www.greenwoodsoftware.com/less/$base.tar.gz"
+      downloadFile "http://www.greenwoodsoftware.com/less/$base.sig"
+      gpg --verify $buildDir/$base`.sig $buildDir/$base`.tar.gz
+      tar -xf $buildDir/$base`.tar.gz -C $buildDir
+      Push-Location -LiteralPath $buildDir/$base
+      try {
+        ./configure --with-editor=vim --with-regex=pcre2
+        make
+        sudo make install
+      }
+      finally {
+        Pop-Location
+      }
+      break
+    }
     localsend {
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
@@ -465,7 +537,7 @@ Comment=A open-source, cross-platform alternative to AirDrop
 StartupNotify=true
 StartupWMClass=localsend_app
 "@ > $dataDir/applications/localsend.desktop
-      update-desktop-database
+      update-desktop-database $dataDir/applications
       break
     }
     mdbook {
@@ -487,7 +559,8 @@ StartupWMClass=localsend_app
       downloadRelease 0xProto.zip
       if ($IsLinux) {
         Expand-Archive -LiteralPath $buildDir/0xProto.zip $dataDir/fonts/truetype -Force
-        sudo fc-cache -v
+        Remove-Item -LiteralPath $dataDir/fonts/truetype/README.md, $dataDir/fonts/truetype/LICENSE
+        fc-cache -v
       }
       elseif ($IsWindows) {
         sudo tar -xf $buildDir/0xProto.zip -C C:\Windows\Fonts
@@ -516,7 +589,7 @@ StartupWMClass=localsend_app
       }
       $root = "$prefixDir/nodejs/$($Meta.tag)"
       tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
-      installBinary $root/bin/node $root/bin/npm
+      installBinary $root/bin/node, $root/bin/npm
       break
     }
     numbat {
@@ -550,30 +623,38 @@ StartupWMClass=localsend_app
       if ($Meta.prerelease) {
         $id = 'preview-' + $id.Replace('-', '_')
       }
-      $file = switch ($pkgType) {
-        'rpm' { 'powershell-{0}-1.rh.{1}.rpm' -f $id, $rust.arch; break }
-        'deb' { 'powershell-{0}.{1}.deb' -f $id, $go.arch; break }
-      }
-      downloadRelease $file
-      if ($Meta.prerelease) {
-        switch ($pkgManager) {
-          dnf { sudo dnf remove -y powershell; break }
-          deb { sudo apt uninstall -y powershell; break }
+      switch ($true) {
+        $IsFedora {
+          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $id, $rust.arch
+          downloadRelease $file
+          if ($Meta.prerelease) {
+            sudo dnf remove -y powershell
+          }
+          else {
+            sudo dnf remove -y powershell-preview
+          }
+          sudo dnf install -y $buildDir/$file
+          break
         }
-      }
-      else {
-        switch ($pkgManager) {
-          dnf { sudo dnf remove -y powershell-preview; break }
-          deb { sudo apt uninstall -y powershell-preview; break }
+        $IsUbuntu {
+          $file = 'powershell-{0}.{1}.deb'
+          downloadRelease $file
+          if ($Meta.prerelease) {
+            sudo apt uninstall -y powershell
+          }
+          else {
+            sudo apt uninstall -y powershell-preview
+          }
+          sudo dpkg -i $buildDir/$file
+          break
         }
+        default { throw [System.NotImplementedException]::new() }
       }
-      sudo $pkgManager install -y $buildDir/$file
       break
     }
     rg {
       $base = 'ripgrep-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $base$ext
-      downloadRelease $base$ext`.sha256
+      downloadRelease $base$ext, $base$ext`.sha256
       checkFileHash $buildDir/$base$ext (Get-Content -Raw -LiteralPath $buildDir/$base$ext`.sha256).Split(' ', 2)[0]
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/rg$exe $binDir -Force
@@ -590,14 +671,11 @@ StartupWMClass=localsend_app
       Move-Item -LiteralPath $files $binDir -Force
       break
     }
-    tracexec {
-      if (!$IsLinux) {
+    rustup {
+      if ($IsWindows) {
         throw [System.NotImplementedException]::new()
       }
-      $base = 'tracexec-{0}' -f $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/tracexec$exe $binDir -Force
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
       break
     }
     uv {
@@ -654,7 +732,7 @@ function Update-Release {
     [string[]]
     $Name
   )
-  $pkgMap = @{}
+  $pkgMap = [ordered]@{}
   Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/releases.yml | ConvertFrom-Yaml | ForEach-Object { $pkgMap[$_.name] = $_ }
   $Name ??= $pkgMap.Keys
   $Name | ForEach-Object {
@@ -671,12 +749,8 @@ $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
 $ps1CompletionDir = "$env:SHUTILS_ROOT/ps1/completions"
 if ($IsLinux) {
-  $pkgType, $pkgManager = if ((Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=')) {
-    'rpm', 'dnf'
-  }
-  else {
-    'deb', 'apt'
-  }
+  $IsUbuntu = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=ubuntu')
+  $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=')
 }
 
 $prefixDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local"

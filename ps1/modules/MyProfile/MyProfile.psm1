@@ -306,6 +306,12 @@ filter showFile ([string[]]$ExtraArgs) {
   }
 }
 
+function Write-CommandDebug ([string]$CommandName, [string[]]$ArgumentList) {
+  Write-Debug ((@($CommandName) + $ArgumentList).ForEach{
+      $_ -cmatch '\s' ? "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'" : $_
+    } -join ' ')
+}
+
 function Invoke-Npm {
   $npm = switch ($true) {
     # use npm as a cli, pipe output
@@ -323,12 +329,6 @@ function Invoke-Npm {
   else {
     & $npm $args
   }
-}
-
-function Write-CommandDebug ([string]$CommandName, [string[]]$ArgumentList) {
-  Write-Debug ((@($CommandName) + $ArgumentList).ForEach{
-      $_ -cmatch '\s' ? "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'" : $_
-    } -join ' ')
 }
 
 function Invoke-Npx {
@@ -355,7 +355,7 @@ function Invoke-Npx {
 
 [string]$pwshExe, [string]$sudoExe = (Get-Command pwsh, sudo -Type Application -TotalCount 1 -ea Ignore).Source
 function Invoke-Sudo {
-  [string[]]$ags = $args
+  [string[]]$ags = $args.ForEach{ $_ }
   if ($args[0] -is [scriptblock]) {
     $ags = $pwshExe, '-nop', '-cwa' + $ags
   }
