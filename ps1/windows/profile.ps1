@@ -8,7 +8,7 @@ if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
 }
 Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   # prevent . invoke variable add
-  if ($MyInvocation.InvocationName -eq '.') {
+  if ($MyInvocation.InvocationName -ceq '.') {
     return & $MyInvocation.MyCommand $args
   }
   $cmd = $MyInvocation.MyCommand.Name
@@ -16,7 +16,11 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     return Write-Error "alias not set $cmd"
   }
   # flat iterator args for native passing
-  $cmd, $ags = @($_executableAliasMap.$cmd; $args.ForEach{ $_ })
+  $cmd, $ags = @($_executableAliasMap.$cmd) + $args.ForEach{
+    if ($null -ne $_) {
+      $_
+    }
+  }
   $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
   Write-CommandDebug $cmd $ags
   if ($MyInvocation.ExpectingInput) {

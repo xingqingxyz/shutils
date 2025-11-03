@@ -12,7 +12,7 @@ function Show-CommandSource {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        $([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)) ??
+        @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)) ??
         [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
       })]
     [Parameter(Position = 0)]
@@ -102,7 +102,7 @@ function Show-CommandSource {
     if (!$Name) {
       $Name = '.'
     }
-    $item = (Convert-Path $Name -Force -ea Ignore | fsPath) ?? (Get-Command $Name -ea Ignore)
+    $item = (Convert-Path $Name -Force -ea Ignore) ?? (Get-Command $Name -ea Ignore)
     if (!$item) {
       return Write-Error "command not found: $Name"
     }
@@ -120,7 +120,7 @@ filter show ([string[]]$ExtraArgs) {
     return $_
   }
   [System.Management.Automation.CommandInfo]$info = $_
-  if ($info.CommandType -eq 'Alias') {
+  if ($info.CommandType -ceq 'Alias') {
     $info = $info.ResolvedCommand
   }
   switch ($info.CommandType) {
@@ -154,7 +154,7 @@ filter fsPath {
 
 filter editable {
   [System.Management.Automation.CommandInfo]$info = $_
-  if ($info.CommandType -eq 'Alias') {
+  if ($info.CommandType -ceq 'Alias') {
     $info = $info.ResolvedCommand
   }
   switch ($info.CommandType) {
@@ -230,7 +230,7 @@ filter showFile ([string[]]$ExtraArgs) {
     }
     return
   }
-  $PSStyle.FormatHyperlink($path, [uri]::new($path))
+  env ls -lh --color=auto --hyperlink=auto `-- $_
   switch -CaseSensitive -Regex ($path) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if (($path | decompress | file -L -).Contains('troff')) {
@@ -308,7 +308,7 @@ filter showFile ([string[]]$ExtraArgs) {
 
 function Write-CommandDebug ([string]$CommandName, [string[]]$ArgumentList) {
   Write-Debug ((@($CommandName) + $ArgumentList).ForEach{
-      $_ -cmatch '\s' ? "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'" : $_
+      $null -eq $_ ? "''" : $_ -cmatch '\s' ? "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'" : $_
     } -join ' ')
 }
 
@@ -355,7 +355,11 @@ function Invoke-Npx {
 
 [string]$pwshExe, [string]$sudoExe = (Get-Command pwsh, sudo -Type Application -TotalCount 1 -ea Ignore).Source
 function Invoke-Sudo {
-  [string[]]$ags = $args.ForEach{ $_ }
+  [string[]]$ags = $args.ForEach{
+    if ($null -ne $_) {
+      $_
+    }
+  }
   if ($args[0] -is [scriptblock]) {
     $ags = $pwshExe, '-nop', '-cwa' + $ags
   }

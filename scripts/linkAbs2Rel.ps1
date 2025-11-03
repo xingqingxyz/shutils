@@ -1,3 +1,9 @@
+<#
+.SYNOPSIS
+Make absolute links to relative symbolic links, returns created link info.
+ #>
+[CmdletBinding()]
+[OutputType([System.IO.FileInfo])]
 param (
   [Parameter(Mandatory, Position = 0)]
   [string[]]
@@ -5,6 +11,6 @@ param (
 )
 Get-Item $Path -Force -ea Ignore | ForEach-Object {
   if ($_.Mode.StartsWith('l') -and [System.IO.Path]::IsPathRooted($_.Target)) {
-    $null = New-Item -Type SymbolicLink -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $_.Target)) $_.FullName -Force
+    New-Item -Type SymbolicLink -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $_.Target)) $_.FullName -Force
   }
 }

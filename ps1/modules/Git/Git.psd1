@@ -7,12 +7,11 @@
 #
 
 @{
-
     # Script module or binary module file associated with this manifest.
     RootModule           = 'Git.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.2.0'
+    ModuleVersion        = '0.3.0'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Core'
@@ -69,7 +68,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport    = @('Repair-GitSymlinks', 'Clear-Module', 'Update-Software', 'howto', 'ex', 'ijq')
+    FunctionsToExport    = @('Clear-Module', 'Repair-GitSymlinks', 'Update-Software', 'ijq')
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = @()
@@ -127,6 +126,4 @@
 
     # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
     # DefaultCommandPrefix = ''
-
 }
-

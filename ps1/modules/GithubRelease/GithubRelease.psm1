@@ -171,6 +171,8 @@ function getLocalVersion ($Meta) {
         (java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
         break
       }
+      xh { (https -V).Split(' ', 2)[1]; break }
+      yq { (yq -V).Split(' ')[-1].Substring(1); break }
       default { (& $_ --version).Split(' ')[-1] -replace '^v', ''; break }
     }
   }
@@ -259,7 +261,8 @@ function Install-Release {
   }
   Write-Debug "Installing $($Meta.name)@$($Meta.version) by tag $($Meta.tag)"
   function downloadRelease ([string[]]$Pattern) {
-    execute gh release download -R $Meta.repo $Pattern.ForEach{ "-p$_" } -D $buildDir --skip-existing $Meta.tag
+    $Pattern = $Pattern.ForEach{ "-p$_" }
+    execute gh release download -R $Meta.repo @Pattern -D $buildDir --skip-existing $Meta.tag
   }
   switch ($Meta.name) {
     alacritty {
@@ -426,6 +429,15 @@ function Install-Release {
       Move-Item -LiteralPath $buildDir/edit$exe $binDir
       break
     }
+    fd {
+      $base = 'fd-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/fd$exe $binDir
+      Move-Item -LiteralPath $buildDir/$base/fd.1 $dataDir/man/man1
+      Move-Item -LiteralPath $buildDir/$base/autocomplete/fd.bash $dataDir/bash-completion/completions
+      break
+    }
     flutter {
       downloadFile $Meta.file
       $file = Split-Path -Leaf $Meta.file
@@ -481,6 +493,14 @@ function Install-Release {
       Move-Item -LiteralPath $buildDir/$base/hexyl.1 $dataDir/man/man1 -Force
       break
     }
+    hyperfine {
+      $base = 'hyperfine-{0}-{1}' -f $Meta.tag, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/hyperfine$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$base/hyperfine.1 $dataDir/man/man1 -Force
+      break
+    }
     jq {
       $os = switch ($true) {
         $IsLinux { 'linux'; break }
@@ -494,7 +514,7 @@ function Install-Release {
       if (!$IsWindows) {
         chmod +x $binDir/jq
       }
-      downloadFile https://github.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $dataDir/man/man1/jq.1
+      downloadFile https://kkgithub.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $dataDir/man/man1/jq.1
       break
     }
     less {
@@ -605,7 +625,6 @@ StartupWMClass=localsend_app
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/pastel$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/autocomplete/pastel.bash $dataDir/bash-completion/completions -Force
-      Move-Item -LiteralPath $buildDir/$base/autocomplete/_pastel.ps1 $ps1CompletionDir -Force
       Move-Item $buildDir/$base/man/* $dataDir/man/man1 -Force
       break
     }
@@ -629,6 +648,7 @@ StartupWMClass=localsend_app
           downloadRelease $file
           if ($Meta.prerelease) {
             sudo dnf remove -y powershell
+            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
           }
           else {
             sudo dnf remove -y powershell-preview
@@ -641,6 +661,7 @@ StartupWMClass=localsend_app
           downloadRelease $file
           if ($Meta.prerelease) {
             sudo apt uninstall -y powershell
+            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
           }
           else {
             sudo apt uninstall -y powershell-preview
@@ -747,7 +768,6 @@ function Update-Release {
 $go = goenv
 $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
-$ps1CompletionDir = "$env:SHUTILS_ROOT/ps1/completions"
 if ($IsLinux) {
   $IsUbuntu = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=ubuntu')
   $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=')

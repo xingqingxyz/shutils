@@ -23,7 +23,6 @@ function ghQuery {
       $jq = '.user.starredRepositories[].nameWithOwner'
       break
     }
-    default { throw [System.NotImplementedException]::new() }
   }
   gh api graphql -F $query $fields.ForEach{ "-f=$_" } -q $jq | Tee-Object Temp:/ghQuery.json | jq
 }

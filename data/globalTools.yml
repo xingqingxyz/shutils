@@ -2,18 +2,14 @@ apt:
   - aria2
   - build-essential
   - cmake
-  - curl
   - containerd
-  - fd-find
-  - fzf
-  - bat
-  - ripgrep
-  - hyperfine
+  - curl
   - docker.io
   - gcc
+  - gnome-browser-connector
   - gnome-shell-extension-appindicator
   - libncurses-dev
-  - libopenssl-dev
+  - libssl-dev
   - libpcre2-dev
   - ninja-build
   - runc
@@ -35,28 +31,22 @@ dnf:
   - clang
   - cmake
   - containerd
-  - fd-find
-  - bat
-  - ripgrep
-  - hyperfine
-  - jq
-  - yq
   - docker-cli
   - gcc
+  - gnome-browser-connector
   - gnome-shell-extension-appindicator
   - gnome-shell-extension-blur-my-shell
   - gnome-shell-extension-dash-to-dock
+  - hyperfine
   - ninja-build
+  - openssl-devel
   - runc
   - shellcheck
   - shfmt
   - xclip
   - xsel
-  - openssl-devel
 flutter: []
-gh:
-  - github/gh-copilot
-  - yusukebe/gh-markdown-preview
+gh: []
 go:
   - golang.org/x/tools/cmd/stringer
 pnpm:
@@ -68,10 +58,24 @@ pnpm:
   - yo
 ps1: []
 psm1:
-  - Pester
   - PSScriptAnalyzer
   - PSToml
   - Yayaml
+releases:
+  - bat
+  - edit
+  - fd
+  - fzf
+  - hexyl
+  - hyperfine
+  - jq
+  - localsend
+  - node
+  - pastel
+  - pwsh
+  - rg
+  - uv
+  - yq
 rustup:
   components:
     - clippy
@@ -79,4 +83,29 @@ rustup:
     - wasm32-unknown-unknown
   toolchains:
     - default
-uv: []
+uv:
+  python:
+    - python3.14t
+  tools:
+    - markitdown
+    - yt-dlp
+winget:
+  - alacritty.alacritty
+  - BurntSushi.ripgrep
+  - github.cli
+  - Golang.Go
+  - goreleaser.goreleaser
+  - jqlang.jq
+  - junegunn.fzf
+  - localsend.localsend
+  - Microsoft.PowerShell.7.Preview
+  - Microsoft.VisualStudioCode
+  - mikefarah.yq
+  - OpenJS.NodeJS
+  - oven-sh.bun
+  - phiresky.ripgrep-all
+  - sharkdp.bat
+  - sharkdp.fd
+  - sharkdp.hexyl
+  - sharkdp.hyperfine
+  - sharkdp.pastel

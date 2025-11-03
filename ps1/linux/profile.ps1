@@ -2,7 +2,6 @@ function mkdir {
   New-Item -ItemType Directory $args
 }
 
-Import-EnvironmentVariable $env:SHUTILS_ROOT/_/.env
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   egrep    = 'egrep', '--color=auto'
   grep     = 'grep', '--color=auto'
@@ -23,7 +22,7 @@ if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
 }
 Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   # prevent . invoke variable add
-  if ($MyInvocation.InvocationName -eq '.') {
+  if ($MyInvocation.InvocationName -ceq '.') {
     return & $MyInvocation.MyCommand $args
   }
   [string]$commandName = $MyInvocation.MyCommand.Name
@@ -31,7 +30,11 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     return Write-Error "alias not set $commandName"
   }
   # flat iterator args for native passing
-  [string[]]$ags = @('--') + $_executableAliasMap.$commandName + $args.ForEach{ $_ }
+  [string[]]$ags = @('--') + $_executableAliasMap.$commandName + $args.ForEach{
+    if ($null -ne $_) {
+      $_
+    }
+  }
   Write-CommandDebug /usr/bin/env $ags
   if ($MyInvocation.ExpectingInput) {
     $input | /usr/bin/env $ags
@@ -40,10 +43,15 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     /usr/bin/env $ags
   }
 }
-# PackageKit command-not-found
+# command-not-found
 $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
   [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
   if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
-    /usr/libexec/pk-command-not-found $e.CommandName 2>$null
+    if ($env:XDG_SESSION_DESKTOP -ceq 'ubuntu') {
+      /usr/lib/command-not-found --ignore-installed --no-failure-msg $e.CommandName
+    }
+    else {
+      /usr/libexec/pk-command-not-found $e.CommandName 2>$null
+    }
   }
 }

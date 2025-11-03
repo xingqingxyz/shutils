@@ -80,8 +80,8 @@ Register-ArgumentCompleter -Native -CommandName code, code-insiders -ScriptBlock
         }
         elseif ($prev -ceq '--log') {
           'trace', 'debug', 'info', 'warn', 'error', 'critical', 'off'
-          break
         }
+        break
       }
       'tunnel' {
         if ($wordToComplete.StartsWith('-')) {

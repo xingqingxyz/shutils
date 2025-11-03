@@ -4,7 +4,11 @@ function env {
   [regex]$reEnv = [regex]::new('^\w+\+?=')
   # flat iterator args for native passing
   # note: replace token -- with `-- to escape function passing
-  [string[]]$ags = foreach ($arg in [string[]]$args.ForEach{ $_ }) {
+  [string[]]$ags = foreach ($arg in [string[]]$args.ForEach{
+      if ($null -ne $_) {
+        $_
+      }
+    }) {
     if (!$reEnv.IsMatch($arg)) {
       $arg
       $foreach

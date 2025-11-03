@@ -18,12 +18,11 @@ function Invoke-Z {
   $sum = $_z.rankSum
   switch ($PSCmdlet.ParameterSetName) {
     'Add' {
-      if ($PWD.Provider.Name -ne 'FileSystem') {
+      if ($PWD.Provider.Name -cne 'FileSystem') {
         return
       }
-      Convert-Path $Queries -ea Ignore | Where-Object { !$_.Contains("`n") } | ForEach-Object {
-        [string]$path = [System.IO.File]::GetAttributes($_).HasFlag([System.IO.FileAttributes]::ReparsePoint) ? [System.IO.File]::ResolveLinkTarget($_, $true).FullName : $_
-        $path = [System.IO.Path]::TrimEndingDirectorySeparator($path)
+      Get-Item $Queries -ea Ignore | Where-Object { !$_.FullName.Contains("`n") } | ForEach-Object {
+        [string]$path = $_.Attributes.HasFlag([System.IO.FileAttributes]::ReparsePoint) ? $_.ResolvedTarget : $_.FullName
         foreach ($pat in $_z.config.excludePatterns) {
           if ($path -like $pat) {
             return
@@ -36,8 +35,9 @@ function Invoke-Z {
           Time = 0
         }
         $item.Rank++
-        $sum++
         [int]$item.Time = Get-Date -UFormat '%s'
+        $_z.itemsMap[$path] = $item
+        $sum++
       }
       if ($sum -gt $_z.config.maxHistory) {
         $sum = 0.0
@@ -53,9 +53,8 @@ function Invoke-Z {
       break
     }
     'Delete' {
-      Convert-Path $Queries -ea Ignore | ForEach-Object {
-        [string]$path = [System.IO.File]::GetAttributes($_).HasFlag([System.IO.FileAttributes]::ReparsePoint) ? [System.IO.File]::ResolveLinkTarget($_, $true).FullName : $_
-        $path = [System.IO.Path]::TrimEndingDirectorySeparator($path)
+      Get-Item $Queries -ea Ignore | ForEach-Object {
+        [string]$path = $_.Attributes.HasFlag([System.IO.FileAttributes]::ReparsePoint) ? $_.ResolvedTarget : $_.FullName
         $item = $_z.itemsMap[$path]
         if ($item) {
           $_z.itemsMap.Remove($path)

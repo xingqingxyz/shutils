@@ -1,4 +1,4 @@
-if ! ((BASH_VERSINFO[0] >= 5 && BASH_VERSINFO[1] >= 3)); then
+if ((BASH_VERSINFO[0] < 5 || BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] < 3)); then
   return
 fi
 
