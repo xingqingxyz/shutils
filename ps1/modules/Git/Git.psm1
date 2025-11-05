@@ -187,9 +187,9 @@ function Update-Software {
         Write-Warning 'Calling winget on non-Windows platform'
         continue
       }
-      winget upgrade -r --accept-package-agreements
+      sudo winget upgrade -r --accept-package-agreements
       if ($Force) {
-        winget install --accept-package-agreements $pkgMap.winget
+        sudo winget install --accept-package-agreements $pkgMap.winget
       }
       continue
     }

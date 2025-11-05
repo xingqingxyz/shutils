@@ -688,7 +688,7 @@ StartupWMClass=localsend_app
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       [string[]]$files = 'rga', 'rga-fzf', 'rga-fzf-open', 'rga-preproc'
-      $files = $files.ForEach{ "$buildDir/$_$exe" }
+      $files = $files.ForEach{ "$buildDir/$base/$_$exe" }
       Move-Item -LiteralPath $files $binDir -Force
       break
     }

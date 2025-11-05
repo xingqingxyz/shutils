@@ -468,14 +468,15 @@ function Set-EnvironmentVariable {
     return
   }
   if ($IsWindows) {
+    # reg faster than [Environment]
+    $regPath = $Scope -ceq 'Machine' ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
     $environment.GetEnumerator().ForEach{
       if ($_.Value) {
-        [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
+        Set-ItemProperty -LiteralPath $regPath $_.Key $_.Value
       }
       else {
-        $path = $Scope -eq 'Machine' ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
-        Write-Debug "remove $($_.Key) on $path"
-        Remove-ItemProperty -LiteralPath $path $_.Key -ea Ignore
+        Write-Debug "remove $($_.Key) on $regPath"
+        Remove-ItemProperty -LiteralPath $regPath $_.Key -ea Ignore
       }
     }
   }
