@@ -86,7 +86,7 @@ Register-ArgumentCompleter -Native -CommandName cargo -ScriptBlock {
         [CompletionResult]::new('yank', 'yank', [CompletionResultType]::ParameterValue, 'Remove a pushed crate from the index')
         cargo install --list | ForEach-Object {
           if ($_.StartsWith('    cargo-')) {
-            [CompletionResult]::new($_.Substring(10))
+            [CompletionResult]::new([System.IO.Path]::GetFileNameWithoutExtension($_.Substring(10)))
           }
         }
         break

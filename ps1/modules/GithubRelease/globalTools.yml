@@ -76,6 +76,7 @@ releases:
   - pastel
   - pwsh
   - rg
+  - rga
   - uv
   - yq
 rustup:
@@ -92,22 +93,45 @@ uv:
     - markitdown
     - yt-dlp
 winget:
-  - alacritty.alacritty
-  - BurntSushi.ripgrep
-  - github.cli
-  - Golang.Go
+  - Alacritty.Alacritty
+  - AppiumDevelopers.AppiumInspector
+  - aria2.aria2
+  - BurntSushi.ripgrep.MSVC
+  - FiloSottile.mkcert
+  - Git.Git
+  - GitHub.cli
+  - GoLang.Go
+  - Google.AndroidStudio
   - goreleaser.goreleaser
+  - gstreamerproject.gstreamer
+  - Gyan.FFmpeg
+  - ImageMagick.Q16-HDRI
+  - jftuga.less
+  - JohnMacFarlane.Pandoc
   - jqlang.jq
   - junegunn.fzf
-  - localsend.localsend
-  - Microsoft.PowerShell.7.Preview
+  - Kingsoft.WPSOffice.CN
+  - koalaman.shellcheck
+  - LocalSend.LocalSend
+  - Meta.Zstandard
+  - Microsoft.Edge
+  - Microsoft.PowerShell.Preview
   - Microsoft.VisualStudioCode
-  - mikefarah.yq
+  - Microsoft.WindowsTerminal
+  - MikeFarah.yq
+  - Mozilla.Firefox.zh-CN
+  - mvdan.shfmt
+  - nginxinc.nginx
   - OpenJS.NodeJS
-  - oven-sh.bun
-  - phiresky.ripgrep-all
+  - Oracle.JDK.25
+  - Oven-sh.Bun
+  - Rustlang.Rustup
   - sharkdp.bat
   - sharkdp.fd
   - sharkdp.hexyl
   - sharkdp.hyperfine
   - sharkdp.pastel
+  - stral-sh.uv
+  - Tencent.WeChat
+  - UPX.UPX
+  - VideoLAN.VLC

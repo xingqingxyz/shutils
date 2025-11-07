@@ -1,8 +1,4 @@
-if ($IsWindows) {
-  throw [System.NotImplementedException]::new()
-}
-
-$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/../..")
+$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $ANDROID_HOME = "$HOME/Android/Sdk"
 $PNPM_HOME = "$HOME/.local/share/pnpm"
 
@@ -60,7 +56,7 @@ mirrors.ustc.edu.cn
 raw.githubusercontents.com
 '@.ReplaceLineEndings(',')
 
-([ordered]@{
+$linuxVar = [ordered]@{
   ANDROID_HOME             = $ANDROID_HOME
   DSC_RESOURCE_PATH        = "$HOME/.local/dsc"
   EDITOR                   = 'edit'
@@ -80,4 +76,33 @@ raw.githubusercontents.com
   RUSTUP_UPDATE_ROOT       = 'https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup'
   SHUTILS_ROOT             = $SHUTILS_ROOT
   SYSTEMD_PAGER            = ''
-}).GetEnumerator().ForEach{ $_.Key + '=' + $_.Value } > ~/.env
+}
+if ($IsLinux) {
+  $linuxVar.GetEnumerator().ForEach{
+    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'Process')
+    $_.Key + '=' + $_.Value
+  } > ~/.env
+}
+elseif ($IsWindows) {
+  $ANDROID_HOME = [System.IO.Path]::GetFullPath($ANDROID_HOME)
+  $PNPM_HOME = "$env:LOCALAPPDATA\pnpm"
+  $SHUTILS_ROOT = [System.IO.Path]::GetFullPath($SHUTILS_ROOT)
+  $common = @{}
+  @('EDITOR', 'FLUTTER_STORAGE_BASE_URL', 'FZF_DEFAULT_OPTS', 'LESS', 'no_proxy', 'PAGER', 'PUB_HOSTED_URL', 'RUSTUP_DIST_SERVER', 'RUSTUP_UPDATE_ROOT').ForEach{ $common[$_] = $linuxVar[$_] }
+  ($common + @{
+    ANDROID_HOME    = $ANDROID_HOME
+    NODE_PATH       = "$PNPM_HOME\global\5\node_modules"
+    PNPM_HOME       = $PNPM_HOME
+    PSModulePath    = "$SHUTILS_ROOT\ps1\modules"
+    UV_LINK_MODE    = 'symlink'
+    UV_TOOL_BIN_DIR = "$HOME\tools"
+  }).GetEnumerator().ForEach{
+    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'Process')
+    Set-ItemProperty -LiteralPath HKCU:\Environment $_.Key $_.Value
+  }
+  # notify only one time
+  [System.Environment]::SetEnvironmentVariable('SHUTILS_ROOT', $SHUTILS_ROOT, 'User')
+}
+else {
+  throw [System.NotImplementedException]::new()
+}
