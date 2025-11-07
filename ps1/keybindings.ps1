@@ -137,7 +137,7 @@ Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -S
         . .venv/Scripts/Activate.ps1
       }
       else {
-        . .venv/bin/activate.ps1
+        . (Convert-Path .venv/bin/*.ps1)
       }
       [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
     }

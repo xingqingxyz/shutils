@@ -2,6 +2,7 @@ function mkdir {
   New-Item -ItemType Directory $args
 }
 
+Set-Alias ls Get-ChildItem
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   egrep    = 'egrep', '--color=auto'
   grep     = 'grep', '--color=auto'
@@ -11,7 +12,6 @@ Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   zegrep   = 'zegrep', '--color=auto'
   zfgrep   = 'zfgrep', '--color=auto'
   zgrep    = 'zgrep', '--color=auto'
-  ls       = 'ls', '-Ah', '--color=auto', '--hyperlink=auto'
   rg       = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=vscode://file{wslprefix}{path}' : '--hyperlink-format=vscode')
   tree     = 'tree', '-C', '--gitignore', '--hyperlink'
   plantuml = 'java', '-jar', "$HOME/.local/bin/plantuml.jar"

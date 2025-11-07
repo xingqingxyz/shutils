@@ -32,12 +32,15 @@ dnf:
   - cmake
   - containerd
   - docker-cli
+  - fcitx5-chinese-addons
   - gcc
+  - git-subtree
   - gnome-browser-connector
   - gnome-shell-extension-appindicator
   - gnome-shell-extension-blur-my-shell
   - gnome-shell-extension-dash-to-dock
   - hyperfine
+  - msedit
   - ninja-build
   - openssl-devel
   - runc
@@ -63,7 +66,6 @@ psm1:
   - Yayaml
 releases:
   - bat
-  - edit
   - fd
   - fzf
   - hexyl

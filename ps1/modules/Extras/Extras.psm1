@@ -544,3 +544,46 @@ function Set-EnvironmentVariablePath {
     $value
   }
 }
+
+function Repair-GitSymlinks {
+  git ls-files -s | ForEach-Object {
+    [int]$mode, $item = $_ -split '\s+', 4
+    if ($mode -ne 120000) {
+      return
+    }
+    $item = $item[2].TrimStart()
+    try {
+      $item = Get-Item -LiteralPath $item -Force -ea Stop
+    }
+    catch {
+      return Write-Warning "staged symlink not found: $item"
+    }
+    if ($item.LinkType -ne 'SymbolicLink') {
+      $target = Get-Content -Raw -LiteralPath $item
+      New-Item -ItemType SymbolicLink -Force -Target $target $item
+    }
+  }
+}
+
+function ijq {
+  $file = fzf '--walker=file,hidden' -q '.json$ '
+  if (!$file) {
+    return
+  }
+  $query = jq -r 'paths | map(
+    if type == "string" then
+      "." + (
+        if test("^[a-zA-Z_]\\w*$") then
+          .
+        else
+          "\"\(.)\""
+        end)
+    else
+      "[\(.)]"
+    end) | join("")' `-- $file | fzf
+  $query = "jq '{0}' '{1}'" -f @(
+    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($query)
+    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent((Convert-Path -LiteralPath $file)))
+  $query
+  [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($query)
+}

@@ -26,6 +26,7 @@
   version: 0.8.0
 - name: dotnet
   version: 99.0.0
+  prerelease: true
 - name: dsc
   repo: PowerShell/DSC
   prerelease: true
@@ -60,6 +61,8 @@
   version: 0.16.0
 - name: hyperfine
   repo: sharkdp/hyperfine
+- name: java
+  version: 25
 - name: jq
   repo: jqlang/jq
   tag: jq-1.8.1
@@ -80,6 +83,8 @@
   version: 2.40.4
 - name: nerdfonts
   repo: ryanoasis/nerd-fonts
+  tag: v3.4.0
+  version: 3.4.0
 - name: node
   repo: nodejs/node
   tag: v25.0.0

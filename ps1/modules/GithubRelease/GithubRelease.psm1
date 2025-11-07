@@ -134,6 +134,7 @@ function downloadFile ([string]$Url, [string]$Path) {
 }
 
 function checkFileHash ([string]$Path, [string]$Sha256) {
+  Write-Debug "checking file hash: $Path"
   if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash -ne $Sha256) {
     throw "file hash not match ($Path): $Sha256"
   }
@@ -166,6 +167,7 @@ function getLocalVersion ($Meta) {
       pastel { (pastel -V).Split(' ', 3)[1]; break }
       less { (less --version 2>$null)[0].Split(' ', 3)[1]; break }
       mold { (mold -v).Split(' ', 3)[1]; break }
+      java { (java --version)[0].Split(' ', 3)[1]; break }
       jq { (jq -V).Split('-', 2)[1]; break }
       plantuml {
         (java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
@@ -207,6 +209,22 @@ function updateLatestVersion ($Meta) {
       $Meta.file = 'https://storage.flutter-io.cn/flutter_infra_release/releases/' + $release.archive
       $Meta.version = $release.version
       $Meta.sha256 = $release.sha256
+      break
+    }
+    java {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $arch = switch ([RuntimeInformation]::OSArchitecture) {
+        'X64' { 'x64'; break }
+        'Arm64' { 'aarch64'; break }
+        default { throw "not supported arch $_" }
+      }
+      $version = (Invoke-WebRequest https://jdk.java.net).Links[0].href
+      $url = ((Invoke-WebRequest "https://jdk.java.net$version").Links | Where-Object href -CLike "https://download.java.net/java/GA/*/openjdk-*_linux-$arch*").href
+      $Meta.url = $url[0]
+      $Meta.sha256 = Invoke-RestMethod $url[1]
+      $Meta.version = $url[0].Split('/', 7)[5].Substring(3)
       break
     }
     default {
@@ -392,10 +410,12 @@ function Install-Release {
         Invoke-Item $buildDir/$file
         break
       }
-      sudo rm -rf $sudoDataDir/dotnet
-      sudo mkdir -p $sudoDataDir/dotnet
-      sudo tar -xf $buildDir/$file -C $sudoDataDir/dotnet --no-same-owner
-      sudo ln -sf $sudoDataDir/dotnet/dotnet $sudoDataDir/dotnet/dnx $sudoBinDir
+      sudo rm -rf $sudoPrefixDir/dotnet
+      sudo mkdir -p $sudoPrefixDir/dotnet
+      sudo tar -xf $buildDir/$file -C $sudoPrefixDir/dotnet --no-same-owner
+      sudo ln -sf $sudoPrefixDir/dotnet/dotnet $sudoPrefixDir/dotnet/dnx $sudoBinDir
+      sudo mkdir -p /etc/dotnet
+      $null = "$sudoPrefixDir/dotnet" | sudo tee /etc/dotnet/install_location_x64
       break
     }
     dsc {
@@ -499,6 +519,18 @@ function Install-Release {
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/hyperfine$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/hyperfine.1 $dataDir/man/man1 -Force
+      break
+    }
+    java {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      downloadFile $Meta.url
+      $file = Split-Path -Leaf $url
+      checkFileHash $buildDir/$file $Meta.sha256
+      sudo rm -rf $sudoPrefixDir/jdk
+      sudo tar -xf $buildDir/$file -C $sudoPrefixDir/jdk --no-same-owner --strip-components=1
+      sudo ln -sf $sudoPrefixDir/jdk/bin/java $sudoBinDir
       break
     }
     jq {
@@ -765,6 +797,185 @@ function Update-Release {
   $pkgMap.Values | ConvertTo-Yaml > $env:SHUTILS_ROOT/data/releases.yml
 }
 
+function Clear-Module {
+  <#
+  .SYNOPSIS
+  Clear outdated modules.
+   #>
+  Get-InstalledModule | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
+    $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
+  } | ForEach-Object { Uninstall-Module $_.Name -MaximumVersion $_.Version }
+}
+
+function Update-Software {
+  [CmdletBinding()]
+  param (
+    [Parameter()]
+    [ArgumentCompleter({
+        param (
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        (Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/globalTools.yml | ConvertFrom-Yaml).Keys.Where{ $_ -like "$WordToComplete*" }
+      })]
+    [string[]]
+    $Category,
+    [Parameter()]
+    [switch]
+    $Global,
+    [Parameter()]
+    [switch]
+    $Force
+  )
+  $pkgMap = Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/globalTools.yml | ConvertFrom-Yaml
+  switch ($Category) {
+    apt {
+      sudo apt update
+      sudo apt install -f
+      sudo apt upgrade -y --auto-remove
+      if ($Force) {
+        sudo apt install -y $pkgMap.apt
+      }
+      continue
+    }
+    bun {
+      if ($Global) {
+        bun upgrade -g
+        if ($Force) {
+          bun add -g $pkgMap.bun
+        }
+        continue
+      }
+      bun update
+      continue
+    }
+    cargo {
+      if ($Global) {
+        cargo install-update --all
+        if ($Force) {
+          cargo install $pkgMap.cargo
+        }
+        continue
+      }
+      cargo update
+      continue
+    }
+    code { code --update-extensions; continue }
+    deno {
+      if ($Global) {
+        deno jupyter --install
+        if ($Force) {
+          deno install --global $pkgMap.deno
+        }
+        continue
+      }
+      deno update
+      continue
+    }
+    dnf {
+      sudo dnf upgrade -y
+      if ($Force) {
+        sudo dnf install -y $pkgMap.dnf
+      }
+      continue
+    }
+    flutter {
+      if ($Global) {
+        [string[]]$pkgs = flutter pub global list
+        if ($Force) {
+          $pkgs += $pkgMap.flutter
+        }
+        flutter pub global activate $pkgs.ForEach{ "$_@latest" }
+        continue
+      }
+      flutter pub upgrade
+      continue
+    }
+    gh {
+      gh extension upgrade --all
+      if ($Force) {
+        gh extension install $pkgMap.gh
+      }
+      continue
+    }
+    go {
+      if ($Global) {
+        go install $pkgMap.go.ForEach{ "$_@latest" }
+        continue
+      }
+      [string[]]$pkgs = go list
+      go get $pkgs.ForEach{ "$_@latest" }
+      continue
+    }
+    pnpm {
+      if ($Global) {
+        pnpm self-update
+        pnpm update -g
+        if ($Force) {
+          pnpm add -g $pkgMap.pnpm
+        }
+        pnpm approve-builds -g
+        continue
+      }
+      pnpm self-update
+      pnpm update
+      pnpm approve-builds
+      continue
+    }
+    ps1 {
+      Update-Script
+      if ($Force) {
+        Install-Script $pkgMap.ps1
+      }
+    }
+    psm1 {
+      Update-Module
+      Clear-Module
+      if ($Force) {
+        Install-Module $pkgMap.psm1
+      }
+      continue
+    }
+    releases {
+      Update-Release $pkgMap.releases
+      continue
+    }
+    rustup {
+      rustup update
+      if ($Force) {
+        rustup toolchain install $pkgMap.rustup.toolchains --component ($pkgMap.rustup.components -join ',') --target ($pkgMap.rustup.targets)
+      }
+      continue
+    }
+    uv {
+      if ($Global) {
+        uv self update
+        uv tool upgrade
+        if ($Force) {
+          $pkgMap.uv.python | ForEach-Object { uv python install $_ }
+          $pkgMap.uv.tools | ForEach-Object { uv tool install $_ }
+        }
+        continue
+      }
+      uv sync --upgrade
+      continue
+    }
+    winget {
+      if (!$IsWindows) {
+        Write-Warning 'Calling winget on non-Windows platform'
+        continue
+      }
+      winget upgrade -r --accept-package-agreements
+      if ($Force) {
+        winget install --accept-package-agreements $pkgMap.winget
+      }
+      continue
+    }
+    default { throw [System.NotImplementedException]::new() }
+  }
+}
+
 $go = goenv
 $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
@@ -779,4 +990,3 @@ $dataDir = Join-Path $prefixDir share
 
 $sudoPrefixDir = $IsWindows ? $env:ProgramData : '/usr/local'
 $sudoBinDir = $IsWindows ? 'C:\tools' : "$sudoPrefixDir/bin"
-$sudoDataDir = Join-Path $sudoPrefixDir share

@@ -2,7 +2,7 @@ if ($IsWindows) {
   throw [System.NotImplementedException]::new()
 }
 
-$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
+$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/../..")
 $ANDROID_HOME = "$HOME/Android/Sdk"
 $PNPM_HOME = "$HOME/.local/share/pnpm"
 
