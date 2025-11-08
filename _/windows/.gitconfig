@@ -12,4 +12,3 @@
 	rebase = false
 [core]
 	editor = \"C:\\Users\\cmema\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code\" --wait
-	symlinks = true
