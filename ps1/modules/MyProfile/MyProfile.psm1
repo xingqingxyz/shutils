@@ -2,6 +2,8 @@ function Show-CommandSource {
   <#
   .SYNOPSIS
   Show or edit command source.
+  .PARAMETER List
+  Defaults editing for Invoke-Sudo.
    #>
   [CmdletBinding()]
   [Alias('l', 'e')]
@@ -12,7 +14,6 @@ function Show-CommandSource {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        @([System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)) ??
         [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
       })]
     [Parameter(Position = 0)]
@@ -26,19 +27,18 @@ function Show-CommandSource {
     $InputObject,
     [Parameter()]
     [switch]
-    $Edit = $MyInvocation.InvocationName -eq 'e',
+    $List = $MyInvocation.InvocationName -ceq 'l',
     [ArgumentCompleter({
         param (
           [string]$CommandName,
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        $([System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)) ??
-        [System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)
+        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
       })]
     [Parameter()]
     [string]
-    $Editor = $env:EDITOR ?? 'code',
+    $Editor = $env:EDITOR ?? 'edit',
     [Alias('Path')]
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]
@@ -66,48 +66,48 @@ function Show-CommandSource {
         if (!$paths) {
           return
         }
-        if ($Edit) {
+        if ($List) {
+          Write-CommandDebug showFile $ExtraArgs
+          $paths | showFile $ExtraArgs
+        }
+        else {
           $ExtraArgs = $paths + $ExtraArgs
           Write-CommandDebug $Editor $ExtraArgs
           & $Editor $ExtraArgs
         }
-        else {
-          Write-CommandDebug showFile $ExtraArgs
-          $paths | showFile $ExtraArgs
-        }
         return
       }
-      if ($Edit) {
-        Write-CommandDebug $Editor $ExtraArgs
-        $inputs | & $Editor $ExtraArgs
-      }
-      else {
+      if ($List) {
         Write-Debug 'showing help from stdin'
         $inputs | bat -plhelp $ExtraArgs
       }
-      return
-    }
-    if ($Edit) {
-      $paths = if ($Name) {
-        Get-Command $Name -ea Ignore | editable
-      }
       else {
-        $MyInvocation.MyCommand.Module.Path
+        Write-CommandDebug $Editor $ExtraArgs
+        $inputs | & $Editor $ExtraArgs
       }
-      $ExtraArgs = $paths ? (($paths | fsPath) + $ExtraArgs) : @($Name; $ExtraArgs)
-      Write-CommandDebug $Editor $ExtraArgs
-      & $Editor $ExtraArgs
       return
     }
-    if (!$Name) {
-      $Name = '.'
+    if ($List) {
+      if (!$Name) {
+        $Name = '.'
+      }
+      $item = (Convert-Path $Name -Force -ea Ignore) ?? (Get-Command $Name -ea Ignore)
+      if (!$item) {
+        return Write-Error "command not found: $Name"
+      }
+      Write-CommandDebug show $ExtraArgs
+      $item | show $ExtraArgs
+      return
     }
-    $item = (Convert-Path $Name -Force -ea Ignore) ?? (Get-Command $Name -ea Ignore)
-    if (!$item) {
-      return Write-Error "command not found: $Name"
+    $paths = if ($Name) {
+      Get-Command $Name -ea Ignore | editable
     }
-    Write-CommandDebug show $ExtraArgs
-    $item | show $ExtraArgs
+    else {
+      $MyInvocation.MyCommand.Module.Path
+    }
+    $ExtraArgs = $paths ? (($paths | fsPath) + $ExtraArgs) : @($Name; $ExtraArgs)
+    Write-CommandDebug $Editor $ExtraArgs
+    & $Editor $ExtraArgs
   }
 }
 
@@ -217,9 +217,6 @@ filter decompress {
 filter showFile ([string[]]$ExtraArgs) {
   [string]$path = $_ | fsPath
   if (Test-Path -LiteralPath $path -PathType Container) {
-    if (!$IsWindows) {
-      return env ls -lah --color=always --hyperlink=always $path $ExtraArgs | less
-    }
     $oldValue = $PSStyle.OutputRendering
     $PSStyle.OutputRendering = 'Ansi'
     try {
@@ -230,7 +227,7 @@ filter showFile ([string[]]$ExtraArgs) {
     }
     return
   }
-  env ls -lh --color=auto --hyperlink=auto `-- $_
+  Get-Item -LiteralPath $path -ea Stop
   switch -CaseSensitive -Regex ($path) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if (($path | decompress | file -L -).Contains('troff')) {
@@ -379,12 +376,12 @@ function Invoke-Sudo {
         $ags[0] = $info.Source
       }
       elseif ($info.Module) {
-        $ags[0] = $info.Source + '\' + $info.Name
+        $ags[0] = $info.Name
       }
       else {
         Write-Warning "running a no module $($info.CommandType) $info"
       }
-      $ags[0] = ($MyInvocation.ExpectingInput ? '$input | ' : '') + '& ''' + [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($ags[0]) + "'"
+      $ags[0] = "`$env:PSModulePath = '{0}'; {1} & '{2}' @args" -f $env:PSModulePath.Replace("'", "''"), ($MyInvocation.ExpectingInput ? '$input | ' : ''), $ags[0].Replace("'", "''")
       $ags = $pwshExe, '-nop', '-cwa' + $ags
     }
   }

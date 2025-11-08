@@ -13,7 +13,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
         break
       }
       $i.Value
-    }) -join ';'
+    }) -join ' '
 
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
@@ -71,6 +71,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
         [CompletionResult]::new('stash', 'stash', [CompletionResultType]::ParameterName, 'Stash the changes in a dirty working directory away')
         [CompletionResult]::new('status', 'status', [CompletionResultType]::ParameterName, 'Show the working tree status')
         [CompletionResult]::new('submodule', 'submodule', [CompletionResultType]::ParameterName, 'Initialize, update or inspect submodules')
+        [CompletionResult]::new('subtree', 'subtree', [CompletionResultType]::ParameterName, 'Merge subtrees together and split repository into subtrees')
         [CompletionResult]::new('switch', 'switch', [CompletionResultType]::ParameterName, 'Switch branches')
         [CompletionResult]::new('tag', 'tag', [CompletionResultType]::ParameterName, 'Create, list, delete or verify a tag object signed with GPG')
         [CompletionResult]::new('worktree', 'worktree', [CompletionResultType]::ParameterName, 'Manage multiple working trees')
@@ -1675,6 +1676,62 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
           [CompletionResult]::new('foreach', 'foreach', [CompletionResultType]::ParameterName, 'Evaluates an arbitrary shell command in each checked out submodule')
           [CompletionResult]::new('sync', 'sync', [CompletionResultType]::ParameterName, "Synchronizes submodules' remote URL configuration setting to the value specified in")
           [CompletionResult]::new('absorbgitdirs', 'absorbgitdirs', [CompletionResultType]::ParameterName, "If a git directory of a submodule is inside the submodule, move the git directory of the submodule into its superproject's $GIT_DIR/modules path and then connect the git directory and its working directory by setting the core")
+        }
+        break
+      }
+      'subtree' {
+        if ($wordToComplete.StartsWith('-')) {
+          [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'show the help')
+          [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'show the help')
+          [CompletionResult]::new('-q', '-q', [CompletionResultType]::ParameterName, 'quiet mode')
+          [CompletionResult]::new('--quiet', '--quiet', [CompletionResultType]::ParameterName, 'quiet mode')
+          [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'show debug messages')
+          [CompletionResult]::new('--debug', '--debug', [CompletionResultType]::ParameterName, 'show debug messages')
+          [CompletionResult]::new('-P', '-P', [CompletionResultType]::ParameterName, 'the name of the subdir to split out')
+          [CompletionResult]::new('--prefix', '--prefix', [CompletionResultType]::ParameterName, 'the name of the subdir to split out')
+          [CompletionResult]::new('--no-prefix', '--no-prefix', [CompletionResultType]::ParameterName, 'the name of the subdir to split out')
+          break
+        }
+        [CompletionResult]::new('add', 'add', [CompletionResultType]::ParameterName, 'add subtree')
+        [CompletionResult]::new('merge', 'merge', [CompletionResultType]::ParameterName, 'merge subtree')
+        [CompletionResult]::new('split', 'split', [CompletionResultType]::ParameterName, 'split into subtrees')
+        [CompletionResult]::new('pull', 'pull', [CompletionResultType]::ParameterName, 'pull from subtrees')
+        [CompletionResult]::new('push', 'push', [CompletionResultType]::ParameterName, 'push to subtrees')
+        break
+      }
+      { $_ -ceq 'subtree split' -or $_ -ceq 'subtree push' } {
+        if ($wordToComplete.StartsWith('-')) {
+          [CompletionResult]::new('--annotate', '--annotate', [CompletionResultType]::ParameterName, 'add a prefix to commit message of new commits')
+          [CompletionResult]::new('--no-annotate', '--no-annotate', [CompletionResultType]::ParameterName, 'add a prefix to commit message of new commits')
+          [CompletionResult]::new('-b', '-b', [CompletionResultType]::ParameterName, 'create a new branch from the split subtree')
+          [CompletionResult]::new('--branch', '--branch', [CompletionResultType]::ParameterName, 'create a new branch from the split subtree')
+          [CompletionResult]::new('--ignore-joins', '--ignore-joins', [CompletionResultType]::ParameterName, 'ignore prior --rejoin commits')
+          [CompletionResult]::new('--no-ignore-joins', '--no-ignore-joins', [CompletionResultType]::ParameterName, 'ignore prior --rejoin commits')
+          [CompletionResult]::new('--onto', '--onto', [CompletionResultType]::ParameterName, 'try connecting new tree to an existing one')
+          [CompletionResult]::new('--no-onto', '--no-onto', [CompletionResultType]::ParameterName, 'try connecting new tree to an existing one')
+          [CompletionResult]::new('--rejoin', '--rejoin', [CompletionResultType]::ParameterName, 'merge the new branch back into HEAD')
+          [CompletionResult]::new('--no-rejoin', '--no-rejoin', [CompletionResultType]::ParameterName, 'merge the new branch back into HEAD')
+          [CompletionResult]::new('--squash', '--squash', [CompletionResultType]::ParameterName, 'merge subtree changes as a single commit')
+          [CompletionResult]::new('--no-squash', '--no-squash', [CompletionResultType]::ParameterName, 'merge subtree changes as a single commit')
+          [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'use the given message as the commit message for the merge commit')
+          [CompletionResult]::new('--message', '--message', [CompletionResultType]::ParameterName, 'use the given message as the commit message for the merge commit')
+          [CompletionResult]::new('-S', '-S', [CompletionResultType]::ParameterName, 'GPG-sign commits. The keyid argument is optional and defaults to the committer identity')
+          [CompletionResult]::new('--gpg-sign', '--gpg-sign', [CompletionResultType]::ParameterName, 'GPG-sign commits. The keyid argument is optional and defaults to the committer identity')
+          [CompletionResult]::new('--no-gpg-sign', '--no-gpg-sign', [CompletionResultType]::ParameterName, 'GPG-sign commits. The keyid argument is optional and defaults to the committer identity')
+          break
+        }
+        break
+      }
+      { $_ -ceq 'subtree add' -or $_ -ceq 'subtree merge' } {
+        if ($wordToComplete.StartsWith('-')) {
+          [CompletionResult]::new('--squash', '--squash', [CompletionResultType]::ParameterName, 'merge subtree changes as a single commit')
+          [CompletionResult]::new('--no-squash', '--no-squash', [CompletionResultType]::ParameterName, 'merge subtree changes as a single commit')
+          [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'use the given message as the commit message for the merge commit')
+          [CompletionResult]::new('--message', '--message', [CompletionResultType]::ParameterName, 'use the given message as the commit message for the merge commit')
+          [CompletionResult]::new('-S', '-S', [CompletionResultType]::ParameterName, 'GPG-sign commits. The keyid argument is optional and defaults to the committer identity')
+          [CompletionResult]::new('--gpg-sign', '--gpg-sign', [CompletionResultType]::ParameterName, 'GPG-sign commits. The keyid argument is optional and defaults to the committer identity')
+          [CompletionResult]::new('--no-gpg-sign', '--no-gpg-sign', [CompletionResultType]::ParameterName, 'GPG-sign commits. The keyid argument is optional and defaults to the committer identity')
+          break
         }
         break
       }

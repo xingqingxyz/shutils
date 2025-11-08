@@ -24,7 +24,7 @@ function Register-ArgumentCompleter {
     Write-Debug "Reload PS command parameter completion: $CommandName -$ParameterName"
   }
   else {
-    $CommandName.ForEach{ $_completionFuncMap.$_ = $ScriptBlock }
+    $CommandName.ForEach{ $_completionFuncMap[$_] = $ScriptBlock }
   }
   Microsoft.PowerShell.Core\Register-ArgumentCompleter @PSBoundParameters
 }
@@ -34,7 +34,7 @@ function Get-ArgumentCompleter ([string]$CommandName) {
     (Test-Path -LiteralPath "$PSScriptRoot/completions/$CommandName.ps1")) {
     & $PSScriptRoot/completions/$CommandName.ps1
   }
-  $_completionFuncMap.$CommandName ?? {}
+  $_completionFuncMap[$CommandName] ?? {}
 }
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}
