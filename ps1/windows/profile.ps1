@@ -1,3 +1,8 @@
+function vsdev {
+  Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
+  Enter-VsDevShell 0f2f6c1d -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
+}
+
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   grep     = 'grep', '--color=auto'
   plantuml = 'java', '-jar', "$HOME\tools\plantuml.jar"
@@ -16,7 +21,7 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     return Write-Error "alias not set $cmd"
   }
   # flat iterator args for native passing
-  $cmd, $ags = @($_executableAliasMap.$cmd) + $args.ForEach{
+  $cmd, $ags = @($_executableAliasMap[$cmd]) + $args.ForEach{
     if ($null -ne $_) {
       $_
     }

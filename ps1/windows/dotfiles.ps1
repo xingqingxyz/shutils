@@ -11,3 +11,5 @@ Get-ChildItem $root -Recurse -File -ea Ignore | ForEach-Object {
 $files.GetEnumerator().ForEach{
   New-Item -Type SymbolicLink -Force -Target $_.Key $_.Value
 }
+$historyDir = [System.IO.Path]::GetDirectoryName((Get-PSReadLineOption).HistorySavePath)
+New-Item -ItemType SymbolicLink -Force -Target ConsoleHost_history.txt "$historyDir\Visual Studio Code Host_history.txt"

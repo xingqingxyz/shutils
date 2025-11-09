@@ -30,7 +30,7 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     return Write-Error "alias not set $commandName"
   }
   # flat iterator args for native passing
-  [string[]]$ags = @('--') + $_executableAliasMap.$commandName + $args.ForEach{
+  [string[]]$ags = @('--') + $_executableAliasMap[$commandName] + $args.ForEach{
     if ($null -ne $_) {
       $_
     }

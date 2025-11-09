@@ -458,9 +458,17 @@ function Set-EnvironmentVariable {
     $value = switch ($Matches[2]) {
       '=' { $Matches[3]; break }
       '+=' { [System.Environment]::GetEnvironmentVariable($key, $Scope) + $Matches[3]; break }
-      default { '1'; break }
+      default { [System.Environment]::GetEnvironmentVariable($key, 'Process') ?? '1'; break }
     }
     $environment[$key] = $value
+    if ($IsWindows) {
+      if ($Scope -ceq 'User') {
+        $value = [System.Environment]::GetEnvironmentVariable($key, 'Machine') + $value
+      }
+      elseif ($Scope -ceq 'Machine') {
+        $value += [System.Environment]::GetEnvironmentVariable($key, 'User')
+      }
+    }
     Set-Item -LiteralPath env:$key $value
   }
   Write-Debug "setting env $($environment.GetEnumerator())"
@@ -543,6 +551,58 @@ function Set-EnvironmentVariablePath {
   [System.Environment]::SetEnvironmentVariable($Name, $value, $Scope)
   if ($PassThru) {
     $value
+  }
+}
+
+Set-Alias uev Use-EnvironmentVariable
+function Use-EnvironmentVariable {
+  $environment = @{}
+  [regex]$reEnv = [regex]::new('^\w+\+?=')
+  # flat iterator args for native passing
+  # note: replace token -- with `-- to escape function passing
+  [string[]]$ags = foreach ($arg in [string[]]$args.ForEach{
+      if ($null -ne $_) {
+        $_
+      }
+    }) {
+    if (!$reEnv.IsMatch($arg)) {
+      $arg
+      $foreach
+      break
+    }
+    [string]$key, [string]$value = $arg.Split('=', 2)
+    if ($key.EndsWith('+')) {
+      $key = $key.TrimEnd('+')
+      $value = [System.Environment]::GetEnvironmentVariable($key) + $value
+    }
+    $environment[$key] = $value
+  }
+  $ags[0] = (Get-Command $ags[0] -Type Application -TotalCount 1 -ea Stop).Source
+  $saveEnvironment = @{}
+  $environment.GetEnumerator().ForEach{
+    [string]$value = [System.Environment]::GetEnvironmentVariable($_.Key)
+    if (![string]::IsNullOrEmpty($value)) {
+      $saveEnvironment[$_.Key] = $value
+    }
+    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
+  }
+  try {
+    [string]$cmd, $ags = $ags
+    Write-CommandDebug -Environment $environment.GetEnumerator() $cmd $ags
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd $ags
+    }
+    else {
+      & $cmd $ags
+    }
+  }
+  finally {
+    $saveEnvironment.GetEnumerator().ForEach{
+      [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
+    }
+  }
+  if ($LASTEXITCODE) {
+    throw "exit status $LASTEXITCODE"
   }
 }
 

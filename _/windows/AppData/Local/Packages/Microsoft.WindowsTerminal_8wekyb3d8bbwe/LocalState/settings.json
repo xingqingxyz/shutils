@@ -51,6 +51,7 @@
         "defaults": 
         {
             "autoMarkPrompts": true,
+            "closeOnExit": "never",
             "colorScheme": "Campbell",
             "showMarksOnScrollbar": true
         },
@@ -78,25 +79,6 @@
                 "hidden": false,
                 "name": "PowerShell",
                 "source": "Windows.Terminal.PowershellCore"
-            },
-            {
-                "guid": "{ee95d172-315b-5e3c-b04a-07e9c3e21de3}",
-                "hidden": false,
-                "name": "Developer Command Prompt for VS 2022",
-                "source": "Windows.Terminal.VisualStudio"
-            },
-            {
-                "guid": "{b38f3aeb-dfcf-583c-852d-0cb765f4bbf2}",
-                "hidden": false,
-                "name": "Developer PowerShell for VS 2022",
-                "source": "Windows.Terminal.VisualStudio"
-            },
-            {
-                "guid": "{2ece5bfe-50ed-5f3a-ab87-5cd4baafed2b}",
-                "hidden": false,
-                "name": "Git Bash",
-                "pathTranslationStyle": "msys2",
-                "source": "Git"
             },
             {
                 "guid": "{16208362-94fc-5b1f-a491-5b2624d5ab56}",

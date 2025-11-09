@@ -59,8 +59,8 @@ function prompt {
     # duration
     Format-Duration ($MyInvocation.HistoryId -eq 1 ? 0 : (Get-History -Count 1).Duration)
     # pwd
-    if ($PWD.Provider.Name -eq 'FileSystem') {
-      $PSStyle.FormatHyperlink($PWD, [uri]::new($env:WSL_DISTRO_NAME ? (wslpath -w $PWD.ProviderPath) : $PWD.ProviderPath))
+    if ($PWD.Provider.Name -ceq 'FileSystem') {
+      $PSStyle.FormatHyperlink($PWD.ProviderPath.Replace($HOME, '~'), [uri]::new($env:WSL_DISTRO_NAME ? (wslpath -w $PWD.ProviderPath) : $PWD.ProviderPath))
     }
     else {
       $PWD

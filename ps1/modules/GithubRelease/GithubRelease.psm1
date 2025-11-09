@@ -147,7 +147,7 @@ function New-EmptyDir ([string]$Path) {
 
 function installBinary ([string[]]$Path) {
   if ($IsWindows) {
-    $Path.ForEach{ "@`"$_`" %*" > $binDir\$(Split-Path -LeafBase $_).cmd }
+    $Path.ForEach{ "@`"$([System.IO.Path]::GetFullPath($_))`" %*" > $binDir\$([System.IO.Path]::GetFileNameWithoutExtension($_)).cmd }
     return
   }
   ln -sf $Path $binDir
@@ -464,8 +464,6 @@ function Install-Release {
       checkFileHash $buildDir/$file $Meta.sha256
       Remove-Item -LiteralPath $prefixDir/flutter
       tar -xf $buildDir/$file -C $prefixDir
-      $bat = $IsWindows ? '.bat' : ''
-      installBinary @('flutter', 'flutter-dev', 'dart').ForEach{ "$prefixDir/flutter/bin/$_$bat" }
       break
     }
     fzf {
@@ -817,7 +815,7 @@ function Update-Software {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        (Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/globalTools.yml | ConvertFrom-Yaml).Keys.Where{ $_ -like "$WordToComplete*" }
+        (Get-Content -Raw -LiteralPath $PSScriptRoot/globalTools.yml | ConvertFrom-Yaml).Keys.Where{ $_ -like "$WordToComplete*" }
       })]
     [string[]]
     $Category,
@@ -828,7 +826,7 @@ function Update-Software {
     [switch]
     $Force
   )
-  $pkgMap = Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/globalTools.yml | ConvertFrom-Yaml
+  $pkgMap = Get-Content -Raw -LiteralPath $PSScriptRoot/globalTools.yml | ConvertFrom-Yaml
   switch ($Category) {
     apt {
       sudo apt update

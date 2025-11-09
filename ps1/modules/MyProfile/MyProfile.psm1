@@ -303,10 +303,10 @@ filter showFile ([string[]]$ExtraArgs) {
   }
 }
 
-function Write-CommandDebug ([string]$CommandName, [string[]]$ArgumentList) {
-  Write-Debug ((@($CommandName) + $ArgumentList).ForEach{
+function Write-CommandDebug ([string]$CommandName, [string[]]$ArgumentList, [string]$Environment) {
+  Write-Debug "$Environment $CommandName $($ArgumentList.ForEach{
       $null -eq $_ ? "''" : $_ -cmatch '\s' ? "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'" : $_
-    } -join ' ')
+    })"
 }
 
 function Invoke-Npm {

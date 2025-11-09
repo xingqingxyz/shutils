@@ -1,5 +1,4 @@
 $SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
-$ANDROID_HOME = "$HOME/Android/Sdk"
 $PNPM_HOME = "$HOME/.local/share/pnpm"
 
 # path
@@ -57,7 +56,7 @@ raw.githubusercontents.com
 '@.ReplaceLineEndings(',')
 
 $linuxVar = [ordered]@{
-  ANDROID_HOME             = $ANDROID_HOME
+  ANDROID_HOME             = "$HOME/Android/Sdk"
   DSC_RESOURCE_PATH        = "$HOME/.local/dsc"
   EDITOR                   = 'edit'
   FLUTTER_STORAGE_BASE_URL = 'https://storage.flutter-io.cn'
@@ -84,18 +83,16 @@ if ($IsLinux) {
   } > ~/.env
 }
 elseif ($IsWindows) {
-  $ANDROID_HOME = [System.IO.Path]::GetFullPath($ANDROID_HOME)
   $PNPM_HOME = "$env:LOCALAPPDATA\pnpm"
-  $SHUTILS_ROOT = [System.IO.Path]::GetFullPath($SHUTILS_ROOT)
   $common = @{}
   @('EDITOR', 'FLUTTER_STORAGE_BASE_URL', 'FZF_DEFAULT_OPTS', 'LESS', 'no_proxy', 'PAGER', 'PUB_HOSTED_URL', 'RUSTUP_DIST_SERVER', 'RUSTUP_UPDATE_ROOT').ForEach{ $common[$_] = $linuxVar[$_] }
   ($common + @{
-    ANDROID_HOME    = $ANDROID_HOME
-    NODE_PATH       = "$PNPM_HOME\global\5\node_modules"
-    PNPM_HOME       = $PNPM_HOME
-    PSModulePath    = "$SHUTILS_ROOT\ps1\modules"
-    UV_LINK_MODE    = 'symlink'
-    UV_TOOL_BIN_DIR = "$HOME\tools"
+    ANDROID_HOME      = "$env:LOCALAPPDATA\Android\Sdk"
+    NODE_PATH         = "$PNPM_HOME\global\5\node_modules"
+    PNPM_HOME         = $PNPM_HOME
+    PSModulePath      = "$SHUTILS_ROOT\ps1\modules"
+    UV_PYTHON_BIN_DIR = "$HOME\tools"
+    UV_TOOL_BIN_DIR   = "$HOME\tools"
   }).GetEnumerator().ForEach{
     [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'Process')
     Set-ItemProperty -LiteralPath HKCU:\Environment $_.Key $_.Value

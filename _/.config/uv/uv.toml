@@ -1,0 +1,21 @@
+[[index]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+[[index]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple"
+
+[[index]]
+name = "pypi.org"
+url = "https://pypi.org/simple"
+
+[[index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[pip]
+python = "3.14"
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+extra-index-url = ["https://mirrors.aliyun.com/pypi/simple", "https://pypi.org/simple", "https://download.pytorch.org/whl/cpu"]

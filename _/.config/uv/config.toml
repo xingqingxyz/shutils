@@ -1,5 +1,0 @@
-[index]
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
-[index.extra]
-urls = ["https://mirrors.aliyun.com/pypi/simple/", "https://pypi.org/simple"]

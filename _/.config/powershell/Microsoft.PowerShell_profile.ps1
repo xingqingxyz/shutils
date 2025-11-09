@@ -17,15 +17,11 @@ function Import-EnvironmentVariable {
 # platform init
 if ($IsWindows) {
   . $env:SHUTILS_ROOT/ps1/windows/profile.ps1
-  Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff.exe
-  Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format.exe
 }
 elseif ($IsLinux) {
   # $env:SHUTILS_ROOT
   Import-EnvironmentVariable ~/.env
   . $env:SHUTILS_ROOT/ps1/linux/profile.ps1
-  Set-Alias ruff ~/.vscode/extensions/charliermarsh.ruff-*/bundled/libs/bin/ruff
-  Set-Alias clang-format ~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/clang-format
 }
 # init scripts
 Convert-Path -Force $env:SHUTILS_ROOT/ps1/*.ps1 | ForEach-Object { . $_ }

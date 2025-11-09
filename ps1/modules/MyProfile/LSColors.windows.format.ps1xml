@@ -40,11 +40,11 @@
     <View>
       <Name>System.IO.FileSystemInfo</Name>
       <ViewSelectedBy>
-        <TypeName>System.IO.DirectoryInfo</TypeName>
-        <TypeName>System.IO.FileInfo</TypeName>
+        <SelectionSetName>System.IO.FileSystemInfo</SelectionSetName>
       </ViewSelectedBy>
       <GroupBy>
         <PropertyName>PSParentPath</PropertyName>
+        <CustomControlName>PSParentPath</CustomControlName>
       </GroupBy>
       <TableControl>
         <TableHeaders>
@@ -78,7 +78,8 @@
                 <PropertyName>LastWriteTimeString</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
-                <ScriptBlock>[LSColors.LSColors]::GetSizeString($_.Length)</ScriptBlock>
+                <ScriptBlock>$_ -is [System.IO.FileInfo] ?
+                  [LSColors.LSColors]::GetSizeString($_.Length) : ''</ScriptBlock>
               </TableColumnItem>
               <TableColumnItem>
                 <ScriptBlock>[LSColors.LSColors]::GetNameString($_)</ScriptBlock>

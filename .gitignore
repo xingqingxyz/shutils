@@ -1,7 +1,7 @@
 .vscode
 node_modules
-/csharp/*/bin
-/csharp/*/obj
+/LSColors/bin
+/LSColors/obj
 /test.*
 /*.exe
 /*.log

@@ -1,7 +1,7 @@
 [init]
 	defaultBranch = main
 [credential "https://dev.azure.com"]
-	useHttpPath = true
+	usehttppath = true
 [url "https://github.com"]
 	insteadOf = gh:
 	insteadOf = github:
@@ -12,3 +12,27 @@
 	rebase = false
 [core]
 	editor = \"C:\\Users\\cmema\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code\" --wait
+[merge]
+	tool = vsdiffmerge
+[mergetool]
+	prompt = true
+[mergetool "vsdiffmerge"]
+	cmd = \"C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsdiffmerge.exe\" \"$REMOTE\" \"$LOCAL\" \"$BASE\" \"$MERGED\" //m
+	keepBackup = false
+	trustExitCode = true
+[diff]
+	tool = vsdiffmerge
+[difftool]
+	prompt = true
+[difftool "vsdiffmerge"]
+	cmd = \"C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsdiffmerge.exe\" \"$LOCAL\" \"$REMOTE\" //t
+	keepBackup = false
+[credential]
+	helper = 
+	helper = manager
+[http]
+	sslbackend = openssl
+[fetch]
+	prune = false
+[gui]
+	recentrepo = C:/Users/cmema/p/am

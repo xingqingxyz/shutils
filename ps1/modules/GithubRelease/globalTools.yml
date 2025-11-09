@@ -106,13 +106,11 @@ winget:
   - gstreamerproject.gstreamer
   - Gyan.FFmpeg
   - ImageMagick.Q16-HDRI
-  - jftuga.less
   - JohnMacFarlane.Pandoc
   - jqlang.jq
   - junegunn.fzf
   - Kingsoft.WPSOffice.CN
   - koalaman.shellcheck
-  - LocalSend.LocalSend
   - Meta.Zstandard
   - Microsoft.Edge
   - Microsoft.PowerShell.Preview
@@ -133,5 +131,4 @@ winget:
   - sharkdp.pastel
   - stral-sh.uv
   - Tencent.WeChat
-  - UPX.UPX
   - VideoLAN.VLC
