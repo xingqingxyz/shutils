@@ -2,7 +2,7 @@ declare _ZOLDPWD
 
 _z() {
   local out
-  out=$(python "${BASH_SOURCE[0]%/*}/z.py" "$@")
+  out=$(uv run "${BASH_SOURCE[0]%/*}/z.py" "$@")
   if [ $? = 99 ]; then
     cd -- "$out"
   elif [ "$out" ]; then
