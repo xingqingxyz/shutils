@@ -1,7 +1,9 @@
-.vscode
 node_modules
+*.ilk
+*.obj
+*.pdb
+*.exe
+*.log
 /LSColors/bin
 /LSColors/obj
 /test.*
-/*.exe
-/*.log

@@ -3,6 +3,9 @@ param (
   [Parameter()]
   [switch]
   $All,
+  [Parameter()]
+  [switch]
+  $Go,
   [Parameter(Position = 0)]
   [string[]]
   $Path
@@ -15,7 +18,6 @@ if ($All) {
     'C:\Program Files\Git\mingw64\bin\bzip2.exe'
     'C:\Program Files\Git\mingw64\bin\pdftotext.exe'
     'C:\Program Files\Git\mingw64\bin\tclsh.exe'
-    'C:\Program Files\Git\mingw64\bin\unxz.exe'
     'C:\Program Files\Git\mingw64\bin\unxz.exe'
     'C:\Program Files\Git\mingw64\bin\wish.exe'
     'C:\Program Files\Git\mingw64\bin\xz.exe'
@@ -39,6 +41,20 @@ if ($All) {
   )
 }
 
+$Path | ForEach-Object {
+  if (![System.IO.Path]::IsPathFullyQualified($_)) {
+    throw "path must be absolute: $_"
+  }
+}
+
+if ($Go) {
+  return $Path | ForEach-Object -Parallel {
+    go build -o ~/tools/$([System.IO.Path]::GetFileName($_)) -a -trimpath -ldflags "-s -w -X `"main.execPath=$_`"" $env:SHUTILS_ROOT/fork/main.go
+  } -ThrottleLimit $env:NUMBER_OF_PROCESSORS
+}
+
 $Path | ForEach-Object -Parallel {
-  go build -o ~/tools/$([System.IO.Path]::GetFileName($_)) -a -trimpath -ldflags "-s -w -X `"main.execPath=$_`"" $env:SHUTILS_ROOT/go/fork/main.go
+  $execPath = 'L"\"' + $_.Replace('\', '\\') + '\""'
+  $base = [System.IO.Path]::GetFileNameWithoutExtension($_)
+  cl /O1 /Oi /Os /GF /Gy /GL /GA /GS- /Zl /favor:AMD64 /std:c17 /utf-8 /nologo /DEXEC_PATH=$execPath /Fa$env:TEMP\$base /Fo$env:TEMP\$base /Fe$HOME\tools\$base $env:SHUTILS_ROOT\fork\main.c /link /LTCG /OPT:REF /OPT:ICF /MERGE:.rdata=.text kernel32.lib msvcrt.lib
 } -ThrottleLimit $env:NUMBER_OF_PROCESSORS
