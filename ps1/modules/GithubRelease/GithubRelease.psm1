@@ -157,6 +157,7 @@ function getLocalVersion ($Meta) {
   try {
     switch ($Meta.name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
+      code { (code --version)[0]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
       fzf { (fzf --version).Split(' ', 2)[0]; break }
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
@@ -173,6 +174,7 @@ function getLocalVersion ($Meta) {
         (java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
         break
       }
+      rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
       xh { (https -V).Split(' ', 2)[1]; break }
       yq { (yq -V).Split(' ')[-1].Substring(1); break }
       default { (& $_ --version).Split(' ')[-1] -replace '^v', ''; break }
@@ -225,6 +227,11 @@ function updateLatestVersion ($Meta) {
       $Meta.url = $url[0]
       $Meta.sha256 = Invoke-RestMethod $url[1]
       $Meta.version = $url[0].Split('/', 7)[5].Substring(3)
+      break
+    }
+    rustup {
+      $prefix = $env:RUSTUP_UPDATE_ROOT ?? 'https://static.rust-lang.org/rustup'
+      $Meta.version = (Invoke-RestMethod $prefix/release-stable.toml | ConvertFrom-Toml).version
       break
     }
     default {
@@ -357,6 +364,7 @@ function Install-Release {
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       Expand-Archive -LiteralPath $buildDir/$file $buildDir
       Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file) $binDir
+      $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
       break
     }
     code {
@@ -590,6 +598,15 @@ StartupWMClass=localsend_app
       update-desktop-database $dataDir/applications
       break
     }
+    mkcert {
+      $file = 'mkcert-{0}-{1}-{2}{3}' -f $Meta.tag, $go.os, $go.arch, $exe
+      downloadRelease $file
+      Move-Item -LiteralPath $buildDir/$file $binDir/mkcert$exe
+      if (!$IsWindows) {
+        chmod +x $binDir/mkcert
+      }
+      break
+    }
     mdbook {
       $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
@@ -726,6 +743,10 @@ StartupWMClass=localsend_app
       if ($IsWindows) {
         throw [System.NotImplementedException]::new()
       }
+      if (Get-Command rustup -CommandType Application -TotalCount 1 -ea Ignore) {
+        rustup self update
+        break
+      }
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
       break
     }
@@ -733,6 +754,14 @@ StartupWMClass=localsend_app
       if ($IsWindows) {
         throw [System.NotImplementedException]::new()
       }
+      if ($true) {
+        $base = 'uv-{0}' -f $rust.target
+        downloadRelease $base$ext
+        tar -xf $buildDir/$base$ext -C $buildDir
+        Move-Item -LiteralPath $buildDir/$base/uv$exe, $buildDir/$base/uvx$exe $binDir -Force
+        break
+      }
+      # uv use github releases link directly
       if (Get-Command uv -CommandType Application -TotalCount 1 -ea Ignore) {
         uv self update
         break
@@ -777,14 +806,14 @@ function Update-Release {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        (Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/releases.yml | ConvertFrom-Yaml | Where-Object name -Like $WordToComplete*).name
+        (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -Like $WordToComplete*).name
       })]
     [Parameter(Position = 0)]
     [string[]]
     $Name
   )
   $pkgMap = [ordered]@{}
-  Get-Content -Raw -LiteralPath $env:SHUTILS_ROOT/data/releases.yml | ConvertFrom-Yaml | ForEach-Object { $pkgMap[$_.name] = $_ }
+  Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | ForEach-Object { $pkgMap[$_.name] = $_ }
   $Name ??= $pkgMap.Keys
   $Name | ForEach-Object {
     if (!$pkgMap.Contains($_)) {
@@ -792,7 +821,7 @@ function Update-Release {
     }
     updateLatestVersion $pkgMap[$_]
   } | ForEach-Object { Install-Release $_ } -ea 'Continue'
-  $pkgMap.Values | ConvertTo-Yaml > $env:SHUTILS_ROOT/data/releases.yml
+  $pkgMap.Values | ConvertTo-Yaml > $PSScriptRoot/releases.yml
 }
 
 function Clear-Module {
@@ -936,7 +965,13 @@ function Update-Software {
       continue
     }
     releases {
-      Update-Release $pkgMap.releases
+      $os = switch ($true) {
+        $IsWindows { 'windows'; break }
+        $IsFedora { 'fedora'; break }
+        $IsUbuntu { 'ubuntu'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      Update-Release $pkgMap.releases.$os
       continue
     }
     rustup {
@@ -979,7 +1014,7 @@ $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
 if ($IsLinux) {
   $IsUbuntu = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=ubuntu')
-  $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('REDHAT_BUGZILLA_PRODUCT=')
+  $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=fedora')
 }
 
 $prefixDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local"

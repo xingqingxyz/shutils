@@ -9,12 +9,15 @@ apt:
   - gnome-browser-connector
   - gnome-shell-extension-appindicator
   - libncurses-dev
-  - libssl-dev
   - libpcre2-dev
+  - libssl-dev
+  - nginx
   - ninja-build
+  - pandoc
   - runc
   - shellcheck
   - shfmt
+  - vlc
   - xclip
   - xsel
 bun: []
@@ -41,11 +44,15 @@ dnf:
   - gnome-shell-extension-dash-to-dock
   - hyperfine
   - msedit
+  - nginx
   - ninja-build
   - openssl-devel
+  - pandoc
+  - pandoc-pdf
   - runc
   - shellcheck
   - shfmt
+  - vlc
   - xclip
   - xsel
 flutter: []
@@ -65,20 +72,77 @@ psm1:
   - PSToml
   - Yayaml
 releases:
-  - bat
-  - fd
-  - fzf
-  - hexyl
-  - hyperfine
-  - jq
-  - localsend
-  - node
-  - pastel
-  - pwsh
-  - rg
-  - rga
-  - uv
-  - yq
+  fedora:
+    - bat
+    - bun
+    - code
+    - deno
+    - diskus
+    - dotnet
+    - flutter
+    - fzf
+    - gh
+    - go
+    - goreleaser
+    - hexyl
+    - java
+    - jq
+    - mkcert
+    - mdbook
+    - nerdfonts
+    - node
+    - numbat
+    - pastel
+    - plantuml
+    - pwsh
+    - rg
+    - rga
+    - rustup
+    - uv
+    - xh
+    - yq
+  windows:
+    - diskus
+    - flutter
+    - nerdfonts
+    - numbat
+    - plantuml
+    - rga
+    - xh
+  ubuntu:
+    - alacritty
+    - bat
+    - bun
+    - code
+    - deno
+    - diskus
+    - dotnet
+    - edit
+    - fd
+    - flutter
+    - fzf
+    - gh
+    - go
+    - goreleaser
+    - hexyl
+    - hyperfine
+    - java
+    - jq
+    - less
+    - mkcert
+    - mdbook
+    - nerdfonts
+    - node
+    - numbat
+    - pastel
+    - plantuml
+    - pwsh
+    - rg
+    - rga
+    - rustup
+    - uv
+    - xh
+    - yq
 rustup:
   components:
     - clippy

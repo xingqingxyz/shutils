@@ -724,6 +724,7 @@
 
     # Gradle
     'gradlew'                       = 'nf-md-elephant'
+    'gradlew.bat'                   = 'nf-md-elephant'
     'gradle.kts'                    = 'nf-md-elephant'
   }
 }

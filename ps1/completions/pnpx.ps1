@@ -1,1 +1,1 @@
-./npx.ps1
+npx.ps1

@@ -1,4 +1,4 @@
-$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
+$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/../..")
 $PNPM_HOME = "$HOME/.local/share/pnpm"
 
 # path
@@ -78,7 +78,7 @@ $linuxVar = [ordered]@{
 }
 if ($IsLinux) {
   $linuxVar.GetEnumerator().ForEach{
-    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'Process')
+    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
     $_.Key + '=' + $_.Value
   } > ~/.env
 }
@@ -94,7 +94,7 @@ elseif ($IsWindows) {
     UV_PYTHON_BIN_DIR = "$HOME\tools"
     UV_TOOL_BIN_DIR   = "$HOME\tools"
   }).GetEnumerator().ForEach{
-    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'Process')
+    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
     Set-ItemProperty -LiteralPath HKCU:\Environment $_.Key $_.Value
   }
   # notify only one time

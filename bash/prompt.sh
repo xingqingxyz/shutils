@@ -72,22 +72,3 @@ if declare -Fp __git_ps1 &> /dev/null; then
   MAPFILE[3]='$(__git_ps1)'${MAPFILE[3]}
 fi
 printf -v PS1 '%s ' "${MAPFILE[@]}"
-
-_idefault_complete() {
-  mapfile -t COMPREPLY < <(compgen -v -S = -- "$2")
-}
-
-complete -o bashdefault -o default -o nospace -F _idefault_complete -I
-
-if ! declare -Fp _completion_loader &> /dev/null; then
-  _completion_loader() {
-    local name
-    name=$(basename -- "$1")
-    if [ -f "$SHUTILS_ROOT/bash/completions/$name.sh" ]; then
-      . "$SHUTILS_ROOT/bash/completions/$name.sh"
-      return 124
-    fi
-    return 1
-  }
-  complete -o bashdefault -o default -F _completion_loader -D
-fi

@@ -19,5 +19,3 @@ gpg --import /tmp/gnu-keyring.gpg
   "$HOME/.local/share/fonts/truetype"
 )
 New-Item -ItemType Directory $dirs -Force
-# root
-sudo $PSScriptRoot/Setup-LinuxMachine.ps1
