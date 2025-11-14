@@ -1,6 +1,6 @@
 function vsdev {
-  Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
-  Enter-VsDevShell 0f2f6c1d -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
+  Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
+  Enter-VsDevShell 1da1aa76 -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
 }
 
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{

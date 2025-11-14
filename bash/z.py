@@ -1,101 +1,99 @@
+import ctypes
+import json
 import os
+import platform
 import re
+import tempfile
 import time
 from argparse import ArgumentParser
-from dataclasses import dataclass
 from fnmatch import fnmatch
 from logging import warning
+from typing import TypedDict
 
 HOME = os.path.expanduser("~")
 
 
-@dataclass
-class ZItem:
-    path: str
+def get_windows_drives():
+    bitmask: int = ctypes.windll.kernel32.GetLogicalDrives()
+    drives: list[str] = []
+    for i in range(26):
+        if bitmask & (1 << i):
+            drives.append(f"{chr(65 + i)}:\\")
+    return drives
+
+
+class ZItem(TypedDict):
     rank: float
     time: int
 
 
 class ZConfig:
-    cmd = "z"
-    datafile = f"{HOME}/.z"
-    datasep = "|"
-    resolve_symlinks = True
+    datafile = f"{HOME}/.z.json"
     max_history = 1000
-    exclude_patterns = [HOME, "/", "/tmp/*"]
+    exclude_patterns = [
+        HOME,
+        os.path.join(tempfile.gettempdir(), "*"),
+    ]
+    if platform.uname().system == "Windows":
+        exclude_patterns.extend(get_windows_drives())
+    else:
+        exclude_patterns.append("/")
 
 
 class Z:
     def __init__(self):
-        self.items_map = {}
-        self.rank_sum = 0.0
-        self.load_data()
-
-    def get_path(self, path):
-        if not ZConfig.resolve_symlinks:
-            return os.path.realpath(path, strict=True)
-        if not os.path.exists(path):
-            raise FileNotFoundError(path)
-        return os.path.abspath(path)
-
-    def load_data(self):
+        if not os.path.exists(ZConfig.datafile):
+            self.itemsMap = {}
+            self.rankSum = 0.0
+            return
         with open(ZConfig.datafile, encoding="utf8") as f:
-            for line in f.readlines():
-                if not line:
-                    continue
-                item = line.split(ZConfig.datasep)
-                if len(item) != 3:
-                    raise TypeError(f"z data file is broken: {ZConfig.datafile}")
-                item = ZItem(item[0], float(item[1]), int(item[2]))
-                self.items_map[item.path] = item
-                self.rank_sum += item.rank
+            o = json.load(f)
+            self.itemsMap: dict[str, ZItem] = o["itemsMap"]
+            self.rankSum: float = o["rankSum"]
 
     def dump_data(self):
         with open(ZConfig.datafile, "w", encoding="utf8") as f:
-            for item in self.items_map.values():
-                f.write(
-                    f"{item.path}{ZConfig.datasep}{item.rank}{ZConfig.datasep}{item.time}\n"
-                )
+            json.dump(self.__dict__, f)
 
     def add(self, paths: list[str]):
-        rank_sum = self.rank_sum
+        sum = self.rankSum
         for path in paths:
             try:
-                path = self.get_path(path)
+                path = os.path.realpath(path)
             except FileNotFoundError:
                 continue
             if any(map(lambda p: fnmatch(path, p), ZConfig.exclude_patterns)):
                 continue
-            if path not in self.items_map:
-                self.items_map[path] = ZItem(path, 0.0, 0)
-            item = self.items_map[path]
-            item.rank += 1.0
-            item.time = int(time.time())
-            rank_sum += 1.0
-        if rank_sum > ZConfig.max_history:
-            rank_sum = 0.0
-            for item in self.items_map.values():
-                item.rank *= 0.99
-                if item.rank > 1.0:
-                    del self.items_map[item.path]
+            if path not in self.itemsMap:
+                self.itemsMap[path] = {"rank": 0.0, "time": 0}
+            item = self.itemsMap[path]
+            item["rank"] += 1.0
+            item["time"] = int(time.time())
+            sum += 1.0
+        if sum > ZConfig.max_history:
+            sum = 0.0
+            for key, value in self.itemsMap.items():
+                value["rank"] *= 0.99
+                if value["rank"] > 1.0:
+                    del self.itemsMap[key]
                 else:
-                    rank_sum += item.rank
-        if rank_sum != self.rank_sum:
-            self.rank_sum = rank_sum
+                    sum += value["rank"]
+        if sum != self.rankSum:
+            self.rankSum = sum
             self.dump_data()
 
     def delete(self, paths: list[str]):
-        rank_sum = self.rank_sum
+        sum = self.rankSum
         for path in paths:
             try:
-                path = self.get_path(path)
+                path = os.path.realpath(path)
             except FileNotFoundError:
                 continue
-            if path in self.items_map:
-                rank_sum -= self.items_map[path].rank
-                del self.items_map[path]
-        if rank_sum != self.rank_sum:
-            self.rank_sum = rank_sum
+            if path in self.itemsMap:
+                sum -= self.itemsMap[path]["rank"]
+                del self.itemsMap[path]
+        if sum != self.rankSum:
+            self.rankSum = sum
             self.dump_data()
 
     def main(
@@ -109,47 +107,62 @@ class Z:
         cwd=False,
         queries: list[str] = [],
     ):
-        if len(queries) == 1 and fnmatch(queries[0], "*[\\/]*"):
-            print(queries[0])
-            exit(99)
-        re_query = re.compile(f"^.*{'.*'.join(queries)}.*$")
-        items = filter(lambda x: re_query.match(x.path), self.items_map.values())
+        items = self.itemsMap.items()
+        # use (?i) or (?i:...) to ignore case
+        re_query = f"^.*{'.*'.join(queries)}.*$"
+        if platform.system() == "Windows":
+            re_query = re_query.replace("/", r"\\")
+        try:
+            re_query = re.compile(re_query)
+            items = filter(lambda x: re_query.match(x[0]), items)
+        finally:
+            # maybe raw glob match on last word
+            pass
         if cwd:
-            items = filter(lambda x: x.path.startswith(os.getcwd() + os.sep), items)
+            pwd = os.getcwd() + os.sep
+            items = filter(lambda x: x[0].startswith(pwd), items)
         items = list(items)
         if not items:
-            warning(f"no matches found for regexp {re_query}")
+            if queries and fnmatch(queries[-1], "*[\\/]*"):
+                print(queries[-1])
+                exit(99)
+            warning(f"no matches for regexp {re_query}")
             return
         if rank:
-            items.sort(key=lambda x: x.rank)
+            items.sort(key=lambda x: x[1]["rank"])
         elif time_:
-            items.sort(key=lambda x: x.time)
+            items.sort(key=lambda x: x[1]["time"])
         else:
             now = int(time.time())
             items.sort(
-                key=lambda x: 10000 * x.rank * (3.75 / (0.0001 * (now - x.time) + 1.25))
+                key=lambda x: 10000
+                * x[1]["rank"]
+                * (3.75 / (0.0001 * (now - x[1]["time"]) + 1.25))
             )
         if list_:
             print("\n".join(map(str, items)))
             return
         elif list_path:
-            print("\n".join(i.path for i in items))
+            print("\n".join(i[0] for i in items))
             return
         elif echo:
-            print(items[-1])
+            print(items[-1][0])
             return
-        rank_sum = self.rank_sum
+        sum = self.rankSum
+        found = False
         for item in reversed(items):
-            if os.path.isdir(item.path):
-                print(item.path)
-                exit(99)
-            warning("directory not exist, removing it: " + item.path)
-            del self.items_map[item.path]
-            rank_sum -= item.rank
-            continue
-        if rank_sum != self.rank_sum:
-            self.rank_sum = rank_sum
+            if os.path.isdir(item[0]):
+                found = True
+                print(item)
+                break
+            warning("directory not exist, removing it: " + item[0])
+            del self.itemsMap[item[0]]
+            sum -= item[1]["rank"]
+        if sum != self.rankSum:
+            self.rankSum = sum
             self.dump_data()
+        if found:
+            exit(99)
 
 
 def main():

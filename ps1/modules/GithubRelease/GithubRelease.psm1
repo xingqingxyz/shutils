@@ -607,13 +607,15 @@ StartupWMClass=localsend_app
     }
     nerdfonts {
       downloadRelease 0xProto.zip
+      Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $buildDir
       if ($IsLinux) {
-        Expand-Archive -LiteralPath $buildDir/0xProto.zip $dataDir/fonts/truetype -Force
-        Remove-Item -LiteralPath $dataDir/fonts/truetype/README.md, $dataDir/fonts/truetype/LICENSE
+        Move-Item $buildDir/0xProtoNerdFont*.ttf $dataDir/fonts/truetype
         fc-cache -v
       }
       elseif ($IsWindows) {
-        sudo tar -xf $buildDir/0xProto.zip -C C:\Windows\Fonts
+        $shellApp = New-Object -ComObject shell.application
+        $fonts = $shellApp.NameSpace(0x14)
+        Convert-Path $buildDir/0xProtoNerdFont*.ttf | ForEach-Object { $fonts.MoveHere($_) }
       }
       else {
         throw [System.NotImplementedException]::new()

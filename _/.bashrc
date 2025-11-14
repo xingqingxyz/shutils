@@ -1,8 +1,10 @@
 # .bashrc
 
-# source env
-if [ -f ~/.bash_profile ]; then
-  . ~/.bash_profile
+# import env
+if [ -f ~/.env ]; then
+  while read -r line; do
+    export "$line"
+  done < ~/.env
 fi
 
 #region UserEnv

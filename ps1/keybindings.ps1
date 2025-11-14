@@ -12,7 +12,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardWord
 Set-PSReadLineKeyHandler -Chord Ctrl+k -Function KillLine
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function BackwardKillLine
 # custom
-Set-PSReadLineKeyHandler -Chord Ctrl+c -Description 'Add line to PSReadLine history then cancel' -ScriptBlock {
+Set-PSReadLineKeyHandler -Chord Ctrl+c -Description 'Add line to PSReadLine history, then cancel' -ScriptBlock {
   $text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
   [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($text)
@@ -22,7 +22,7 @@ Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -
   $cursor = 0
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
-  [string]$name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
+  [string]$name = $tokens.Where{ $_.TokenFlags -ceq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
   if (!$name) {
     return
   }
@@ -40,7 +40,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell doc
   $cursor = 0
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
-  $name = $tokens.Where{ $_.TokenFlags -eq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
+  $name = $tokens.Where{ $_.TokenFlags -ceq 'CommandName' -and $_.Extent.StartOffset -le $cursor }[-1].Text
   $info = Get-Command $name -ea Ignore
   if ($info.CommandType -eq 'Alias') {
     $info = $info.ResolvedCommand
@@ -97,7 +97,7 @@ Set-PSReadLineKeyHandler -Chord Alt+C -Description 'Fzf select parent directorie
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
-  $dir = (Invoke-Z -List).Path | fzf --scheme=path
+  $dir = (Invoke-Z -List).Key | fzf --scheme=path
   if (!$dir) {
     return
   }
@@ -109,7 +109,7 @@ Set-PSReadLineKeyHandler -Chord Alt+s -Description 'Add sudo to command line and
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$ast, [ref]$tokens, [ref]$null, [ref]$null)
   $text = $ast.ToString()
-  if (@($tokens.Where{ $_.TokenFlags -eq 'CommandName' }).Count -eq 1) {
+  if (@($tokens.Where{ $_.TokenFlags -ceq 'CommandName' }).Count -eq 1) {
     [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "sudo $text")
   }
   else {

@@ -10,43 +10,52 @@ function Invoke-Z {
     [Parameter(ParameterSetName = 'Delete', Mandatory)][switch]$Delete,
     [Parameter(ParameterSetName = 'Main')][switch]$Echo,
     [Parameter(ParameterSetName = 'Main')][switch]$List,
-    [Parameter(ParameterSetName = 'Main')][switch]$Rank,
-    [Parameter(ParameterSetName = 'Main')][switch]$Time,
+    [Parameter(ParameterSetName = 'Main')][switch]$rank,
+    [Parameter(ParameterSetName = 'Main')][switch]$time,
     [Parameter(ParameterSetName = 'Main')][switch]$Cwd,
     [Parameter(ValueFromRemainingArguments)][string[]]$Queries
   )
-  $sum = $_z.rankSum
+  [hashtable]$json = try {
+    Get-Content -LiteralPath $_zConfig.dataFile -ea Stop | ConvertFrom-Json -AsHashtable -ea Stop
+  }
+  catch {
+    @{
+      itemsMap = @{}
+      rankSum  = 0.0
+    }
+  }
+  [hashtable]$itemsMap = $json.itemsMap
+  $sum = $json.rankSum
   switch ($PSCmdlet.ParameterSetName) {
     'Add' {
       if ($PWD.Provider.Name -cne 'FileSystem') {
         return
       }
-      Get-Item $Queries -ea Ignore | Where-Object { !$_.FullName.Contains("`n") } | ForEach-Object {
+      Get-Item $Queries -ea Ignore | ForEach-Object {
         [string]$path = $_.Attributes.HasFlag([System.IO.FileAttributes]::ReparsePoint) ? $_.ResolvedTarget : $_.FullName
-        foreach ($pat in $_z.config.excludePatterns) {
-          if ($path -like $pat) {
+        foreach ($pat in $_zConfig.excludePatterns) {
+          if ($path -clike $pat) {
             return
           }
         }
-        $item = $_z.itemsMap[$path]
+        $item = $itemsMap[$path]
         $item ??= [pscustomobject]@{
-          Path = $path
-          Rank = 0.0
-          Time = 0
+          rank = 0.0
+          time = 0
         }
-        $item.Rank++
-        [int]$item.Time = Get-Date -UFormat '%s'
-        $_z.itemsMap[$path] = $item
+        $item.rank++
+        [int]$item.time = Get-Date -UFormat '%s'
+        $itemsMap[$path] = $item
         $sum++
       }
-      if ($sum -gt $_z.config.maxHistory) {
+      if ($sum -gt $_zConfig.maxHistory) {
         $sum = 0.0
-        foreach ($item in $_z.itemsMap.Values) {
-          if (($item.Rank *= 0.99) -lt 1.0) {
-            $_z.itemsMap.Remove($item.Path)
+        @($itemsMap.GetEnumerator()).ForEach{
+          if (($_.Value.rank *= 0.99) -lt 1.0) {
+            $itemsMap.Remove($_.Key)
           }
           else {
-            $sum += $item.Rank
+            $sum += $_.Value.rank
           }
         }
       }
@@ -55,32 +64,36 @@ function Invoke-Z {
     'Delete' {
       Get-Item $Queries -ea Ignore | ForEach-Object {
         [string]$path = $_.Attributes.HasFlag([System.IO.FileAttributes]::ReparsePoint) ? $_.ResolvedTarget : $_.FullName
-        $item = $_z.itemsMap[$path]
+        $item = $itemsMap[$path]
         if ($item) {
-          $_z.itemsMap.Remove($path)
-          $sum -= $item.Rank
+          $itemsMap.Remove($path)
+          $sum -= $item.rank
         }
       }
       break
     }
     'Main' {
-      if ($Queries.Count -eq 1 -and $Queries[0] -clike '*[\/]*') {
-        return Set-Location $Queries[0]
+      $reQuery = "^.*$($Queries -join '.*').*$"
+      if ($IsWindows) {
+        $reQuery = $reQuery.Replace('/', '\\')
       }
-      $items = $_z.itemsMap.Values | Where-Object Path -Like *$($Queries -join '*')*
+      # use (?i) ... (?-i) or (?i:...) to ignore case
+      $items = $itemsMap.GetEnumerator() | Where-Object Key -CMatch $reQuery -ea Ignore
       if ($Cwd) {
-        [string]$pattern = [System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath, '*')
-        $items = $items | Where-Object Path -Like $pattern
+        $items = $items | Where-Object Key -CLike (Join-Path $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath *)
       }
       if (!$items) {
-        return Write-Error 'no matches'
+        if ($Queries -and $Queries[-1] -clike '*[\/]*') {
+          return Set-Location $Queries[-1]
+        }
+        return Write-Error "no matches for regexp $reQuery"
       }
       $items = switch ($true) {
-        $Rank { $items | Sort-Object Rank; break }
-        $Time { $items | Sort-Object Time; break }
+        $rank { $items | Sort-Object { $_.Value.rank }; break }
+        $time { $items | Sort-Object { $_.Value.time }; break }
         default {
           [double]$now = Get-Date -UFormat '%s'
-          $items | Sort-Object { 10000 * $_.Rank * (3.75 / (.0001 * ($now - $_.Time) + 1.25)) }
+          $items | Sort-Object { 10000 * $_.Value.rank * (3.75 / (.0001 * ($now - $_.Value.time) + 1.25)) }
           break
         }
       }
@@ -88,58 +101,42 @@ function Invoke-Z {
         return $items
       }
       elseif ($Echo) {
-        return $items[-1]
+        return $items[-1].Key
       }
       for ($i = $items.Count - 1; $i -ge 0; $i--) {
         $item = $items[$i]
         try {
-          Set-Location -LiteralPath $item.Path -ea Stop
+          Set-Location -LiteralPath $item.Key -ea Stop
           break
         }
         catch {
-          Write-Warning "Set-Location failed, removing it: $($item.Path)"
-          $_z.itemsMap.Remove($item.Path)
-          $sum -= $item.Rank
+          Write-Warning "Set-Location failed, removing it: $($item.Key)"
+          $itemsMap.Remove($item.Key)
+          $sum -= $item.Value.rank
           break
         }
       }
       break
     }
   }
-  if ($sum -ne $_z.rankSum) {
-    $_z.rankSum = $sum
-    $_z.itemsMap.Values.ForEach{
-      $_.Path, $_.Rank, $_.Time -join $_z.config.dataSeperator
-    } > $_z.config.dataFile
+  if ($sum -ne $json.rankSum) {
+    $json.rankSum = $sum
+    $json | ConvertTo-Json > $_zConfig.dataFile
   }
 }
 
-Set-Variable -Option ReadOnly -Force _z ([pscustomobject]@{
-    config   = [pscustomobject]@{
-      dataFile        = "$HOME/.z"
-      dataSeperator   = '|'
-      maxHistory      = 1000
-      excludePatterns = @($HOME, ([System.IO.Path]::GetTempPath() + '*')) + (Get-PSDrive -PSProvider FileSystem).Root
-    }
-    rankSum  = 0.0
-    itemsMap = @{}
-  })
-
 & {
-  if (!(Test-Path -LiteralPath $_z.config.dataFile)) {
-    $null = New-Item $_z.config.dataFile -Force
-  }
-  Get-Content -LiteralPath $_z.config.dataFile -ea Ignore | ForEach-Object {
-    [string]$path, [double]$rank, [int]$time = $_.Split($_z.config.dataSeperator)
-    $_z.itemsMap.Add($path, [pscustomobject]@{
-        Path = $path
-        Rank = $rank
-        Time = $time
-      })
-    $_z.rankSum += $rank
+  if ($_zConfig) {
+    return
   }
   $hook = [System.EventHandler[System.Management.Automation.LocationChangedEventArgs]] { Invoke-Z -Add . }
   $action = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
   $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction =
   $action ? [Delegate]::Combine($action, $hook) : $hook
 }
+
+Set-Variable -Option ReadOnly -Force _zConfig ([pscustomobject]@{
+    dataFile        = "$HOME/.z.json"
+    maxHistory      = 1000
+    excludePatterns = @($HOME, ([System.IO.Path]::GetTempPath() + '*')) + (Get-PSDrive -PSProvider FileSystem).Root
+  })

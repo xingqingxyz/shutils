@@ -36,3 +36,5 @@
 	prune = false
 [gui]
 	recentrepo = C:/Users/cmema/p/am
+[rerere]
+	enabled = true
