@@ -15,13 +15,9 @@ function Import-EnvironmentVariable {
 }
 
 # platform init
-if ($IsWindows) {
-  . $env:SHUTILS_ROOT/ps1/windows/profile.ps1
-}
-elseif ($IsLinux) {
+if ($IsLinux) {
   # $env:SHUTILS_ROOT
   Import-EnvironmentVariable ~/.env
-  . $env:SHUTILS_ROOT/ps1/linux/profile.ps1
 }
 # init scripts
 Convert-Path -Force $env:SHUTILS_ROOT/ps1/*.ps1 | ForEach-Object { . $_ }

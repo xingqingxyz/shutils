@@ -5,13 +5,17 @@ if (!$IsWindows) {
 Set-PSReadLineKeyHandler -Chord Alt+H -Function WhatIsKey
 Set-PSReadLineKeyHandler -Chord Alt+o -Function InsertLineAbove
 Set-PSReadLineKeyHandler -Chord Alt+O -Function InsertLineBelow
+Set-PSReadLineKeyHandler -Chord Ctrl+b -Function BackwardWord
 Set-PSReadLineKeyHandler -Chord Ctrl+d -Function DeleteCharOrExit
 Set-PSReadLineKeyHandler -Chord Ctrl+Delete -Function KillWord
-Set-PSReadLineKeyHandler -Chord Ctrl+e -Function ViEditVisually
 Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardWord
 Set-PSReadLineKeyHandler -Chord Ctrl+k -Function KillLine
 Set-PSReadLineKeyHandler -Chord Ctrl+u -Function BackwardKillLine
 # custom
+Set-PSReadLineKeyHandler -Chord 'Ctrl+x,Ctrl+e' -Description 'Edit and execute command' -ScriptBlock {
+  [Microsoft.PowerShell.PSConsoleReadLine]::ViEditVisually()
+  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+}
 Set-PSReadLineKeyHandler -Chord Ctrl+c -Description 'Add line to PSReadLine history, then cancel' -ScriptBlock {
   $text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)

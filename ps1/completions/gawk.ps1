@@ -1,1 +1,1 @@
-./awk.ps1
+awk.ps1

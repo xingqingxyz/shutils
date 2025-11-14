@@ -1,3 +1,45 @@
+if ($IsWindows) {
+  function vsdev {
+    Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
+    Enter-VsDevShell 1da1aa76 -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
+  }
+
+  Set-Variable -Option ReadOnly -Force _executableAliasMap @{
+    grep     = 'grep', '--color=auto'
+    plantuml = 'java', '-jar', "$HOME\tools\plantuml.jar"
+    rg       = 'rg', '--hyperlink-format=vscode'
+  }
+  if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
+    $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
+  }
+  Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
+    # prevent . invoke variable add
+    if ($MyInvocation.InvocationName -ceq '.') {
+      return & $MyInvocation.MyCommand $args
+    }
+    $cmd = $MyInvocation.MyCommand.Name
+    if (!$_executableAliasMap.Contains($cmd)) {
+      return Write-Error "alias not set $cmd"
+    }
+    # flat iterator args for native passing
+    $cmd, $ags = @($_executableAliasMap[$cmd]) + $args.ForEach{
+      if ($null -ne $_) {
+        $_
+      }
+    }
+    $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
+    Write-CommandDebug $cmd $ags
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd $ags
+    }
+    else {
+      & $cmd $ags
+    }
+  }
+  return
+}
+
+#region linux
 function mkdir {
   New-Item -ItemType Directory $args
 }
@@ -55,3 +97,4 @@ $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
     }
   }
 }
+#endregion

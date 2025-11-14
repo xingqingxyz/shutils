@@ -407,8 +407,8 @@ function Get-EnvironmentVariable {
   if ($MyInvocation.ExpectingInput) {
     $ExtraArgs += $input
   }
-  if ($Scope -eq 'Process') {
-    return Get-Item $ExtraArgs.ForEach{ "env:$_" }
+  if ($Scope -ceq 'Process') {
+    return Get-Item -LiteralPath $ExtraArgs.ForEach{ "env:$_" }
   }
   Convert-Path $ExtraArgs.ForEach{ "env:$_" } | ForEach-Object {
     $value = [System.Environment]::GetEnvironmentVariable($_, $Scope)
@@ -446,7 +446,7 @@ function Set-EnvironmentVariable {
   if ($MyInvocation.ExpectingInput) {
     $PSBoundParameters.ExtraArgs = $ExtraArgs += $input
   }
-  if ($Scope -eq 'Machine' -and !(Test-Administrator)) {
+  if ($Scope -ceq 'Machine' -and !(Test-Administrator)) {
     return Invoke-Sudo Set-EnvironmentVariable @PSBoundParameters
   }
   $environment = @{}
@@ -458,7 +458,7 @@ function Set-EnvironmentVariable {
     $value = switch ($Matches[2]) {
       '=' { $Matches[3]; break }
       '+=' { [System.Environment]::GetEnvironmentVariable($key, $Scope) + $Matches[3]; break }
-      default { [System.Environment]::GetEnvironmentVariable($key, 'Process') ?? '1'; break }
+      default { [System.Environment]::GetEnvironmentVariable($key) ?? '1'; break }
     }
     $environment[$key] = $value
     if ($IsWindows) {
@@ -472,7 +472,7 @@ function Set-EnvironmentVariable {
     Set-Item -LiteralPath env:$key $value
   }
   Write-Debug "setting env $($environment.GetEnumerator())"
-  if ($Scope -eq 'Process') {
+  if ($Scope -ceq 'Process') {
     return
   }
   if ($IsWindows) {
@@ -619,9 +619,15 @@ function Repair-GitSymlinks {
     catch {
       return Write-Warning "staged symlink not found: $item"
     }
-    if ($item.LinkType -ne 'SymbolicLink') {
+    if ($item.LinkType -cne 'SymbolicLink') {
       $target = Get-Content -Raw -LiteralPath $item
+      if ($target.StartsWith('.' + [System.IO.Path]::DirectorySeparatorChar)) {
+        $target = $target.Substring(2)
+      }
       New-Item -ItemType SymbolicLink -Force -Target $target $item
+    }
+    elseif ($item.Target.StartsWith('.' + [System.IO.Path]::DirectorySeparatorChar)) {
+      New-Item -ItemType SymbolicLink -Force -Target $item.Target.Substring(2) $item
     }
   }
 }

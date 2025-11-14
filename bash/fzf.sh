@@ -4,7 +4,7 @@
 # -A FZF_COMP_CMDTYPE ...
 
 _fzf_compgen_file() {
-  rg -HI --files -- "$(dirname -- "$2")"
+  rg --hidden --no-ignore --files -- "$(dirname -- "$2")"
 }
 
 _fzf_compgen_file_post() {
@@ -12,7 +12,7 @@ _fzf_compgen_file_post() {
 }
 
 _fzf_compgen_dir() {
-  fd -HILtd . -- "$(dirname -- "$2")"
+  fd -HILtd --search-path="$(dirname -- "$2")"
 }
 
 _fzf_compgen_dir_post() {

@@ -1,1 +1,1 @@
-./python.ps1
+python.ps1

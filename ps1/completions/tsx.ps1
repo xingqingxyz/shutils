@@ -1,1 +1,1 @@
-./node.ps1
+node.ps1

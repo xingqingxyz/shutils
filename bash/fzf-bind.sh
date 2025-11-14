@@ -28,8 +28,23 @@ _fzf_history() {
     '--bind=ctrl-r:toggle-sort'
     '--bind=ctrl-z:ignore'
   )
-  out=$(fc -lr | awk -f "${BASH_SOURCE[0]%/*}/fzf-hist.awk" \
-    | FZF_DEFAULT_OPTS+=" $FZF_CTRL_R_OPTS" fzf "${args[@]}") || return
+  out=$(fc -lr | awk '
+    /^[0-9]+\t \S/ {
+      if (NR > 1) {
+        items[i++] = item
+      }
+      item = $0
+      next
+    }
+    {
+      item = item RS $0
+    }
+    END {
+      items[i] = item
+      for (i in items) {
+        printf "%s\0", items[i]
+      }
+    }' | FZF_DEFAULT_OPTS+=" $FZF_CTRL_R_OPTS" fzf "${args[@]}") || return
   out=${out#*$'\t'}
   READLINE_LINE=$out${READLINE_LINE:READLINE_POINT}
   READLINE_POINT=${#out}

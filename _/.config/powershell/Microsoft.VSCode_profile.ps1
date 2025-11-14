@@ -9,7 +9,10 @@ try {
   }
   else {
     # symlinks escape hatch
-    . $([Environment]::GetFolderPath('MyDocuments'))/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+    . $([System.Environment]::GetFolderPath('MyDocuments'))/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+  }
+  if (Test-Path -LiteralPath ./scripts/onEnterPSES.ps1) {
+    . ./scripts/onEnterPSES.ps1
   }
 }
 catch { }

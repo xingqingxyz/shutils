@@ -22,6 +22,10 @@ function Show-CommandSource {
     [Parameter(Position = 1, ValueFromRemainingArguments)]
     [string[]]
     $ExtraArgs,
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [Alias('Path')]
+    [string]
+    $FullName,
     [Parameter(ValueFromPipeline)]
     [string]
     $InputObject,
@@ -38,11 +42,7 @@ function Show-CommandSource {
       })]
     [Parameter()]
     [string]
-    $Editor = $env:EDITOR ?? 'edit',
-    [Alias('Path')]
-    [Parameter(ValueFromPipelineByPropertyName)]
-    [string]
-    $FullName
+    $Editor = $env:EDITOR ?? 'edit'
   )
   begin {
     [string[]]$paths = @()
@@ -144,7 +144,7 @@ filter show ([string[]]$ExtraArgs) {
 
 filter fsPath {
   if ($IsWindows) {
-    $item = (Get-Item -LiteralPath $_ -ea Stop)
+    $item = (Get-Item -LiteralPath $_ -Force -ea Stop)
     $item.ResolvedTarget ?? $item.FullName
   }
   else {
@@ -184,7 +184,7 @@ filter editable {
 }
 
 filter shouldEdit {
-  $item = Get-Item -LiteralPath $_ -Force
+  $item = Get-Item -LiteralPath $_ -Force -ea Stop
   if ($item.Length -gt 0x300000) {
     return $false # gt 3M
   }
@@ -220,14 +220,14 @@ filter showFile ([string[]]$ExtraArgs) {
     $oldValue = $PSStyle.OutputRendering
     $PSStyle.OutputRendering = 'Ansi'
     try {
-      Get-ChildItem -LiteralPath $path -ea Stop | less
+      Get-ChildItem -LiteralPath $path -Force -ea Stop | less
     }
     finally {
       $PSStyle.OutputRendering = $oldValue
     }
     return
   }
-  Get-Item -LiteralPath $path -ea Stop
+  Get-Item -LiteralPath $path -Force -ea Stop
   switch -CaseSensitive -Regex ($path) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if (($path | decompress | file -L -).Contains('troff')) {

@@ -24,6 +24,3 @@ Set-DarkMode -On
 if (Get-Command dsc -CommandType Application -TotalCount 1 -ea Ignore) {
   Set-DscResourcePath
 }
-
-# root
-sudo $PSScriptRoot/Setup-WinMachine.ps1

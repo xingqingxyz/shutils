@@ -73,6 +73,10 @@
   repo: localsend/localsend
   tag: v1.17.0
   version: 1.17.0
+- name: mkcert
+  repo: FiloSottile/mkcert
+  tag: v1.4.4
+  version: 1.4.4
 - name: mdbook
   repo: rust-lang/mdBook
   tag: v0.4.52
@@ -110,10 +114,13 @@
   repo: phiresky/ripgrep-all
   tag: v0.10.9
   version: 0.10.9
+- name: rustup
+  repo: rust-lang/rustup
+  version: 1.28.2
 - name: uv
   repo: astral-sh/uv
-  version: 0.9.5
-  tag: 0.9.5
+  version: 0.9.8
+  tag: 0.9.8
 - name: xh
   repo: ducaale/xh
   tag: v0.25.0

@@ -3,31 +3,40 @@ using namespace System.Management.Automation.Language
 
 Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
   param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
-  $command = @(foreach ($i in $commandAst.CommandElements) {
-      if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {
-        continue
-      }
-      if ($i -isnot [StringConstantExpressionAst] -or
-        $i.StringConstantType -ne [StringConstantType]::BareWord -or
-        $i.Value.StartsWith('-')) {
-        break
-      }
-      $i.Value
-    }) -join ' '
-
-  $cursorPosition -= $wordToComplete.Length
-  foreach ($i in $commandAst.CommandElements) {
-    if ($i.Extent.StartOffset -ge $cursorPosition) {
+  $commands = @()
+  $prev = ''
+  foreach ($el in ($commandAst.CommandElements | Select-Object -Skip 1)) {
+    if ($el.Extent.EndOffset -ge $cursorPosition) {
       break
     }
-    $prev = $i
+    $text = if ($el -is [StringConstantExpressionAst]) {
+      $el.Value
+    }
+    elseif ($el -is [CommandParameterAst]) {
+      $el.ToString()
+    }
+    else {
+      break
+    }
+    if ($text.StartsWith('-')) {
+      if ($commands.Count -eq 0) {
+        $prev = $text
+        continue
+      }
+      break
+    }
+    if ($commands.Count -eq 0 -and $prev -cmatch '^-[^-]') {
+      $prev = $text
+      continue
+    }
+    $prev = $text
+    $commands += $text
   }
-  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
-
+  $command = $commands -join ' '
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          @('-h', '--help', '-v', '--version').ForEach{ [CompletionResult]::new($_) }
+          @('-v', '--version', '-h', '--help', '-C', '-c', '--exec-path=', '--html-path', '--man-path', '--info-path', '-p', '--paginate', '-P', '--no-pager', '--no-replace-objects', '--no-lazy-fetch', '--no-optional-locks', '--no-advice', '--bare', '--git-dir=', '--work-tree=', '--namespace=', '--config-env=').ForEach{ [CompletionResult]::new($_) }
           break
         }
         [CompletionResult]::new('add', 'add', [CompletionResultType]::ParameterName, 'Add file contents to the index')
@@ -3720,7 +3729,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
         }
         break
       }
-      'flow;init' {
+      'flow init' {
         if ($wordToComplete.StartsWith('-')) {
           [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Show this help')
           [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Show this help')
@@ -3753,7 +3762,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
         }
         break
       }
-      { $_ -like 'flow;*' } {
+      { $_.StartsWith('flow ') } {
         if ($wordToComplete.StartsWith('-')) {
           [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Show this help')
           [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Show this help')

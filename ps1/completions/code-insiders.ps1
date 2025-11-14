@@ -1,1 +1,1 @@
-./code.ps1
+code.ps1
