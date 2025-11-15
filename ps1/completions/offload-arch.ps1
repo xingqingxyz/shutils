@@ -1,0 +1,1 @@
+amdgpu-arch.ps1

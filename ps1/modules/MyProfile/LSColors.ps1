@@ -6,6 +6,6 @@ else {
 }
 $PSStyle.FileInfo.Directory = $PSStyle.Underline + $PSStyle.Foreground.BrightBlue
 $PSStyle.FileInfo.Executable = $PSStyle.Italic + $PSStyle.Foreground.BrightYellow
-Import-Csv $PSScriptRoot/LSColors.ini -Delimiter = -Header name, value | ForEach-Object {
+Import-Csv -LiteralPath $PSScriptRoot/LSColors.ini -Delimiter = -Header name, value | ForEach-Object {
   $PSStyle.FileInfo.Extension[$_.name] = $PSStyle.Foreground.FromConsoleColor([System.ConsoleColor]$_.value)
 }

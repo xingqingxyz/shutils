@@ -942,14 +942,12 @@ function Update-Software {
         pnpm self-update
         pnpm update -g
         if ($Force) {
-          pnpm add -g $pkgMap.pnpm
+          pnpm add -g $pkgMap.pnpm.packages $pkgMap.pnpm.allowBuild.ForEach{ "--allow-build=$_" }
         }
-        pnpm approve-builds -g
         continue
       }
       pnpm self-update
       pnpm update
-      pnpm approve-builds
       continue
     }
     ps1 {

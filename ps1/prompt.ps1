@@ -45,14 +45,12 @@ function Format-Duration {
 function prompt {
   '{0} ({1}:{2}) {3}{4} ' -f @(
     # status
-    if ($?) {
-      "`e[32mPS`e[0m"
-    }
-    elseif ($Error -and $MyInvocation.HistoryId - 1 -eq ($Error[0].ErrorRecord ?? $Error[0]).InvocationInfo.HistoryId) {
-      "`e[31mPS`e[0m"
-    }
-    else {
-      "`e[$(32 - [bool]$LASTEXITCODE)m$LASTEXITCODE`e[0m"
+    switch ([int]!$? -shl 1 -bor [int][bool]$LASTEXITCODE) {
+      0 { "`e[32mPS`e[0m"; break }
+      1 { "`e[33m$LASTEXITCODE`e[0m"; break }
+      2 { "`e[31mPS`e[0m"; break }
+      3 { "`e[31m$LASTEXITCODE`e[0m"; break }
+      # no default
     }
     # historyId
     $MyInvocation.HistoryId

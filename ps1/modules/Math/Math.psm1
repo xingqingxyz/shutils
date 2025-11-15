@@ -61,3 +61,27 @@ function hex {
       })
   }
 }
+
+$vimDigraph = $null
+function de {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Digraph
+  )
+  if (!$vimDigraph) {
+    $Script:vimDigraph = Import-Csv -LiteralPath $PSScriptRoot/vim-digraph.tsv -Delimiter "`t" -ea Stop
+  }
+  foreach ($item in $vimDigraph) {
+    if ($item.digraph -ceq $Digraph) {
+      return $item.char
+    }
+  }
+  throw 'no matches'
+}
+
+function fzfDigraph {
+  $char = Import-Csv -LiteralPath $PSScriptRoot/vim-digraph.tsv -Delimiter "`t" | fzf
+  $char.Split("`t", 2)[0]
+}

@@ -1,0 +1,1308 @@
+char	digraph	description
+^@	nu	null (nul)
+^a	sh	start of heading (soh)
+^b	sx	start of text (stx)
+^c	ex	end of text (etx)
+^d	et	end of transmission (eot)
+^e	eq	enquiry (enq)
+^f	ak	acknowledge (ack)
+^g	bl	bell (bel)
+^h	bs	backspace (bs)
+^i	ht	character tabulation (ht)
+^@	lf	line feed (lf)
+^k	vt	line tabulation (vt)
+^l	ff	form feed (ff)
+^m	cr	carriage return (cr)
+^n	so	shift out (so)
+^o	si	shift in (si)
+^p	dl	datalink escape (dle)
+^q	d1	device control one (dc1)
+^r	d2	device control two (dc2)
+^s	d3	device control three (dc3)
+^t	d4	device control four (dc4)
+^u	nk	negative acknowledge (nak)
+^v	sy	synchronous idle (syn)
+^w	eb	end of transmission block (etb)
+^x	cn	cancel (can)
+^y	em	end of medium (em)
+^z	sb	substitute (sub)
+^[	ec	escape (esc)
+^\	fs	file separator (is4)
+^]	gs	group separator (is3)
+^^	rs	record separator (is2)
+^_	us	unit separator (is1)
+" "	sp	space
+#	nb	number sign
+$	do	dollar sign
+@	at	commercial at
+[	<(	left square bracket
+\	//	reverse solidus
+]	)>	right square bracket
+^	'>	circumflex accent
+`	'!	grave accent
+{	(!	left curly bracket
+|	!!	vertical line
+}	!)	right curly bracket
+~	'?	tilde
+^?	dt	delete (del)
+~@	pa	padding character (pad)
+~a	ho	high octet preset (hop)
+~b	bh	break permitted here (bph)
+~c	nh	no break here (nbh)
+~d	in	index (ind)
+~e	nl	next line (nel)
+~f	sa	start of selected area (ssa)
+~g	es	end of selected area (esa)
+~h	hs	character tabulation set (hts)
+~i	hj	character tabulation with justification (htj)
+~j	vs	line tabulation set (vts)
+~k	pd	partial line forward (pld)
+~l	pu	partial line backward (plu)
+~m	ri	reverse line feed (ri)
+~n	s2	single-shift two (ss2)
+~o	s3	single-shift three (ss3)
+~p	dc	device control string (dcs)
+~q	p1	private use one (pu1)
+~r	p2	private use two (pu2)
+~s	ts	set transmit state (sts)
+~t	cc	cancel character (cch)
+~u	mw	message waiting (mw)
+~v	sg	start of guarded area (spa)
+~w	eg	end of guarded area (epa)
+~x	ss	start of string (sos)
+~y	gc	single graphic character introducer (sgci)
+~z	sc	single character introducer (sci)
+~[	ci	control sequence introducer (csi)
+~\	st	string terminator (st)
+~]	oc	operating system command (osc)
+~^	pm	privacy message (pm)
+~_	ac	application program command (apc)
+|	ns	no-break space
+¡	!i	inverted exclamation mark
+¢	ct	cent sign
+£	pd	pound sign
+¤	cu	currency sign
+¥	ye	yen sign
+¦	bb	broken bar
+§	se	section sign
+¨	':	diaeresis
+©	co	copyright sign
+ª	-a	feminine ordinal indicator
+«	<<	left-pointing double angle quotation mark
+¬	no	not sign
+­	--	soft hyphen
+®	rg	registered sign
+¯	'm	macron
+°	dg	degree sign
+±	+-	plus-minus sign
+²	2s	superscript two
+³	3s	superscript three
+´	''	acute accent
+µ	my	micro sign
+¶	pi	pilcrow sign
+·	.m	middle dot
+¸	'	184
+¹	1s	superscript one
+º	-o	masculine ordinal indicator
+»	>>	right-pointing double angle quotation mark
+¼	14	vulgar fraction one quarter
+½	12	vulgar fraction one half
+¾	34	vulgar fraction three quarters
+¿	?i	inverted question mark
+à	a!	latin capital letter a with grave
+á	a'	latin capital letter a with acute
+â	a>	latin capital letter a with circumflex
+ã	a?	latin capital letter a with tilde
+ä	a:	latin capital letter a with diaeresis
+å	aa	latin capital letter a with ring above
+æ	ae	latin capital letter ae
+ç	c	199
+è	e!	latin capital letter e with grave
+é	e'	latin capital letter e with acute
+ê	e>	latin capital letter e with circumflex
+ë	e:	latin capital letter e with diaeresis
+ì	i!	latin capital letter i with grave
+í	i'	latin capital letter i with acute
+î	i>	latin capital letter i with circumflex
+ï	i:	latin capital letter i with diaeresis
+ð	d-	latin capital letter eth (icelandic)
+ñ	n?	latin capital letter n with tilde
+ò	o!	latin capital letter o with grave
+ó	o'	latin capital letter o with acute
+ô	o>	latin capital letter o with circumflex
+õ	o?	latin capital letter o with tilde
+ö	o:	latin capital letter o with diaeresis
+×	*x	multiplication sign
+ø	o/	latin capital letter o with stroke
+ù	u!	latin capital letter u with grave
+ú	u'	latin capital letter u with acute
+û	u>	latin capital letter u with circumflex
+ü	u:	latin capital letter u with diaeresis
+ý	y'	latin capital letter y with acute
+þ	th	latin capital letter thorn (icelandic)
+ß	ss	latin small letter sharp s (german)
+à	a!	latin small letter a with grave
+á	a'	latin small letter a with acute
+â	a>	latin small letter a with circumflex
+ã	a?	latin small letter a with tilde
+ä	a:	latin small letter a with diaeresis
+å	aa	latin small letter a with ring above
+æ	ae	latin small letter ae
+ç	c	231
+è	e!	latin small letter e with grave
+é	e'	latin small letter e with acute
+ê	e>	latin small letter e with circumflex
+ë	e:	latin small letter e with diaeresis
+ì	i!	latin small letter i with grave
+í	i'	latin small letter i with acute
+î	i>	latin small letter i with circumflex
+ï	i:	latin small letter i with diaeresis
+ð	d-	latin small letter eth (icelandic)
+ñ	n?	latin small letter n with tilde
+ò	o!	latin small letter o with grave
+ó	o'	latin small letter o with acute
+ô	o>	latin small letter o with circumflex
+õ	o?	latin small letter o with tilde
+ö	o:	latin small letter o with diaeresis
+÷	-:	division sign
+ø	o/	latin small letter o with stroke
+ù	u!	latin small letter u with grave
+ú	u'	latin small letter u with acute
+û	u>	latin small letter u with circumflex
+ü	u:	latin small letter u with diaeresis
+ý	y'	latin small letter y with acute
+þ	th	latin small letter thorn (icelandic)
+ÿ	y:	latin small letter y with diaeresis
+ā	a-	latin capital letter a with macron
+ā	a-	latin small letter a with macron
+ă	a(	latin capital letter a with breve
+ă	a(	latin small letter a with breve
+ą	a;	latin capital letter a with ogonek
+ą	a;	latin small letter a with ogonek
+ć	c'	latin capital letter c with acute
+ć	c'	latin small letter c with acute
+ĉ	c>	latin capital letter c with circumflex
+ĉ	c>	latin small letter c with circumflex
+ċ	c.	latin capital letter c with dot above
+ċ	c.	latin small letter c with dot above
+č	c<	latin capital letter c with caron
+č	c<	latin small letter c with caron
+ď	d<	latin capital letter d with caron
+ď	d<	latin small letter d with caron
+đ	d/	latin capital letter d with stroke
+đ	d/	latin small letter d with stroke
+ē	e-	latin capital letter e with macron
+ē	e-	latin small letter e with macron
+ĕ	e(	latin capital letter e with breve
+ĕ	e(	latin small letter e with breve
+ė	e.	latin capital letter e with dot above
+ė	e.	latin small letter e with dot above
+ę	e;	latin capital letter e with ogonek
+ę	e;	latin small letter e with ogonek
+ě	e<	latin capital letter e with caron
+ě	e<	latin small letter e with caron
+ĝ	g>	latin capital letter g with circumflex
+ĝ	g>	latin small letter g with circumflex
+ğ	g(	latin capital letter g with breve
+ğ	g(	latin small letter g with breve
+ġ	g.	latin capital letter g with dot above
+ġ	g.	latin small letter g with dot above
+ģ	g	0290
+ģ	g	0291
+ĥ	h>	latin capital letter h with circumflex
+ĥ	h>	latin small letter h with circumflex
+ħ	h/	latin capital letter h with stroke
+ħ	h/	latin small letter h with stroke
+ĩ	i?	latin capital letter i with tilde
+ĩ	i?	latin small letter i with tilde
+ī	i-	latin capital letter i with macron
+ī	i-	latin small letter i with macron
+ĭ	i(	latin capital letter i with breve
+ĭ	i(	latin small letter i with breve
+į	i;	latin capital letter i with ogonek
+į	i;	latin small letter i with ogonek
+i̇	i.	latin capital letter i with dot above
+ı	i.	latin small letter dotless i
+ĳ	ij	latin capital ligature ij
+ĳ	ij	latin small ligature ij
+ĵ	j>	latin capital letter j with circumflex
+ĵ	j>	latin small letter j with circumflex
+ķ	k	0310
+ķ	k	0311
+ĸ	kk	latin small letter kra
+ĺ	l'	latin capital letter l with acute
+ĺ	l'	latin small letter l with acute
+ļ	l	0315
+ļ	l	0316
+ľ	l<	latin capital letter l with caron
+ľ	l<	latin small letter l with caron
+ŀ	l.	latin capital letter l with middle dot
+ŀ	l.	latin small letter l with middle dot
+ł	l/	latin capital letter l with stroke
+ł	l/	latin small letter l with stroke
+ń	n'	latin capital letter n with acute
+ń	n'	latin small letter n with acute
+ņ	n	0325
+ņ	n	0326
+ň	n<	latin capital letter n with caron
+ň	n<	latin small letter n with caron
+ŉ	'n	latin small letter n preceded by apostrophe
+ŋ	ng	latin capital letter eng
+ŋ	ng	latin small letter eng
+ō	o-	latin capital letter o with macron
+ō	o-	latin small letter o with macron
+ŏ	o(	latin capital letter o with breve
+ŏ	o(	latin small letter o with breve
+ő	o\"	latin capital letter o with double acute
+ő	o\"	latin small letter o with double acute
+œ	oe	latin capital ligature oe
+œ	oe	latin small ligature oe
+ŕ	r'	latin capital letter r with acute
+ŕ	r'	latin small letter r with acute
+ŗ	r	0342
+ŗ	r	0343
+ř	r<	latin capital letter r with caron
+ř	r<	latin small letter r with caron
+ś	s'	latin capital letter s with acute
+ś	s'	latin small letter s with acute
+ŝ	s>	latin capital letter s with circumflex
+ŝ	s>	latin small letter s with circumflex
+ş	s	0350
+ş	s	0351
+š	s<	latin capital letter s with caron
+š	s<	latin small letter s with caron
+ţ	t	0354
+ţ	t	0355
+ť	t<	latin capital letter t with caron
+ť	t<	latin small letter t with caron
+ŧ	t/	latin capital letter t with stroke
+ŧ	t/	latin small letter t with stroke
+ũ	u?	latin capital letter u with tilde
+ũ	u?	latin small letter u with tilde
+ū	u-	latin capital letter u with macron
+ū	u-	latin small letter u with macron
+ŭ	u(	latin capital letter u with breve
+ŭ	u(	latin small letter u with breve
+ů	u0	latin capital letter u with ring above
+ů	u0	latin small letter u with ring above
+ű	u\"	latin capital letter u with double acute
+ű	u\"	latin small letter u with double acute
+ų	u;	latin capital letter u with ogonek
+ų	u;	latin small letter u with ogonek
+ŵ	w>	latin capital letter w with circumflex
+ŵ	w>	latin small letter w with circumflex
+ŷ	y>	latin capital letter y with circumflex
+ŷ	y>	latin small letter y with circumflex
+ÿ	y:	latin capital letter y with diaeresis
+ź	z'	latin capital letter z with acute
+ź	z'	latin small letter z with acute
+ż	z.	latin capital letter z with dot above
+ż	z.	latin small letter z with dot above
+ž	z<	latin capital letter z with caron
+ž	z<	latin small letter z with caron
+ơ	o9	latin capital letter o with horn
+ơ	o9	latin small letter o with horn
+ƣ	oi	latin capital letter oi
+ƣ	oi	latin small letter oi
+ʀ	yr	latin letter yr
+ư	u9	latin capital letter u with horn
+ư	u9	latin small letter u with horn
+ƶ	z/	latin capital letter z with stroke
+ƶ	z/	latin small letter z with stroke
+ʒ	ed	latin capital letter ezh
+ǎ	a<	latin capital letter a with caron
+ǎ	a<	latin small letter a with caron
+ǐ	i<	latin capital letter i with caron
+ǐ	i<	latin small letter i with caron
+ǒ	o<	latin capital letter o with caron
+ǒ	o<	latin small letter o with caron
+ǔ	u<	latin capital letter u with caron
+ǔ	u<	latin small letter u with caron
+ǟ	a1	latin capital letter a with diaeresis and macron
+ǟ	a1	latin small letter a with diaeresis and macron
+ǡ	a7	latin capital letter a with dot above and macron
+ǡ	a7	latin small letter a with dot above and macron
+ǣ	a3	latin capital letter ae with macron
+ǣ	a3	latin small letter ae with macron
+ǥ	g/	latin capital letter g with stroke
+ǥ	g/	latin small letter g with stroke
+ǧ	g<	latin capital letter g with caron
+ǧ	g<	latin small letter g with caron
+ǩ	k<	latin capital letter k with caron
+ǩ	k<	latin small letter k with caron
+ǫ	o;	latin capital letter o with ogonek
+ǫ	o;	latin small letter o with ogonek
+ǭ	o1	latin capital letter o with ogonek and macron
+ǭ	o1	latin small letter o with ogonek and macron
+ǯ	ez	latin capital letter ezh with caron
+ǯ	ez	latin small letter ezh with caron
+ǰ	j<	latin small letter j with caron
+ǵ	g'	latin capital letter g with acute
+ǵ	g'	latin small letter g with acute
+ʿ	;s	modifier letter left half ring
+ˇ	'<	caron
+˘	'(	breve
+˙	'.	dot above
+˚	'0	ring above
+˛	';	ogonek
+˝	'\"	double acute accent
+ά	a%	greek capital letter alpha with tonos
+έ	e%	greek capital letter epsilon with tonos
+ή	y%	greek capital letter eta with tonos
+ί	i%	greek capital letter iota with tonos
+ό	o%	greek capital letter omicron with tonos
+ύ	u%	greek capital letter upsilon with tonos
+ώ	w%	greek capital letter omega with tonos
+ΐ	i3	greek small letter iota with dialytika and tonos
+α	a*	greek capital letter alpha
+β	b*	greek capital letter beta
+γ	g*	greek capital letter gamma
+δ	d*	greek capital letter delta
+ε	e*	greek capital letter epsilon
+ζ	z*	greek capital letter zeta
+η	y*	greek capital letter eta
+θ	h*	greek capital letter theta
+ι	i*	greek capital letter iota
+κ	k*	greek capital letter kappa
+λ	l*	greek capital letter lamda (aka lambda)
+μ	m*	greek capital letter mu
+ν	n*	greek capital letter nu
+ξ	c*	greek capital letter xi
+ο	o*	greek capital letter omicron
+π	p*	greek capital letter pi
+ρ	r*	greek capital letter rho
+σ	s*	greek capital letter sigma
+τ	t*	greek capital letter tau
+υ	u*	greek capital letter upsilon
+φ	f*	greek capital letter phi
+χ	x*	greek capital letter chi
+ψ	q*	greek capital letter psi
+ω	w*	greek capital letter omega
+ϊ	j*	greek capital letter iota with dialytika
+ϋ	v*	greek capital letter upsilon with dialytika
+ά	a%	greek small letter alpha with tonos
+έ	e%	greek small letter epsilon with tonos
+ή	y%	greek small letter eta with tonos
+ί	i%	greek small letter iota with tonos
+ΰ	u3	greek small letter upsilon with dialytika and tonos
+α	a*	greek small letter alpha
+β	b*	greek small letter beta
+γ	g*	greek small letter gamma
+δ	d*	greek small letter delta
+ε	e*	greek small letter epsilon
+ζ	z*	greek small letter zeta
+η	y*	greek small letter eta
+θ	h*	greek small letter theta
+ι	i*	greek small letter iota
+κ	k*	greek small letter kappa
+λ	l*	greek small letter lamda (aka lambda)
+μ	m*	greek small letter mu
+ν	n*	greek small letter nu
+ξ	c*	greek small letter xi
+ο	o*	greek small letter omicron
+π	p*	greek small letter pi
+ρ	r*	greek small letter rho
+ς	*s	greek small letter final sigma
+σ	s*	greek small letter sigma
+τ	t*	greek small letter tau
+υ	u*	greek small letter upsilon
+φ	f*	greek small letter phi
+χ	x*	greek small letter chi
+ψ	q*	greek small letter psi
+ω	w*	greek small letter omega
+ϊ	j*	greek small letter iota with dialytika
+ϋ	v*	greek small letter upsilon with dialytika
+ό	o%	greek small letter omicron with tonos
+ύ	u%	greek small letter upsilon with tonos
+ώ	w%	greek small letter omega with tonos
+ϙ	'g	greek letter archaic koppa
+ϙ		0985
+ϛ	t3	greek letter stigma
+ϛ	t3	greek small letter stigma
+ϝ	m3	greek letter digamma
+ϝ	m3	greek small letter digamma
+ϟ	k3	greek letter koppa
+ϟ	k3	greek small letter koppa
+ϡ	p3	greek letter sampi
+ϡ	p3	greek small letter sampi
+θ	'%	greek capital theta symbol
+ϵ	j3	greek lunate epsilon symbol
+ё	io	cyrillic capital letter io
+ђ	d%	cyrillic capital letter dje
+ѓ	g%	cyrillic capital letter gje
+є	ie	cyrillic capital letter ukrainian ie
+ѕ	ds	cyrillic capital letter dze
+і	ii	cyrillic capital letter byelorussian-ukrainian i
+ї	yi	cyrillic capital letter yi
+ј	j%	cyrillic capital letter je
+љ	lj	cyrillic capital letter lje
+њ	nj	cyrillic capital letter nje
+ћ	ts	cyrillic capital letter tshe
+ќ	kj	cyrillic capital letter kje
+ў	v%	cyrillic capital letter short u
+џ	dz	cyrillic capital letter dzhe
+а	a=	cyrillic capital letter a
+б	b=	cyrillic capital letter be
+в	v=	cyrillic capital letter ve
+г	g=	cyrillic capital letter ghe
+д	d=	cyrillic capital letter de
+е	e=	cyrillic capital letter ie
+ж	z%	cyrillic capital letter zhe
+з	z=	cyrillic capital letter ze
+и	i=	cyrillic capital letter i
+й	j=	cyrillic capital letter short i
+к	k=	cyrillic capital letter ka
+л	l=	cyrillic capital letter el
+м	m=	cyrillic capital letter em
+н	n=	cyrillic capital letter en
+о	o=	cyrillic capital letter o
+п	p=	cyrillic capital letter pe
+р	r=	cyrillic capital letter er
+с	s=	cyrillic capital letter es
+т	t=	cyrillic capital letter te
+у	u=	cyrillic capital letter u
+ф	f=	cyrillic capital letter ef
+х	h=	cyrillic capital letter ha
+ц	c=	cyrillic capital letter tse
+ч	c%	cyrillic capital letter che
+ш	s%	cyrillic capital letter sha
+щ	sc	cyrillic capital letter shcha
+ъ	=\"	cyrillic capital letter hard sign
+ы	y=	cyrillic capital letter yeru
+ь	%\"	cyrillic capital letter soft sign
+э	je	cyrillic capital letter e
+ю	ju	cyrillic capital letter yu
+я	ja	cyrillic capital letter ya
+а	a=	cyrillic small letter a
+б	b=	cyrillic small letter be
+в	v=	cyrillic small letter ve
+г	g=	cyrillic small letter ghe
+д	d=	cyrillic small letter de
+е	e=	cyrillic small letter ie
+ж	z%	cyrillic small letter zhe
+з	z=	cyrillic small letter ze
+и	i=	cyrillic small letter i
+й	j=	cyrillic small letter short i
+к	k=	cyrillic small letter ka
+л	l=	cyrillic small letter el
+м	m=	cyrillic small letter em
+н	n=	cyrillic small letter en
+о	o=	cyrillic small letter o
+п	p=	cyrillic small letter pe
+р	r=	cyrillic small letter er
+с	s=	cyrillic small letter es
+т	t=	cyrillic small letter te
+у	u=	cyrillic small letter u
+ф	f=	cyrillic small letter ef
+х	h=	cyrillic small letter ha
+ц	c=	cyrillic small letter tse
+ч	c%	cyrillic small letter che
+ш	s%	cyrillic small letter sha
+щ	sc	cyrillic small letter shcha
+ъ	='	cyrillic small letter hard sign
+ы	y=	cyrillic small letter yeru
+ь	%'	cyrillic small letter soft sign
+э	je	cyrillic small letter e
+ю	ju	cyrillic small letter yu
+я	ja	cyrillic small letter ya
+ё	io	cyrillic small letter io
+ђ	d%	cyrillic small letter dje
+ѓ	g%	cyrillic small letter gje
+є	ie	cyrillic small letter ukrainian ie
+ѕ	ds	cyrillic small letter dze
+і	ii	cyrillic small letter byelorussian-ukrainian i
+ї	yi	cyrillic small letter yi
+ј	j%	cyrillic small letter je
+љ	lj	cyrillic small letter lje
+њ	nj	cyrillic small letter nje
+ћ	ts	cyrillic small letter tshe
+ќ	kj	cyrillic small letter kje
+ў	v%	cyrillic small letter short u
+џ	dz	cyrillic small letter dzhe
+ѣ	y3	cyrillic capital letter yat
+ѣ	y3	cyrillic small letter yat
+ѫ	o3	cyrillic capital letter big yus
+ѫ	o3	cyrillic small letter big yus
+ѳ	f3	cyrillic capital letter fita
+ѳ	f3	cyrillic small letter fita
+ѵ	v3	cyrillic capital letter izhitsa
+ѵ	v3	cyrillic small letter izhitsa
+ҁ	c3	cyrillic capital letter koppa
+ҁ	c3	cyrillic small letter koppa
+ґ	g3	cyrillic capital letter ghe with upturn
+ґ	g3	cyrillic small letter ghe with upturn
+א	a+	hebrew letter alef
+ב	b+	hebrew letter bet
+ג	g+	hebrew letter gimel
+ד	d+	hebrew letter dalet
+ה	h+	hebrew letter he
+ו	w+	hebrew letter vav
+ז	z+	hebrew letter zayin
+ח	x+	hebrew letter het
+ט	tj	hebrew letter tet
+י	j+	hebrew letter yod
+ך	k%	hebrew letter final kaf
+כ	k+	hebrew letter kaf
+ל	l+	hebrew letter lamed
+ם	m%	hebrew letter final mem
+מ	m+	hebrew letter mem
+ן	n%	hebrew letter final nun
+נ	n+	hebrew letter nun
+ס	s+	hebrew letter samekh
+ע	e+	hebrew letter ayin
+ף	p%	hebrew letter final pe
+פ	p+	hebrew letter pe
+ץ	zj	hebrew letter final tsadi
+צ	zj	hebrew letter tsadi
+ק	q+	hebrew letter qof
+ר	r+	hebrew letter resh
+ש	sh	hebrew letter shin
+ת	t+	hebrew letter tav
+،		1548
+؛	;+	arabic semicolon
+؟	?+	arabic question mark
+ء	h'	arabic letter hamza
+آ	am	arabic letter alef with madda above
+أ	ah	arabic letter alef with hamza above
+ؤ	wh	arabic letter waw with hamza above
+إ	ah	arabic letter alef with hamza below
+ئ	yh	arabic letter yeh with hamza above
+ا	a+	arabic letter alef
+ب	b+	arabic letter beh
+ة	tm	arabic letter teh marbuta
+ت	t+	arabic letter teh
+ث	tk	arabic letter theh
+ج	g+	arabic letter jeem
+ح	hk	arabic letter hah
+خ	x+	arabic letter khah
+د	d+	arabic letter dal
+ذ	dk	arabic letter thal
+ر	r+	arabic letter reh
+ز	z+	arabic letter zain
+س	s+	arabic letter seen
+ش	sn	arabic letter sheen
+ص	c+	arabic letter sad
+ض	dd	arabic letter dad
+ط	tj	arabic letter tah
+ظ	zh	arabic letter zah
+ع	e+	arabic letter ain
+غ	i+	arabic letter ghain
+ـ	++	arabic tatweel
+ف	f+	arabic letter feh
+ق	q+	arabic letter qaf
+ك	k+	arabic letter kaf
+ل	l+	arabic letter lam
+م	m+	arabic letter meem
+ن	n+	arabic letter noon
+ه	h+	arabic letter heh
+و	w+	arabic letter waw
+ى	j+	arabic letter alef maksura
+ي	y+	arabic letter yeh
+ً	:+	arabic fathatan
+ٌ	\"+	arabic dammatan
+ٍ	=+	arabic kasratan
+َ	/+	arabic fatha
+ُ	'+	arabic damma
+ِ	1+	arabic kasra
+ّ	3+	arabic shadda
+ْ	0+	arabic sukun
+ٰ	as	arabic letter superscript alef
+پ	p+	arabic letter peh
+ڤ	v+	arabic letter veh
+گ	gf	arabic letter gaf
+۰	0a	extended arabic-indic digit zero
+۱	1a	extended arabic-indic digit one
+۲	2a	extended arabic-indic digit two
+۳	3a	extended arabic-indic digit three
+۴	4a	extended arabic-indic digit four
+۵	5a	extended arabic-indic digit five
+۶	6a	extended arabic-indic digit six
+۷	7a	extended arabic-indic digit seven
+۸	8a	extended arabic-indic digit eight
+۹	9a	extended arabic-indic digit nine
+ḃ	b.	latin capital letter b with dot above
+ḃ	b.	latin small letter b with dot above
+ḇ	b_	latin capital letter b with line below
+ḇ	b_	latin small letter b with line below
+ḋ	d.	latin capital letter d with dot above
+ḋ	d.	latin small letter d with dot above
+ḏ	d_	latin capital letter d with line below
+ḏ	d_	latin small letter d with line below
+ḑ	d	7696
+ḑ	d	7697
+ḟ	f.	latin capital letter f with dot above
+ḟ	f.	latin small letter f with dot above
+ḡ	g-	latin capital letter g with macron
+ḡ	g-	latin small letter g with macron
+ḣ	h.	latin capital letter h with dot above
+ḣ	h.	latin small letter h with dot above
+ḧ	h:	latin capital letter h with diaeresis
+ḧ	h:	latin small letter h with diaeresis
+ḩ	h	7720
+ḩ	h	7721
+ḱ	k'	latin capital letter k with acute
+ḱ	k'	latin small letter k with acute
+ḵ	k_	latin capital letter k with line below
+ḵ	k_	latin small letter k with line below
+ḻ	l_	latin capital letter l with line below
+ḻ	l_	latin small letter l with line below
+ḿ	m'	latin capital letter m with acute
+ḿ	m'	latin small letter m with acute
+ṁ	m.	latin capital letter m with dot above
+ṁ	m.	latin small letter m with dot above
+ṅ	n.	latin capital letter n with dot above
+ṅ	n.	latin small letter n with dot above
+ṉ	n_	latin capital letter n with line below
+ṉ	n_	latin small letter n with line below
+ṕ	p'	latin capital letter p with acute
+ṕ	p'	latin small letter p with acute
+ṗ	p.	latin capital letter p with dot above
+ṗ	p.	latin small letter p with dot above
+ṙ	r.	latin capital letter r with dot above
+ṙ	r.	latin small letter r with dot above
+ṟ	r_	latin capital letter r with line below
+ṟ	r_	latin small letter r with line below
+ṡ	s.	latin capital letter s with dot above
+ṡ	s.	latin small letter s with dot above
+ṫ	t.	latin capital letter t with dot above
+ṫ	t.	latin small letter t with dot above
+ṯ	t_	latin capital letter t with line below
+ṯ	t_	latin small letter t with line below
+ṽ	v?	latin capital letter v with tilde
+ṽ	v?	latin small letter v with tilde
+ẁ	w!	latin capital letter w with grave
+ẁ	w!	latin small letter w with grave
+ẃ	w'	latin capital letter w with acute
+ẃ	w'	latin small letter w with acute
+ẅ	w:	latin capital letter w with diaeresis
+ẅ	w:	latin small letter w with diaeresis
+ẇ	w.	latin capital letter w with dot above
+ẇ	w.	latin small letter w with dot above
+ẋ	x.	latin capital letter x with dot above
+ẋ	x.	latin small letter x with dot above
+ẍ	x:	latin capital letter x with diaeresis
+ẍ	x:	latin small letter x with diaeresis
+ẏ	y.	latin capital letter y with dot above
+ẏ	y.	latin small letter y with dot above
+ẑ	z>	latin capital letter z with circumflex
+ẑ	z>	latin small letter z with circumflex
+ẕ	z_	latin capital letter z with line below
+ẕ	z_	latin small letter z with line below
+ẖ	h_	latin small letter h with line below
+ẗ	t:	latin small letter t with diaeresis
+ẘ	w0	latin small letter w with ring above
+ẙ	y0	latin small letter y with ring above
+ả	a2	latin capital letter a with hook above
+ả	a2	latin small letter a with hook above
+ẻ	e2	latin capital letter e with hook above
+ẻ	e2	latin small letter e with hook above
+ẽ	e?	latin capital letter e with tilde
+ẽ	e?	latin small letter e with tilde
+ỉ	i2	latin capital letter i with hook above
+ỉ	i2	latin small letter i with hook above
+ỏ	o2	latin capital letter o with hook above
+ỏ	o2	latin small letter o with hook above
+ủ	u2	latin capital letter u with hook above
+ủ	u2	latin small letter u with hook above
+ỳ	y!	latin capital letter y with grave
+ỳ	y!	latin small letter y with grave
+ỷ	y2	latin capital letter y with hook above
+ỷ	y2	latin small letter y with hook above
+ỹ	y?	latin capital letter y with tilde
+ỹ	y?	latin small letter y with tilde
+ἀ	;'	greek small letter alpha with psili
+ἁ		7937
+ἂ	;!	greek small letter alpha with psili and varia
+ἃ		7939
+ἄ	?;	greek small letter alpha with psili and oxia
+ἅ	?	7941
+ἆ	!:	greek small letter alpha with psili and perispomeni
+ἇ	?:	greek small letter alpha with dasia and perispomeni
+ 	1n	en space
+ 	1m	em space
+ 	3m	three-per-em space
+ 	4m	four-per-em space
+ 	6m	six-per-em space
+ 	1t	thin space
+ 	1h	hair space
+‐	-1	hyphen
+–	-n	en dash
+—	-m	em dash
+―	-3	horizontal bar
+‖	!2	double vertical line
+‗	=2	double low line
+‘	'6	left single quotation mark
+’	'9	right single quotation mark
+‚	.9	single low-9 quotation mark
+‛	9'	single high-reversed-9 quotation mark
+“	\"6	left double quotation mark
+”	\"9	right double quotation mark
+„	:9	double low-9 quotation mark
+‟	9\"	double high-reversed-9 quotation mark
+†	/-	dagger
+‡	/=	double dagger
+•	oo	bullet
+‥	..	two dot leader
+…		8230
+‰	%0	per mille sign
+′	1'	prime
+″	2'	double prime
+‴	3'	triple prime
+⁗	4'	quadruple prime
+‵	1\"	reversed prime
+‶	2\"	reversed double prime
+‷	3\"	reversed triple prime
+‸	ca	caret
+‹	<1	single left-pointing angle quotation mark
+›	>1	single right-pointing angle quotation mark
+※	:x	reference mark
+‾	'-	overline
+⁄	/f	fraction slash
+⁰	0s	superscript zero
+⁴	4s	superscript four
+⁵	5s	superscript five
+⁶	6s	superscript six
+⁷	7s	superscript seven
+⁸	8s	superscript eight
+⁹	9s	superscript nine
+⁺	+s	superscript plus sign
+⁻	-s	superscript minus
+⁼	=s	superscript equals sign
+⁽	(s	superscript left parenthesis
+⁾	)s	superscript right parenthesis
+ⁿ	ns	superscript latin small letter n
+₀	0s	subscript zero
+₁	1s	subscript one
+₂	2s	subscript two
+₃	3s	subscript three
+₄	4s	subscript four
+₅	5s	subscript five
+₆	6s	subscript six
+₇	7s	subscript seven
+₈	8s	subscript eight
+₉	9s	subscript nine
+₊	+s	subscript plus sign
+₋	-s	subscript minus
+₌	=s	subscript equals sign
+₍	(s	subscript left parenthesis
+₎	)s	subscript right parenthesis
+₤	li	lira sign
+₧	pt	peseta sign
+₩	w=	won sign
+€	eu	euro sign
+₽	=r	rouble sign
+₽	=p	rouble sign
+℃	oc	degree celsius
+℅	co	care of
+℉	of	degree fahrenheit
+№	n0	numero sign
+℗	po	sound recording copyright
+℞	rx	prescription take
+℠	sm	service mark
+™	tm	trade mark sign
+ω	om	ohm sign
+å	ao	angstrom sign
+⅓	13	vulgar fraction one third
+⅔	23	vulgar fraction two thirds
+⅕	15	vulgar fraction one fifth
+⅖	25	vulgar fraction two fifths
+⅗	35	vulgar fraction three fifths
+⅘	45	vulgar fraction four fifths
+⅙	16	vulgar fraction one sixth
+⅚	56	vulgar fraction five sixths
+⅛	18	vulgar fraction one eighth
+⅜	38	vulgar fraction three eighths
+⅝	58	vulgar fraction five eighths
+⅞	78	vulgar fraction seven eighths
+ⅰ	1r	roman numeral one
+ⅱ	2r	roman numeral two
+ⅲ	3r	roman numeral three
+ⅳ	4r	roman numeral four
+ⅴ	5r	roman numeral five
+ⅵ	6r	roman numeral six
+ⅶ	7r	roman numeral seven
+ⅷ	8r	roman numeral eight
+ⅸ	9r	roman numeral nine
+ⅹ	ar	roman numeral ten
+ⅺ	br	roman numeral eleven
+ⅻ	cr	roman numeral twelve
+ⅰ	1r	small roman numeral one
+ⅱ	2r	small roman numeral two
+ⅲ	3r	small roman numeral three
+ⅳ	4r	small roman numeral four
+ⅴ	5r	small roman numeral five
+ⅵ	6r	small roman numeral six
+ⅶ	7r	small roman numeral seven
+ⅷ	8r	small roman numeral eight
+ⅸ	9r	small roman numeral nine
+ⅹ	ar	small roman numeral ten
+ⅺ	br	small roman numeral eleven
+ⅻ	cr	small roman numeral twelve
+←	<-	leftwards arrow
+↑	-!	upwards arrow
+→	->	rightwards arrow
+↓	-v	downwards arrow
+↔	<>	left right arrow
+↕	ud	up down arrow
+⇐	<=	leftwards double arrow
+⇒	=>	rightwards double arrow
+⇔	==	left right double arrow
+∀	fa	for all
+∂	dp	partial differential
+∃	te	there exists
+∅	/0	empty set
+∆	de	increment
+∇	nb	nabla
+∈	(-	element of
+∋	-)	contains as member
+∏	*p	n-ary product
+∑	+z	n-ary summation
+−	-2	minus sign
+∓	-+	minus-or-plus sign
+∗	*-	asterisk operator
+∘	ob	ring operator
+∙	sb	bullet operator
+√	rt	square root
+∝	0(	proportional to
+∞	00	infinity
+∟	-l	right angle
+∠	-v	angle
+∥	pp	parallel to
+∧	an	logical and
+∨	or	logical or
+∩	(u	intersection
+∪	)u	union
+∫	in	integral
+∬	di	double integral
+∮	io	contour integral
+∴	.:	therefore
+∵	:.	because
+∶	:r	ratio
+∷	::	proportion
+∼	?1	tilde operator
+∾	cg	inverted lazy s
+≃	?-	asymptotically equal to
+≅	?=	approximately equal to
+≈	?2	almost equal to
+≌	=?	all equal to
+≐	.=	approaches the limit
+≓	hi	image of or approximately equal to
+≠	!=	not equal to
+≡	=3	identical to
+≤	=<	less-than or equal to
+≥	>=	greater-than or equal to
+≪	<*	much less-than
+≫	*>	much greater-than
+≮	!<	not less-than
+≯	!>	not greater-than
+⊂	(c	subset of
+⊃	)c	superset of
+⊆	(_	subset of or equal to
+⊇	)_	superset of or equal to
+⊙	0.	circled dot operator
+⊚	02	circled ring operator
+⊥	-t	up tack
+⋅	.p	dot operator
+⋮	:3	vertical ellipsis
+⋯	.3	midline horizontal ellipsis
+⌂	eh	house
+⌈	<7	left ceiling
+⌉	>7	right ceiling
+⌊	7<	left floor
+⌋	7>	right floor
+⌐	ni	reversed not sign
+⌒	(a	arc
+⌕	tr	telephone recorder
+⌠	iu	top half integral
+⌡	il	bottom half integral
+⟨	<[	left mathematical angle bracket
+⟩	]>	right mathematical angle bracket
+␣	vs	open box
+⑀	1h	ocr hook
+⑁	3h	ocr chair
+⑂	2h	ocr fork
+⑃	4h	ocr inverted fork
+⑆	1j	ocr branch bank identification
+⑇	2j	ocr amount of check
+⑈	3j	ocr dash
+⑉	4j	ocr customer account number
+⒈	1.	digit one full stop
+⒉	2.	digit two full stop
+⒊	3.	digit three full stop
+⒋	4.	digit four full stop
+⒌	5.	digit five full stop
+⒍	6.	digit six full stop
+⒎	7.	digit seven full stop
+⒏	8.	digit eight full stop
+⒐	9.	digit nine full stop
+─	hh	box drawings light horizontal
+━	hh	box drawings heavy horizontal
+│	vv	box drawings light vertical
+┃	vv	box drawings heavy vertical
+┄	3-	box drawings light triple dash horizontal
+┅	3_	box drawings heavy triple dash horizontal
+┆	3!	box drawings light triple dash vertical
+┇	3/	box drawings heavy triple dash vertical
+┈	4-	box drawings light quadruple dash horizontal
+┉	4_	box drawings heavy quadruple dash horizontal
+┊	4!	box drawings light quadruple dash vertical
+┋	4/	box drawings heavy quadruple dash vertical
+┌	dr	box drawings light down and right
+┍	dr	box drawings down light and right heavy
+┎	dr	box drawings down heavy and right light
+┏	dr	box drawings heavy down and right
+┐	dl	box drawings light down and left
+┑	dl	box drawings down light and left heavy
+┒	dl	box drawings down heavy and left light
+┓	ld	box drawings heavy down and left
+└	ur	box drawings light up and right
+┕	ur	box drawings up light and right heavy
+┖	ur	box drawings up heavy and right light
+┗	ur	box drawings heavy up and right
+┘	ul	box drawings light up and left
+┙	ul	box drawings up light and left heavy
+┚	ul	box drawings up heavy and left light
+┛	ul	box drawings heavy up and left
+├	vr	box drawings light vertical and right
+┝	vr	box drawings vertical light and right heavy
+┠	vr	box drawings vertical heavy and right light
+┣	vr	box drawings heavy vertical and right
+┤	vl	box drawings light vertical and left
+┥	vl	box drawings vertical light and left heavy
+┨	vl	box drawings vertical heavy and left light
+┫	vl	box drawings heavy vertical and left
+┬	dh	box drawings light down and horizontal
+┯	dh	box drawings down light and horizontal heavy
+┰	dh	box drawings down heavy and horizontal light
+┳	dh	box drawings heavy down and horizontal
+┴	uh	box drawings light up and horizontal
+┷	uh	box drawings up light and horizontal heavy
+┸	uh	box drawings up heavy and horizontal light
+┻	uh	box drawings heavy up and horizontal
+┼	vh	box drawings light vertical and horizontal
+┿	vh	box drawings vertical light and horizontal heavy
+╂	vh	box drawings vertical heavy and horizontal light
+╋	vh	box drawings heavy vertical and horizontal
+╱	fd	box drawings light diagonal upper right to lower left
+╲	bd	box drawings light diagonal upper left to lower right
+▀	tb	upper half block
+▄	lb	lower half block
+█	fb	full block
+▌	lb	left half block
+▐	rb	right half block
+░	.s	light shade
+▒	:s	medium shade
+▓	?s	dark shade
+■	fs	black square
+□	os	white square
+▢	ro	white square with rounded corners
+▣	rr	white square containing black small square
+▤	rf	square with horizontal fill
+▥	ry	square with vertical fill
+▦	rh	square with orthogonal crosshatch fill
+▧	rz	square with upper left to lower right fill
+▨	rk	square with upper right to lower left fill
+▩	rx	square with diagonal crosshatch fill
+▪	sb	black small square
+▬	sr	black rectangle
+▭	or	white rectangle
+▲	ut	black up-pointing triangle
+△	ut	white up-pointing triangle
+▶	pr	black right-pointing triangle
+▷	tr	white right-pointing triangle
+▼	dt	black down-pointing triangle
+▽	dt	white down-pointing triangle
+◀	pl	black left-pointing triangle
+◁	tl	white left-pointing triangle
+◆	db	black diamond
+◇	dw	white diamond
+◊	lz	lozenge
+○	0m	white circle
+◎	0o	bullseye
+●	0m	black circle
+◐	0l	circle with left half black
+◑	0r	circle with right half black
+◘	sn	inverse bullet
+◙	ic	inverse white circle
+◢	fd	black lower right triangle
+◣	bd	black lower left triangle
+★	*2	black star
+☆	*1	white star
+☜	<h	white left pointing index
+☞	>h	white right pointing index
+☺	0u	white smiling face
+☻	0u	black smiling face
+☼	su	white sun with rays
+♀	fm	female sign
+♂	ml	male sign
+♠	cs	black spade suit
+♡	ch	white heart suit
+♢	cd	white diamond suit
+♣	cc	black club suit
+♩	md	quarter note
+♪	m8	eighth note
+♫	m2	beamed eighth notes
+♭	mb	music flat sign
+♮	mx	music natural sign
+♯	mx	music sharp sign
+✓	ok	check mark
+✗	xx	ballot x
+✠	-x	maltese cross
+　	is	ideographic space
+、		12289
+。	._	ideographic full stop
+〃	+\"	ditto mark
+〄	+_	japanese industrial standard symbol
+々	*_	ideographic iteration mark
+〆	;_	ideographic closing mark
+〇	0_	ideographic number zero
+《	<+	left double angle bracket
+》	>+	right double angle bracket
+「	<'	left corner bracket
+」	>'	right corner bracket
+『	<\"	left white corner bracket
+』	>\"	right white corner bracket
+【	(\"	left black lenticular bracket
+】	)\"	right black lenticular bracket
+〒	=t	postal mark
+〓	=_	geta mark
+〔	('	left tortoise shell bracket
+〕	)'	right tortoise shell bracket
+〖	(i	left white lenticular bracket
+〗	)i	right white lenticular bracket
+〜	-?	wave dash
+ぁ	a5	hiragana letter small a
+あ	a5	hiragana letter a
+ぃ	i5	hiragana letter small i
+い	i5	hiragana letter i
+ぅ	u5	hiragana letter small u
+う	u5	hiragana letter u
+ぇ	e5	hiragana letter small e
+え	e5	hiragana letter e
+ぉ	o5	hiragana letter small o
+お	o5	hiragana letter o
+か	ka	hiragana letter ka
+が	ga	hiragana letter ga
+き	ki	hiragana letter ki
+ぎ	gi	hiragana letter gi
+く	ku	hiragana letter ku
+ぐ	gu	hiragana letter gu
+け	ke	hiragana letter ke
+げ	ge	hiragana letter ge
+こ	ko	hiragana letter ko
+ご	go	hiragana letter go
+さ	sa	hiragana letter sa
+ざ	za	hiragana letter za
+し	si	hiragana letter si
+じ	zi	hiragana letter zi
+す	su	hiragana letter su
+ず	zu	hiragana letter zu
+せ	se	hiragana letter se
+ぜ	ze	hiragana letter ze
+そ	so	hiragana letter so
+ぞ	zo	hiragana letter zo
+た	ta	hiragana letter ta
+だ	da	hiragana letter da
+ち	ti	hiragana letter ti
+ぢ	di	hiragana letter di
+っ	tu	hiragana letter small tu
+つ	tu	hiragana letter tu
+づ	du	hiragana letter du
+て	te	hiragana letter te
+で	de	hiragana letter de
+と	to	hiragana letter to
+ど	do	hiragana letter do
+な	na	hiragana letter na
+に	ni	hiragana letter ni
+ぬ	nu	hiragana letter nu
+ね	ne	hiragana letter ne
+の	no	hiragana letter no
+は	ha	hiragana letter ha
+ば	ba	hiragana letter ba
+ぱ	pa	hiragana letter pa
+ひ	hi	hiragana letter hi
+び	bi	hiragana letter bi
+ぴ	pi	hiragana letter pi
+ふ	hu	hiragana letter hu
+ぶ	bu	hiragana letter bu
+ぷ	pu	hiragana letter pu
+へ	he	hiragana letter he
+べ	be	hiragana letter be
+ぺ	pe	hiragana letter pe
+ほ	ho	hiragana letter ho
+ぼ	bo	hiragana letter bo
+ぽ	po	hiragana letter po
+ま	ma	hiragana letter ma
+み	mi	hiragana letter mi
+む	mu	hiragana letter mu
+め	me	hiragana letter me
+も	mo	hiragana letter mo
+ゃ	ya	hiragana letter small ya
+や	ya	hiragana letter ya
+ゅ	yu	hiragana letter small yu
+ゆ	yu	hiragana letter yu
+ょ	yo	hiragana letter small yo
+よ	yo	hiragana letter yo
+ら	ra	hiragana letter ra
+り	ri	hiragana letter ri
+る	ru	hiragana letter ru
+れ	re	hiragana letter re
+ろ	ro	hiragana letter ro
+ゎ	wa	hiragana letter small wa
+わ	wa	hiragana letter wa
+ゐ	wi	hiragana letter wi
+ゑ	we	hiragana letter we
+を	wo	hiragana letter wo
+ん	n5	hiragana letter n
+ゔ	vu	hiragana letter vu
+゛	\"5	katakana-hiragana voiced sound mark
+゜	05	katakana-hiragana semi-voiced sound mark
+ゝ	*5	hiragana iteration mark
+ゞ	+5	hiragana voiced iteration mark
+ァ	a6	katakana letter small a
+ア	a6	katakana letter a
+ィ	i6	katakana letter small i
+イ	i6	katakana letter i
+ゥ	u6	katakana letter small u
+ウ	u6	katakana letter u
+ェ	e6	katakana letter small e
+エ	e6	katakana letter e
+ォ	o6	katakana letter small o
+オ	o6	katakana letter o
+カ	ka	katakana letter ka
+ガ	ga	katakana letter ga
+キ	ki	katakana letter ki
+ギ	gi	katakana letter gi
+ク	ku	katakana letter ku
+グ	gu	katakana letter gu
+ケ	ke	katakana letter ke
+ゲ	ge	katakana letter ge
+コ	ko	katakana letter ko
+ゴ	go	katakana letter go
+サ	sa	katakana letter sa
+ザ	za	katakana letter za
+シ	si	katakana letter si
+ジ	zi	katakana letter zi
+ス	su	katakana letter su
+ズ	zu	katakana letter zu
+セ	se	katakana letter se
+ゼ	ze	katakana letter ze
+ソ	so	katakana letter so
+ゾ	zo	katakana letter zo
+タ	ta	katakana letter ta
+ダ	da	katakana letter da
+チ	ti	katakana letter ti
+ヂ	di	katakana letter di
+ッ	tu	katakana letter small tu
+ツ	tu	katakana letter tu
+ヅ	du	katakana letter du
+テ	te	katakana letter te
+デ	de	katakana letter de
+ト	to	katakana letter to
+ド	do	katakana letter do
+ナ	na	katakana letter na
+ニ	ni	katakana letter ni
+ヌ	nu	katakana letter nu
+ネ	ne	katakana letter ne
+ノ	no	katakana letter no
+ハ	ha	katakana letter ha
+バ	ba	katakana letter ba
+パ	pa	katakana letter pa
+ヒ	hi	katakana letter hi
+ビ	bi	katakana letter bi
+ピ	pi	katakana letter pi
+フ	hu	katakana letter hu
+ブ	bu	katakana letter bu
+プ	pu	katakana letter pu
+ヘ	he	katakana letter he
+ベ	be	katakana letter be
+ペ	pe	katakana letter pe
+ホ	ho	katakana letter ho
+ボ	bo	katakana letter bo
+ポ	po	katakana letter po
+マ	ma	katakana letter ma
+ミ	mi	katakana letter mi
+ム	mu	katakana letter mu
+メ	me	katakana letter me
+モ	mo	katakana letter mo
+ャ	ya	katakana letter small ya
+ヤ	ya	katakana letter ya
+ュ	yu	katakana letter small yu
+ユ	yu	katakana letter yu
+ョ	yo	katakana letter small yo
+ヨ	yo	katakana letter yo
+ラ	ra	katakana letter ra
+リ	ri	katakana letter ri
+ル	ru	katakana letter ru
+レ	re	katakana letter re
+ロ	ro	katakana letter ro
+ヮ	wa	katakana letter small wa
+ワ	wa	katakana letter wa
+ヰ	wi	katakana letter wi
+ヱ	we	katakana letter we
+ヲ	wo	katakana letter wo
+ン	n6	katakana letter n
+ヴ	vu	katakana letter vu
+ヵ	ka	katakana letter small ka
+ヶ	ke	katakana letter small ke
+ヷ	va	katakana letter va
+ヸ	vi	katakana letter vi
+ヹ	ve	katakana letter ve
+ヺ	vo	katakana letter vo
+・	.6	katakana middle dot
+ー	-6	katakana-hiragana prolonged sound mark
+ヽ	*6	katakana iteration mark
+ヾ	+6	katakana voiced iteration mark
+ㄅ	b4	bopomofo letter b
+ㄆ	p4	bopomofo letter p
+ㄇ	m4	bopomofo letter m
+ㄈ	f4	bopomofo letter f
+ㄉ	d4	bopomofo letter d
+ㄊ	t4	bopomofo letter t
+ㄋ	n4	bopomofo letter n
+ㄌ	l4	bopomofo letter l
+ㄍ	g4	bopomofo letter g
+ㄎ	k4	bopomofo letter k
+ㄏ	h4	bopomofo letter h
+ㄐ	j4	bopomofo letter j
+ㄑ	q4	bopomofo letter q
+ㄒ	x4	bopomofo letter x
+ㄓ	zh	bopomofo letter zh
+ㄔ	ch	bopomofo letter ch
+ㄕ	sh	bopomofo letter sh
+ㄖ	r4	bopomofo letter r
+ㄗ	z4	bopomofo letter z
+ㄘ	c4	bopomofo letter c
+ㄙ	s4	bopomofo letter s
+ㄚ	a4	bopomofo letter a
+ㄛ	o4	bopomofo letter o
+ㄜ	e4	bopomofo letter e
+ㄞ	ai	bopomofo letter ai
+ㄟ	ei	bopomofo letter ei
+ㄠ	au	bopomofo letter au
+ㄡ	ou	bopomofo letter ou
+ㄢ	an	bopomofo letter an
+ㄣ	en	bopomofo letter en
+ㄤ	an	bopomofo letter ang
+ㄥ	en	bopomofo letter eng
+ㄦ	er	bopomofo letter er
+ㄧ	i4	bopomofo letter i
+ㄨ	u4	bopomofo letter u
+ㄩ	iu	bopomofo letter iu
+ㄪ	v4	bopomofo letter v
+ㄫ	ng	bopomofo letter ng
+ㄬ	gn	bopomofo letter gn
+㈠	1c	parenthesized ideograph one
+㈡	2c	parenthesized ideograph two
+㈢	3c	parenthesized ideograph three
+㈣	4c	parenthesized ideograph four
+㈤	5c	parenthesized ideograph five
+㈥	6c	parenthesized ideograph six
+㈦	7c	parenthesized ideograph seven
+㈧	8c	parenthesized ideograph eight
+㈨	9c	parenthesized ideograph nine
+ﬀ	ff	latin small ligature ff
+ﬁ	fi	latin small ligature fi
+ﬂ	fl	latin small ligature fl
+ﬅ	ft	latin small ligature long s t
+ﬆ	st	latin small ligature st

@@ -32,11 +32,13 @@ dnf:
   - alacritty
   - aria2
   - clang
+  - clang-tools-extra
   - cmake
   - containerd
   - docker-cli
   - fcitx5-chinese-addons
   - gcc
+  - gh
   - git-subtree
   - gnome-browser-connector
   - gnome-shell-extension-appindicator
@@ -52,6 +54,7 @@ dnf:
   - runc
   - shellcheck
   - shfmt
+  - valgrind
   - vlc
   - xclip
   - xsel
@@ -60,12 +63,19 @@ gh: []
 go:
   - golang.org/x/tools/cmd/stringer
 pnpm:
-  - "@vscode/vsce"
-  - generator-code
-  - prettier
-  - tree-sitter-cli
-  - tsx
-  - yo
+  allowBuild:
+    - "@vscode/vsce-sign"
+    - esbuild
+    - keytar
+    - tree-sitter-cli
+    - yo
+  packages:
+    - "@vscode/vsce"
+    - generator-code
+    - prettier
+    - tree-sitter-cli
+    - tsx
+    - yo
 ps1: []
 psm1:
   - PSScriptAnalyzer
@@ -81,7 +91,6 @@ releases:
     - dotnet
     - flutter
     - fzf
-    - gh
     - go
     - goreleaser
     - hexyl

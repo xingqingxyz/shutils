@@ -5,6 +5,7 @@ all:
 ./LSColors/bin/Release/net10.0/LSColors.dll: $(wildcard ./LSColors/*.cs)
 	dotnet build -c Release
 
+.PHONY: git-hook-post-update
 git-hook-post-update: ./LSColors/bin/Release/net10.0/LSColors.dll, $(wildcard ./_/**/*)
 	pwsh -nop -c ./scripts/dotfiles.ps1
 
