@@ -8,6 +8,8 @@ elif type -aP fcitx; then
 fi
 
 # import env
-while read -r line; do
-  export "$line"
-done < ~/.env
+if [ -f ~/.env ]; then
+  while read -r line; do
+    export "$line"
+  done < ~/.env
+fi

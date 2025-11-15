@@ -10,7 +10,7 @@ param (
 
 function encodedCommand ([string]$Kind) {
   [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes(
-      "Get-ChildItem -LiteralPath $PSScriptRoot/$Kind -Force -File | ForEach-Object { & `$_.FullName }"
+      "Convert-Path '$((Join-Path $PSScriptRoot $Kind/*.ps1).Replace("'", "''"))' | ForEach-Object { . `$_ }"
     ))
 }
 

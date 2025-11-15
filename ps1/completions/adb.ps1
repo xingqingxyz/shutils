@@ -31,78 +31,91 @@ Register-ArgumentCompleter -Native -CommandName adb -ScriptBlock {
       '' {
         if (!$wordToComplete.StartsWith('-')) {
           'devices', 'help', 'version', 'connect', 'disconnect', 'pair', 'forward', 'forward', 'reverse', 'mdns', 'push', 'pull', 'sync', 'shell', 'install', 'install-multiple', 'install-multi-package', 'uninstall', 'bugreport', 'jdwp', 'logcat', 'disable-verity', 'enable-verity', 'keygen', 'wait-for-usb-device', 'wait-for-usb-recovery', 'wait-for-usb-rescue', 'wait-for-usb-sideload', 'wait-for-usb-bootloader', 'wait-for-usb-disconnect', 'wait-for-local-device', 'wait-for-local-recovery', 'wait-for-local-rescue', 'wait-for-local-sideload', 'wait-for-local-bootloader', 'wait-for-local-disconnect', 'wait-for-any-device', 'wait-for-any-recovery', 'wait-for-any-rescue', 'wait-for-any-sideload', 'wait-for-any-bootloader', 'wait-for-any-disconnect', 'get-state', 'get-serialno', 'get-devpath', 'remount', 'reboot', 'sideload', 'root', 'unroot', 'usb', 'tcpip', 'start-server', 'kill-server', 'reconnect', 'attach', 'detach'
+          break
         }
         break
       }
       'forward' {
         if ($wordToComplete.StartsWith('-')) {
           '--list', '--no-rebind', '--remove', '--remove-all'
+          break
         }
         break
       }
       'reverse' {
         if ($wordToComplete.StartsWith('-')) {
           '--list', '--no-rebind', '--remove', '--remove-all'
+          break
         }
         break
       }
       'mdns' {
         if (!$wordToComplete.StartsWith('-')) {
           'check', 'services'
+          break
         }
         break
       }
       'push' {
         if ($wordToComplete.StartsWith('-')) {
           '-n', '-q', '-Z', '-z', '-zany', '-znone', '-zbrotli', '-zlz4', '-zzstd', '--sync'
+          break
         }
         break
       }
       'pull' {
         if ($wordToComplete.StartsWith('-')) {
           '-a', '-q', '-Z', '-z', '-zany', '-znone', '-zbrotli', '-zlz4', '-zzstd'
+          break
         }
         break
       }
       'sync' {
         if ($wordToComplete.StartsWith('-')) {
           '-l', '-n', '-q', '-Z', '-z', '-zany', '-znone', '-zbrotli', '-zlz4', '-zzstd'
+          break
         }
         break
       }
       'shell' {
         if ($wordToComplete.StartsWith('-')) {
           '-e', '-enone', '-e~', '-n', '-T', '-t', '-x'
+          break
         }
         break
       }
       'install' {
         if ($wordToComplete.StartsWith('-')) {
           '-r', '-t', '-d', '-p', '-g', '--abi', '--instant', '--no-streaming', '--streaming', '--fastdeploy', '--no-fastdeploy', '--force-agent', '--date-check-agent', '--version-check-agent', '--local-agent'
+          break
         }
         break
       }
       'uninstall' {
         if ($wordToComplete.StartsWith('-')) {
           '-k'
+          break
         }
         break
       }
       'remount' {
         if ($wordToComplete.StartsWith('-')) {
           '-R'
+          break
         }
         break
       }
       'reboot' {
         if (!$wordToComplete.StartsWith('-')) {
           'bootloader', 'recovery', 'sideload', 'sideload-auto-reboot'
+          break
         }
         break
       }
       'reconnect' {
         if (!$wordToComplete.StartsWith('-')) {
           'device', 'offline'
+          break
         }
         break
       }
