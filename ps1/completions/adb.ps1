@@ -27,11 +27,7 @@ Register-ArgumentCompleter -Native -CommandName adb -ScriptBlock {
   }
   $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
-  @(
-    if ($wordToComplete.StartsWith('-')) {
-      '-a', '-d', '-e', '-s', '-t', '-H', '-P', '-P5037', '-P5555', '-P9999', '-L', '-Ltcp:localhost:5037', '--one-device', '--exit-on-write-error', '--help', '--version'
-    }
-    switch ($command) {
+  @(switch ($command) {
       '' {
         if (!$wordToComplete.StartsWith('-')) {
           'devices', 'help', 'version', 'connect', 'disconnect', 'pair', 'forward', 'forward', 'reverse', 'mdns', 'push', 'pull', 'sync', 'shell', 'install', 'install-multiple', 'install-multi-package', 'uninstall', 'bugreport', 'jdwp', 'logcat', 'disable-verity', 'enable-verity', 'keygen', 'wait-for-usb-device', 'wait-for-usb-recovery', 'wait-for-usb-rescue', 'wait-for-usb-sideload', 'wait-for-usb-bootloader', 'wait-for-usb-disconnect', 'wait-for-local-device', 'wait-for-local-recovery', 'wait-for-local-rescue', 'wait-for-local-sideload', 'wait-for-local-bootloader', 'wait-for-local-disconnect', 'wait-for-any-device', 'wait-for-any-recovery', 'wait-for-any-rescue', 'wait-for-any-sideload', 'wait-for-any-bootloader', 'wait-for-any-disconnect', 'get-state', 'get-serialno', 'get-devpath', 'remount', 'reboot', 'sideload', 'root', 'unroot', 'usb', 'tcpip', 'start-server', 'kill-server', 'reconnect', 'attach', 'detach'
@@ -110,5 +106,8 @@ Register-ArgumentCompleter -Native -CommandName adb -ScriptBlock {
         }
         break
       }
+    }
+    if ($wordToComplete.StartsWith('-')) {
+      '-a', '-d', '-e', '-s', '-t', '-H', '-P', '-P5037', '-P5555', '-P9999', '-L', '-Ltcp:localhost:5037', '--one-device', '--exit-on-write-error', '--help', '--version'
     }).Where{ $_ -like "$wordToComplete*" }
 }

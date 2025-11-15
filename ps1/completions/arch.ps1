@@ -1,3 +1,4 @@
+# gnu coreutils
 Register-ArgumentCompleter -Native -CommandName arch, b2sum, base32, base64, basename, basenc, cat, chcon, chgrp, chmod, chown, chroot, cksum, comm, cp, csplit, cut, date, dd, df, dircolors, dirname, du, echo, expand, factor, fmt, fold, head, id, install, join, ln, ls, md5sum, mkdir, mkfifo, mknod, mktemp, mv, nice, nl, nproc, numfmt, od, paste, pathchk, pinky, pr, printenv, ptx, readlink, realpath, rm, rmdir, runcon, seq, sha1sum, sha224sum, sha256sum, sha384sum, sha512sum, shred, shuf, sort, split, stat, stdbuf, stty, stty, sum, sync, tac, tail, tee, timeout, touch, tr, truncate, tty, uname, unexpand, uniq, wc, who -ScriptBlock {
   param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   @(if ($wordToComplete.StartsWith('-')) {

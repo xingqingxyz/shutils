@@ -14,8 +14,8 @@
   tag: bun-v1.3.1
 - name: code
   repo: microsoft/vscode
-  version: 1.105.1
-  tag: 1.105.1
+  version: 1.106.0
+  tag: 1.106.0
 - name: deno
   repo: denoland/deno
   tag: v2.5.4
@@ -26,7 +26,6 @@
   version: 0.8.0
 - name: dotnet
   version: 99.0.0
-  prerelease: true
 - name: dsc
   repo: PowerShell/DSC
   prerelease: true
@@ -91,8 +90,8 @@
   version: 3.4.0
 - name: node
   repo: nodejs/node
-  tag: v25.0.0
-  version: 25.0.0
+  tag: v25.2.0
+  version: 25.2.0
 - name: numbat
   repo: sharkdp/numbat
   tag: v1.16.0

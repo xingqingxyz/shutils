@@ -34,7 +34,7 @@ function Get-ArgumentCompleter ([string]$CommandName) {
     (Test-Path -LiteralPath "$PSScriptRoot/completions/$CommandName.ps1")) {
     & $PSScriptRoot/completions/$CommandName.ps1
   }
-  $_completionFuncMap[$CommandName] ?? {}
+  $_completionFuncMap[$CommandName] ?? { param ([string]$wordToComplete) @('--help', '--version').Where{ $_.StartsWith($wordToComplete) } }
 }
 
 Set-Variable -Option ReadOnly -Force _completionFuncMap @{}

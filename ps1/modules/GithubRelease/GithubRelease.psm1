@@ -406,7 +406,7 @@ function Install-Release {
       break
     }
     dotnet {
-      $ChannelQuality = $Meta.prerelease ? '10.0/preview' : 'STS'
+      $ChannelQuality = $Meta.prerelease ? '11.0/preview' : '10.0'
       $os, $fileExt = switch ($true) {
         $IsWindows { 'win', '.exe'; break }
         $IsLinux { 'linux', '.tar.gz'; break }
@@ -418,12 +418,12 @@ function Install-Release {
         Invoke-Item $buildDir/$file
         break
       }
-      sudo rm -rf $sudoPrefixDir/dotnet
-      sudo mkdir -p $sudoPrefixDir/dotnet
-      sudo tar -xf $buildDir/$file -C $sudoPrefixDir/dotnet --no-same-owner
-      sudo ln -sf $sudoPrefixDir/dotnet/dotnet $sudoPrefixDir/dotnet/dnx $sudoBinDir
+      sudo rm -rf $sudoDataDir/dotnet
+      sudo mkdir -p $sudoDataDir/dotnet
+      sudo tar -xf $buildDir/$file -C $sudoDataDir/dotnet --no-same-owner
+      sudo ln -sf $sudoDataDir/dotnet/dotnet $sudoDataDir/dotnet/dnx $sudoBinDir
       sudo mkdir -p /etc/dotnet
-      $null = "$sudoPrefixDir/dotnet" | sudo tee /etc/dotnet/install_location_x64
+      $null = "$sudoDataDir/dotnet" | sudo tee /etc/dotnet/install_location_x64
       break
     }
     dsc {
@@ -434,8 +434,8 @@ function Install-Release {
         'DSC-{0}-{1}' -f $Meta.version, $rust.target
       }
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
-      installBinary $prefixDir/dsc/dsc$exe
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $dataDir/dsc)
+      installBinary $dataDir/dsc/dsc$exe
       break
     }
     edit {
@@ -470,8 +470,8 @@ function Install-Release {
       downloadFile $Meta.file
       $file = Split-Path -Leaf $Meta.file
       checkFileHash $buildDir/$file $Meta.sha256
-      Remove-Item -LiteralPath $prefixDir/flutter
-      tar -xf $buildDir/$file -C $prefixDir
+      Remove-Item -LiteralPath $dataDir/flutter
+      tar -xf $buildDir/$file -C $dataDir
       break
     }
     fzf {
@@ -496,9 +496,9 @@ function Install-Release {
       $file = '{0}.{1}-{2}.tar.gz' -f $Meta.tag, $go.os, $go.arch
       downloadFile "https://golang.google.cn/dl/$file"
       checkFileHash $buildDir/$file $Meta.sha256
-      sudo rm -rf $sudoPrefixDir/go
-      sudo tar -xf $buildDir/$file -C $sudoPrefixDir --no-same-owner
-      sudo ln -sf $sudoPrefixDir/go/bin/go $sudoPrefixDir/go/bin/gofmt $sudoBinDir
+      sudo rm -rf $sudoDataDir/go
+      sudo tar -xf $buildDir/$file -C $sudoDataDir --no-same-owner
+      sudo ln -sf $sudoDataDir/go/bin/go $sudoDataDir/go/bin/gofmt $sudoBinDir
       break
     }
     goreleaser {
@@ -534,9 +534,9 @@ function Install-Release {
       downloadFile $Meta.url
       $file = Split-Path -Leaf $url
       checkFileHash $buildDir/$file $Meta.sha256
-      sudo rm -rf $sudoPrefixDir/jdk
-      sudo tar -xf $buildDir/$file -C $sudoPrefixDir/jdk --no-same-owner --strip-components=1
-      sudo ln -sf $sudoPrefixDir/jdk/bin/java $sudoBinDir
+      sudo rm -rf $sudoDataDir/jdk
+      sudo tar -xf $buildDir/$file -C $sudoDataDir/jdk --no-same-owner --strip-components=1
+      sudo ln -sf $sudoDataDir/jdk/bin/java $sudoBinDir
       break
     }
     jq {
@@ -581,11 +581,11 @@ function Install-Release {
       }
       $base = 'LocalSend-{0}-{1}-x86-64' -f $Meta.version, $rust.os
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/localsend)
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $dataDir/localsend)
       @"
 [Desktop Entry]
-Icon=$prefixDir/localsend/data/flutter_assets/assets/img/logo-512.png
-Exec=$prefixDir/localsend/localsend_app %u
+Icon=$dataDir/localsend/data/flutter_assets/assets/img/logo-512.png
+Exec=$dataDir/localsend/localsend_app %u
 Version=1.0
 Type=Application
 Categories=Network
@@ -619,7 +619,7 @@ StartupWMClass=localsend_app
       }
       $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
       downloadRelease $base$ext
-      sudo tar -xf $buildDir/$base$ext -C $sudoPrefixDir --no-same-owner --strip-components=1
+      sudo tar -xf $buildDir/$base$ext -C $sudoDataDir --no-same-owner --strip-components=1
       break
     }
     nerdfonts {
@@ -654,7 +654,7 @@ StartupWMClass=localsend_app
         Invoke-Item $buildDir/$file
         break
       }
-      $root = "$prefixDir/nodejs/$($Meta.tag)"
+      $root = "$dataDir/nodejs/$($Meta.tag)"
       tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
       installBinary $root/bin/node, $root/bin/npm
       break
@@ -662,8 +662,8 @@ StartupWMClass=localsend_app
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
-      installBinary $prefixDir/numbat/numbat$exe
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $dataDir/numbat) --strip-components=1
+      installBinary $dataDir/numbat/numbat$exe
       break
     }
     pastel {
@@ -984,7 +984,12 @@ function Update-Software {
     uv {
       if ($Global) {
         uv self update
-        uv tool upgrade
+        $tools = uv tool list | ForEach-Object {
+          if ($_.StartsWith('- ')) {
+            $_.Substring(2)
+          }
+        }
+        uv tool upgrade $tools
         if ($Force) {
           $pkgMap.uv.python | ForEach-Object { uv python install $_ }
           $pkgMap.uv.tools | ForEach-Object { uv tool install $_ }
@@ -1017,9 +1022,8 @@ if ($IsLinux) {
   $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=fedora')
 }
 
-$prefixDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local"
-$binDir = $IsWindows ? "$HOME\tools" : "$prefixDir/bin"
-$dataDir = Join-Path $prefixDir share
+$binDir = $IsWindows ? "$HOME\tools" : "$HOME/.local/bin"
+$dataDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local/share"
 
-$sudoPrefixDir = $IsWindows ? $env:ProgramData : '/usr/local'
-$sudoBinDir = $IsWindows ? 'C:\tools' : "$sudoPrefixDir/bin"
+$sudoBinDir = $IsWindows ? 'C:\tools' : '/usr/local/bin'
+$sudoDataDir = $IsWindows ? $env:ProgramData : '/usr/local/share'

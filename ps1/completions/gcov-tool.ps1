@@ -1,6 +1,6 @@
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName alacritty -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName gcov-tool -ScriptBlock {
   param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {
@@ -16,44 +16,40 @@ Register-ArgumentCompleter -Native -CommandName alacritty -ScriptBlock {
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          '--print-events', '--ref-test', '--embed', '--config-file', '--socket', '-qq', '-qqq', '-vv', '-vvv', '--daemon', '--working-directory', '--hold', '-e', '--command', '-T', '--title', '--class', '-o', '--option', '-h', '--help', '-V', '--version'
+          '-h', '--help', '-v', '--version'
           break
         }
-        'help', 'migrate', 'msg'
+        'merge', 'merge-stream', 'file', 'rewrite', 'overlap'
         break
       }
-      'help' {
-        'help', 'migrate', 'msg'
-        break
-      }
-      'migrate' {
+      'merge' {
         if ($wordToComplete.StartsWith('-')) {
-          '-c', '--config-file', '-d', '--dry-run', '-i', '--skip-imports', '--skip-renames', '-s', '--silent', '-h', '--help'
+          '-o', '--output', '-v', '--verbose', '-w', '--weight'
           break
         }
         break
       }
-      'msg' {
+      'file' {
         if ($wordToComplete.StartsWith('-')) {
-          '-s', '--socket', '-h', '--help'
-          break
-        }
-        'create-window', 'config', 'help'
-        break
-      }
-      'msg create-window' {
-        if ($wordToComplete.StartsWith('-')) {
-          '--working-directory', '--hold', '-e', '--command', '-T', '--title', '--class', '-o', '--option', '-h', '--help'
+          '-v', '--verbose', '-w', '--weight'
           break
         }
         break
       }
-      'msg config' {
+      'rewrite' {
         if ($wordToComplete.StartsWith('-')) {
-          '-w', '--window-id', '-r', '--reset', '-h', '--help'
+          '-n', '--normalize', '-o', '--output', '-s', '--scale', '-v', '--verbose'
+          break
+        }
+        break
+      }
+      'overlap' {
+        if ($wordToComplete.StartsWith('-')) {
+          '-f', '--function', '-F', '--fullname', '-h', '--hotonly', '-o', '--object', '-t', '--hot_threshold', '-v', '--verbose'
           break
         }
         break
       }
     }).Where{ $_ -like "$wordToComplete*" }
 }
+
