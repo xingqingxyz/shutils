@@ -75,7 +75,7 @@
   CmdletsToExport      = @()
 
   # Variables to export from this module
-  VariablesToExport    = '*'
+  VariablesToExport    = @()
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
   AliasesToExport      = @('l', 'e')
@@ -87,7 +87,7 @@
   # ModuleList           = @()
 
   # List of all files packaged with this module
-  FileList             = @('./LSColors.format.ps1xml', './LSColors.windows.format.ps1xml')
+  FileList             = @('./LSColors.ini', './LSColors.format.ps1xml', './LSColors.windows.format.ps1xml')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData          = @{
