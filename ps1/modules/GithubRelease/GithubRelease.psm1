@@ -870,7 +870,8 @@ function Update-Software {
     }
     bun {
       if ($Global) {
-        bun upgrade -g
+        bun upgrade
+        bun update -g
         if ($Force) {
           bun add -g $pkgMap.bun
         }
@@ -893,6 +894,7 @@ function Update-Software {
     code { code --update-extensions; continue }
     deno {
       if ($Global) {
+        deno upgrade
         deno jupyter --install
         if ($Force) {
           deno install --global $pkgMap.deno
@@ -911,6 +913,7 @@ function Update-Software {
     }
     flutter {
       if ($Global) {
+        flutter upgrade --force
         [string[]]$pkgs = flutter pub global list
         if ($Force) {
           $pkgs += $pkgMap.flutter
@@ -939,7 +942,7 @@ function Update-Software {
     }
     pnpm {
       if ($Global) {
-        pnpm self-update
+        Start-Process pnpm self-update -WorkingDirectory $HOME -Wait -NoNewWindow
         pnpm update -g
         if ($Force) {
           pnpm add -g $pkgMap.pnpm.packages $pkgMap.pnpm.allowBuild.ForEach{ "--allow-build=$_" }

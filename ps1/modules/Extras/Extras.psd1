@@ -30,7 +30,7 @@
   Copyright            = '(c) Ming Chen. All rights reserved.'
 
   # Description of the functionality provided by this module
-  Description          = 'Enhanced cli commands.'
+  Description          = 'Enhanced powershell commands.'
 
   # Minimum version of the PowerShell engine required by this module
   PowerShellVersion    = '7.5.2'
@@ -66,10 +66,10 @@
   FormatsToProcess     = @('./Extras.format.ps1xml')
 
   # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-  # NestedModules = @()
+  NestedModules        = @('./Tools.psm1')
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('batf', 'icat', 'ijq', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Use-EnvironmentVariable', 'Repair-GitSymlinks')
+  FunctionsToExport    = @('batf', 'de', 'de.f', 'icat', 'jq.f', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Use-EnvironmentVariable', 'Repair-GitSymlinks')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -87,7 +87,7 @@
   # ModuleList = @()
 
   # List of all files packaged with this module
-  # FileList = @()
+  FileList             = @('./vimDigraph.tsv')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData          = @{

@@ -164,6 +164,7 @@ uv:
     - python3.14t
   tools:
     - markitdown
+    - ruff
     - yt-dlp
 winget:
   - Alacritty.Alacritty
