@@ -69,7 +69,7 @@
   NestedModules        = @('./Tools.psm1')
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('batf', 'de', 'de.f', 'icat', 'jq.f', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Use-EnvironmentVariable', 'Repair-GitSymlinks')
+  FunctionsToExport    = @('batf', 'ghQuery', 'icat', 'de', 'de.f', 'figlet.f', 'jq.f', 'rg.f', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Use-EnvironmentVariable', 'Repair-GitSymlinks', 'ConvertTo-RelativeSymlink')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -87,7 +87,7 @@
   # ModuleList = @()
 
   # List of all files packaged with this module
-  FileList             = @('./vimDigraph.tsv')
+  FileList             = @('./vimDigraph.tsv', './github/limit.gql', './github/releases.gql', './github/stars.gql')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData          = @{

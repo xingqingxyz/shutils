@@ -89,11 +89,11 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
 $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
   [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
   if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
-    if ($env:XDG_SESSION_DESKTOP -ceq 'ubuntu') {
+    if (Test-Path -LiteralPath /usr/lib/command-not-found) {
       /usr/lib/command-not-found --ignore-installed --no-failure-msg $e.CommandName
     }
-    else {
-      /usr/libexec/pk-command-not-found $e.CommandName 2>$null
+    elseif (Test-Path -LiteralPath /usr/libexec/pk-command-not-found) {
+      /usr/libexec/pk-command-not-found $e.CommandName
     }
   }
 }

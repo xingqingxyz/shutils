@@ -1,11 +1,14 @@
 #!/bin/bash
 if [ $# = 0 ]; then
   if [ -v ALACRITTY_WINDOW_ID ]; then
-    ls ~/p/alacritty-theme/themes | fzf --preview="$0 --preview {}"
+    tmp=$(mktemp)
+    cat ~/.config/alacritty/theme_dark.toml > "$tmp"
+    ls ~/p/alacritty-theme/themes | fzf --preview="$0 --preview {}" && exit
+    cat "$tmp" > ~/.config/alacritty/theme_dark.toml
   fi
 elif [ "$1" = -p -o "$1" = --preview ]; then
   if [ "$2" ]; then
-    cp ~/p/alacritty-theme/themes/"$2" ~/.config/alacritty/theme_dark.toml
+    cat ~/p/alacritty-theme/themes/"$2" > ~/.config/alacritty/theme_dark.toml
   fi
   for ((i = 30; i <= 36; i++)); do
     printf '\e[%sm%s.hello world\e[0m\n' "$i" "$i"

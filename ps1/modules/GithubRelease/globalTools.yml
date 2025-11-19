@@ -2,7 +2,6 @@ apt:
   - aria2
   - build-essential
   - cmake
-  - containerd
   - curl
   - docker.io
   - gcc
@@ -31,13 +30,18 @@ deno: []
 dnf:
   - alacritty
   - aria2
+  - chrome-driver
   - clang
   - clang-tools-extra
   - cmake
-  - containerd
+  - dconf-editor
+  - dictd
   - docker-cli
   - fcitx5-chinese-addons
+  - fd-find
+  - figlet
   - gcc
+  - gdb
   - gh
   - git-subtree
   - gnome-browser-connector
@@ -45,15 +49,19 @@ dnf:
   - gnome-shell-extension-blur-my-shell
   - gnome-shell-extension-dash-to-dock
   - hyperfine
+  - lldb
   - msedit
   - nginx
   - ninja-build
   - openssl-devel
   - pandoc
   - pandoc-pdf
+  - python3-devel
+  - ripgrep
   - runc
   - shellcheck
   - shfmt
+  - strace
   - valgrind
   - vlc
   - xclip
@@ -83,7 +91,6 @@ psm1:
   - Yayaml
 releases:
   fedora:
-    - bat
     - bun
     - code
     - deno
@@ -104,7 +111,6 @@ releases:
     - pastel
     - plantuml
     - pwsh
-    - rg
     - rga
     - rustup
     - uv
@@ -170,6 +176,7 @@ winget:
   - Alacritty.Alacritty
   - AppiumDevelopers.AppiumInspector
   - aria2.aria2
+  - astral-sh.uv
   - BurntSushi.ripgrep.MSVC
   - FiloSottile.mkcert
   - Git.Git
@@ -203,6 +210,5 @@ winget:
   - sharkdp.hexyl
   - sharkdp.hyperfine
   - sharkdp.pastel
-  - stral-sh.uv
   - Tencent.WeChat
   - VideoLAN.VLC

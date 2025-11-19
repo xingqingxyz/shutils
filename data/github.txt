@@ -1,4 +1,0 @@
-https://docs.github.com/public/fpt/schema.docs.graphql
-aria2c https://github.com/xingqingxyz/mvext/archive/refs/heads/main.zip
-aria2c https://github.com/xingqingxyz/mvext/blob/HEAD/README.md
-aria2c https://github.com/xingqingxyz/mvext/raw/refs/heads/main/README.md

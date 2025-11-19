@@ -10,10 +10,10 @@ _completion_loader() {
       return 124
     fi
   fi
-  local name
-  name=$(basename -- "$1")
-  if [ -f "$BASH_SOURCE/completions/$name.sh" ]; then
-    . "$BASH_SOURCE/completions/$name.sh"
+  local dir=${BASH_SOURCE[0]%/*} name=${1##*/}
+  name=${name%.*}
+  if [ -f "$dir/completions/$name.sh" ]; then
+    . "$dir/completions/$name.sh"
     return 124
   fi
   return 1

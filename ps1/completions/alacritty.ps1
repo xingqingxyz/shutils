@@ -38,7 +38,7 @@ Register-ArgumentCompleter -Native -CommandName alacritty -ScriptBlock {
           '-s', '--socket', '-h', '--help'
           break
         }
-        'create-window', 'config', 'help'
+        'create-window', 'config', 'get-config', 'help'
         break
       }
       'msg create-window' {
@@ -51,6 +51,13 @@ Register-ArgumentCompleter -Native -CommandName alacritty -ScriptBlock {
       'msg config' {
         if ($wordToComplete.StartsWith('-')) {
           '-w', '--window-id', '-r', '--reset', '-h', '--help'
+          break
+        }
+        break
+      }
+      'msg get-config' {
+        if ($wordToComplete.StartsWith('-')) {
+          '-w', '--window-id', '-h', '--help'
           break
         }
         break
