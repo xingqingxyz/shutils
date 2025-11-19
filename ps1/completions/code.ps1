@@ -25,7 +25,7 @@ Register-ArgumentCompleter -Native -CommandName code, code-insiders -ScriptBlock
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          '-d', '--diff', '-m', '--merge', '-a', '--add', '--remove', '-g', '--goto', '-n', '--new-window', '-r', '--reuse-window', '-w', '--wait', '--locale', '--user-data-dir', '--profile', '--extensions-dir', '--list-extensions', '--show-versions', '--category', '--install-extension', '--force', '--pre-release', '--uninstall-extension', '--update-extensions', '--enable-proposed-api', '--add-mcp', '--verbose', '--log', '-s', '--status', '--prof-startup', '--disable-extensions', '--disable-extension', '--sync', '--inspect-extensions', '--inspect-brk-extensions', '--disable-lcd-text', '--disable-gpu', '--disable-chromium-sandbox', '--locate-shell-integration-path', '--telemetry', '-v', '--version', '-h', '--help'
+          '-d', '--diff', '-m', '--merge', '-a', '--add', '--remove', '-g', '--goto', '-n', '--new-window', '-r', '--reuse-window', '-w', '--wait', '--locale', '--user-data-dir', '--profile', '--extensions-dir', '--list-extensions', '--show-versions', '--category', '--install-extension', '--force', '--pre-release', '--uninstall-extension', '--update-extensions', '--enable-proposed-api', '--add-mcp', '--verbose', '--log', '-s', '--status', '--prof-startup', '--disable-extensions', '--disable-extension', '--sync', '--inspect-extensions', '--inspect-brk-extensions', '--disable-lcd-text', '--disable-gpu', '--disable-chromium-sandbox', '--locate-shell-integration-path', '--telemetry', '-v', '--version', '-h', '--help', '--open-url'
           break
         }
         switch ($prev) {

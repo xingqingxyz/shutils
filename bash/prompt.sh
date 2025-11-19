@@ -5,38 +5,34 @@ fi
 declare LAST_CMD_DUR_C LAST_CMD_DUR_T LAST_CMD_TIME=$EPOCHREALTIME
 
 PS0='${ LAST_CMD_TIME=$EPOCHREALTIME;}'
-enable -f /usr/local/lib/bash/fltexpr fltexpr 2> /dev/null
 
 _prompt() {
-  local dur color
-  fltexpr 'dur=EPOCHREALTIME-LAST_CMD_TIME'
+  local dur color left right
+  dur=$(bc <<< "$EPOCHREALTIME-$LAST_CMD_TIME")
+  printf -v left '%.0f' "$dur"
+  right=${dur: -6}
   # colors: green, cyan, blue, yellow, magenta, red
-  if fltexpr 'dur<0.001'; then
+  if ((left == 0 && ${right##+(0)} < 1000)); then
     color=32
-    fltexpr 'dur*=1000000'
-    printf -v dur '%.0fμs' "$dur"
-  elif fltexpr 'dur<1'; then
+    dur=${right##+(0)}μs
+  elif ((left == 0)); then
     color=36
-    fltexpr 'dur*=1000'
-    printf -v dur '%.0fms' "$dur"
-  elif fltexpr 'dur<1000'; then
+    left=${right:0:3}
+    dur=${left##+(0)}.${right:3}ms
+  elif ((left < 1000)); then
     color=34
-    printf -v dur '%.3fs' "$dur"
+    dur=$left.${right:0:3}s
+  elif ((right = left % 60)) && (((left /= 60) < 60)); then
+    color=33
+    dur=${left}m${right}s
+  elif ((right = left % 60)) && (((left /= 60) < 24)); then
+    color=35
+    dur=${left}h${right}m
   else
-    local left right
-    printf -v left '%.0f' "$dur"
-    if ((right = left % 60)) && (((left /= 60) < 60)); then
-      color=33
-      dur=${left}m${right}s
-    elif ((right = left % 60)) && (((left /= 60) < 24)); then
-      color=35
-      dur=${left}h${right}m
-    else
-      ((right = left % 24))
-      ((left /= 24))
-      color=31
-      dur=${left}d${right}h
-    fi
+    ((right = left % 24))
+    ((left /= 24))
+    color=31
+    dur=${left}d${right}h
   fi
   LAST_CMD_DUR_C=$color
   LAST_CMD_DUR_T=$dur

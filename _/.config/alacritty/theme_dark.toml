@@ -1,29 +1,42 @@
-# Theme: enfocado_dark
-# Source:  https://github.com/wuelnerdotexe/vim-enfocado
+# KDE Breeze (Ported from Konsole)
 
 # Default colors
 [colors.primary]
-background =  '#181818'
-foreground =  '#b9b9b9'
+background = '#232627'
+foreground = '#fcfcfc'
+
+dim_foreground = '#eff0f1'
+bright_foreground = '#ffffff'
 
 # Normal colors
 [colors.normal]
-black   = '#3b3b3b'
-red     = '#ed4a46'
-green   = '#70b433'
-yellow  = '#dbb32d'
-blue    = '#368aeb'
-magenta = '#eb6eb7'
-cyan    = '#3fc5b7'
-white   = '#b9b9b9'
+black = '#232627'
+red = '#ed1515'
+green = '#11d116'
+yellow = '#f67400'
+blue = '#1d99f3'
+magenta = '#9b59b6'
+cyan = '#1abc9c'
+white = '#fcfcfc'
 
 # Bright colors
 [colors.bright]
-black   = '#777777'
-red     = '#ff5e56'
-green   = '#83c746'
-yellow  = '#efc541'
-blue    = '#4f9cfe'
-magenta = '#ff81ca'
-cyan    = '#56d8c9'
-white   = '#dedede'
+black = '#7f8c8d'
+red = '#c0392b'
+green = '#1cdc9a'
+yellow = '#fdbc4b'
+blue = '#3daee9'
+magenta = '#8e44ad'
+cyan = '#16a085'
+white = '#ffffff'
+
+# Dim colors
+[colors.dim]
+black = '#31363b'
+red = '#783228'
+green = '#17a262'
+yellow = '#b65619'
+blue = '#1b668f'
+magenta = '#614a73'
+cyan = '#186c60'
+white = '#63686d'

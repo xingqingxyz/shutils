@@ -1,14 +1,10 @@
 #Requires -Version 7.5 -Modules Pester
+using namespace Microsoft.Windows.PowerShell.ScriptAnalyzer
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
 . $PSScriptRoot/TextDocument.ps1
-
-BeforeAll {
-  Write-Host 'hello world'
-  notify-send 'hello pester'
-}
 
 BeforeAll {
   Write-Host ([TextDocument].FullName)
@@ -20,7 +16,7 @@ BeforeAll {
 
 Describe '#offsetAt' {
   It 'must true offset' {
-    $document.offsetAt([Microsoft.Windows.PowerShell.ScriptAnalyzer.Position]::new(1, 6)) | Should -Be 5
-    $document.offsetAt([Microsoft.Windows.PowerShell.ScriptAnalyzer.Position]::new(2, 3)) | Should -Be 10
+    $document.offsetAt([Position]::new(1, 6)) | Should -Be 5
+    $document.offsetAt([Position]::new(2, 3)) | Should -Be 10
   }
 }

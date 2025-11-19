@@ -25,7 +25,9 @@ fi
 # aliases
 alias cls=clear \
   r='fc -s' \
-  ls='ls -lah --color=auto --hyperlink=auto' \
+  ls='ls --color=auto --hyperlink=auto' \
+  ll='ls -lah' \
+  grep='grep --color=auto' \
   rg='rg --hyperlink-format=vscode' \
   tree='tree -C --hyperlink --gitignore'
 

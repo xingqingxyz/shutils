@@ -233,6 +233,40 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
   }
 }
 
+function ghQuery {
+  [CmdletBinding()]
+  param (
+    [Parameter(Position = 0)]
+    [ValidateSet('releases', 'limit', 'stars')]
+    [string]
+    $Category = 'releases',
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $Queries
+  )
+  [string]$query = "query=@$PSScriptRoot/github/$Category.gql"
+  [string[]]$fields = @()
+  [string]$jq = '.'
+  switch ($Category) {
+    releases {
+      $jq = '.repository.latestRelease[].name'
+      $owner, $name = $Queries.Split('/', 2)
+      $fields += "owner=$owner", "name=$name"
+      break
+    }
+    stars {
+      $jq = '.user.starredRepositories[].nameWithOwner'
+      $login = git config get --global user.name
+      if (!$login) {
+        throw 'please setup git and git global config user.name'
+      }
+      $fields += "login=$login"
+      break
+    }
+  }
+  gh api graphql -F $query $fields.ForEach{ "-f=$_" } -q $jq | jq
+}
+
 function icat {
   <#
   .SYNOPSIS
@@ -313,4 +347,48 @@ function de {
 function de.f {
   [string]$line = Get-Content -LiteralPath $PSScriptRoot/vimDigraph.tsv | Select-Object -Skip 1 | fzf
   $line.Split("`t", 2)[0]
+}
+
+function figlet.f {
+  Split-Path -Resolve -LeafBase /usr/share/figlet/*.flf | fzf --reverse --preview-window=70% --preview='figlet -f {} -w "$FZF_PREVIEW_COLUMNS" "hello world"' --bind="enter:become:figlet -f {} -w $([System.Console]::WindowWidth) 'hello world'"
+}
+
+function rg.f {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Query,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $Options,
+    [Parameter(ValueFromPipeline)]
+    [System.Object]
+    $InputObject
+  )
+  $reload = @"
+rg $Options --column --color=always {q} || exit 0
+"@
+  $open = @'
+code --open-url "vscode://file$(realpath -- "{1}"):{2}:{3}"
+'@
+  $preview = @'
+bat --number --color=always --terminal-width=$FZF_PREVIEW_COLUMNS --highlight-line={2} {1}
+'@
+  $ags = @(
+    "--query=$Query"
+    '--ansi'
+    '--delimiter=:'
+    '--preview-window=up,border-bottom,~3,+{2}+3/3'
+    "--preview=$preview"
+    "--bind=start,ctrl-r:reload:$reload"
+    "--bind=enter:become:$open"
+    "--bind=ctrl-o:execute:$open"
+  )
+  if ($MyInvocation.ExpectingInput) {
+    $input | fzf @ags
+  }
+  else {
+    fzf @ags
+  }
 }
