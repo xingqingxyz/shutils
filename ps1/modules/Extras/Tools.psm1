@@ -349,8 +349,17 @@ function de.f {
   $line.Split("`t", 2)[0]
 }
 
-function figlet.f {
-  Split-Path -Resolve -LeafBase /usr/share/figlet/*.flf | fzf --reverse --preview-window=70% --preview='figlet -f {} -w "$FZF_PREVIEW_COLUMNS" "hello world"' --bind="enter:become:figlet -f {} -w $([System.Console]::WindowWidth) 'hello world'"
+function figlet.f ([string]$Value) {
+  if ([string]::IsNullOrEmpty($Value)) {
+    $Value = if ($MyInvocation.ExpectingInput) {
+      $input
+    }
+    else {
+      'hello world'
+    }
+  }
+  $Value = $Value.Replace("'", "\'")
+  Split-Path -Resolve -LeafBase /usr/share/figlet/*.flf | fzf --reverse --preview-window=70% "--preview=figlet -f {} -w `"`$FZF_PREVIEW_COLUMNS`" '$Value'" "--bind=enter:become:figlet -f {} -w $([System.Console]::WindowWidth) '$Value'"
 }
 
 function rg.f {
@@ -366,11 +375,14 @@ function rg.f {
     [System.Object]
     $InputObject
   )
+  if ($MyInvocation.ExpectingInput) {
+    return $input | rg $Query @Options | fzf
+  }
   $reload = @"
 rg $Options --column --color=always {q} || exit 0
 "@
   $open = @'
-code --open-url "vscode://file$(realpath -- "{1}"):{2}:{3}"
+code --open-url "vscode://file$(realpath -- {1}):{2}:{3}"
 '@
   $preview = @'
 bat --number --color=always --terminal-width=$FZF_PREVIEW_COLUMNS --highlight-line={2} {1}
@@ -385,10 +397,5 @@ bat --number --color=always --terminal-width=$FZF_PREVIEW_COLUMNS --highlight-li
     "--bind=enter:become:$open"
     "--bind=ctrl-o:execute:$open"
   )
-  if ($MyInvocation.ExpectingInput) {
-    $input | fzf @ags
-  }
-  else {
-    fzf @ags
-  }
+  fzf @ags
 }

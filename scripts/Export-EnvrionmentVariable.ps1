@@ -1,14 +1,15 @@
-$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/../..")
+$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $PNPM_HOME = "$HOME/.local/share/pnpm"
 
 # path
 $PATH = @"
 $HOME/.local/bin
-$PNPM_HOME
-$HOME/go/bin
 $HOME/.cargo/bin
+$HOME/go/bin
+$PNPM_HOME
 $ANDROID_HOME/platform-tools
 $HOME/.local/share/powershell/Scripts
+/usr/local/share/powershell/Scripts
 $SHUTILS_ROOT/scripts
 "@.ReplaceLineEndings(':')
 $PATH += if ($env:XDG_SESSION_DESKTOP -ceq 'ubuntu') {
@@ -21,6 +22,7 @@ else {
 $PSModulePath = @"
 $SHUTILS_ROOT/ps1/modules
 $HOME/.local/share/powershell/Modules
+/usr/local/share/powershell/Modules
 $([System.IO.Path]::GetFullPath("$((Get-Module Microsoft.PowerShell.Management).Path)/../.."))
 "@.ReplaceLineEndings(':')
 
@@ -29,14 +31,15 @@ $FZF_DEFAULT_OPTS = @'
 --cycle
 --bind=alt-/:last
 --bind=alt-\\:first
---bind=alt-+:change-multi
 --bind=alt-J:jump
+--bind=alt-z:toggle-wrap
 --bind=ctrl-/:preview-bottom
 --bind=ctrl-\\:preview-top
 --bind=ctrl-a:toggle-all
 --bind=ctrl-b:preview-page-up
 --bind=ctrl-e:preview-down
 --bind=ctrl-f:preview-page-down
+--bind=ctrl-m:change-multi
 --bind=ctrl-y:preview-up
 --bind=ctrl-alt-b:page-up
 --bind=ctrl-alt-d:half-page-down

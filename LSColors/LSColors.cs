@@ -10,7 +10,8 @@ public class LSColors
     < 1000 => PSStyle.Instance.Foreground.Green + size,
     < 1000_000 => PSStyle.Instance.Foreground.Cyan + (size / 1000.0).ToString(".0") + 'K',
     < 1000_000_000 => PSStyle.Instance.Foreground.Blue + (size / 1000_000.0).ToString(".0") + 'M',
-    _ => PSStyle.Instance.Foreground.Yellow + (size / 1000_000_000.0).ToString(".0") + 'G'
+    < 1000_000_000_000 => PSStyle.Instance.Foreground.Magenta + (size / 1000_000_000.0).ToString(".0") + 'G'
+    _ => PSStyle.Instance.Foreground.Yellow + (size / 1000_000_000_000.0).ToString(".0") + 'T'
   } + PSStyle.Instance.Reset;
 
   public static string GetNameString(FileInfo info) => GetNameString(info, null);
