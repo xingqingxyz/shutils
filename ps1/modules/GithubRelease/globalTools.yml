@@ -99,7 +99,6 @@ releases:
     - flutter
     - fzf
     - go
-    - goreleaser
     - hexyl
     - java
     - jq
@@ -138,7 +137,6 @@ releases:
     - fzf
     - gh
     - go
-    - goreleaser
     - hexyl
     - hyperfine
     - java
@@ -173,17 +171,16 @@ uv:
     - ruff
     - yt-dlp
 winget:
-  - Alacritty.Alacritty
   - AppiumDevelopers.AppiumInspector
   - aria2.aria2
   - astral-sh.uv
   - BurntSushi.ripgrep.MSVC
+  - charmbracelet.glow
   - FiloSottile.mkcert
   - Git.Git
   - GitHub.cli
   - GoLang.Go
   - Google.AndroidStudio
-  - goreleaser.goreleaser
   - gstreamerproject.gstreamer
   - Gyan.FFmpeg
   - ImageMagick.Q16-HDRI

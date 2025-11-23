@@ -36,6 +36,28 @@ if ($IsWindows) {
       & $cmd $ags
     }
   }
+  # winget command-not-found
+  # note: stdout, stderr are ignored in the scriptblock
+  $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
+    [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
+    if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
+      [string[]]$lines = winget search -s winget -n 1 --no-vt --cmd (Split-Path -LeafBase $e.CommandName)
+      if ($lines.Count -ne 3) {
+        return
+      }
+      $add = switch ((Get-Culture).Name) {
+        en-US { 0; break }
+        zh-CN { 2; break }
+        default { return }
+      }
+      $id = $lines[2].Substring($lines[0].IndexOf('ID') + $add).Split(' ', 2)[0]
+      winget show -s winget --id $id | Out-Host
+      $ok = Read-Host "Install? (Y/N)"
+      if ($ok -eq 'y') {
+        sudo winget install -s winget --accept-package-agreements --no-vt --id $id
+      }
+    }
+  }
   return
 }
 

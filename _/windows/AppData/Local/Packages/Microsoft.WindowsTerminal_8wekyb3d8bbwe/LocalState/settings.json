@@ -1,16 +1,15 @@
 {
     "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
-    "actions": 
-    [
+    "actions": [
         {
             "command": "find",
             "id": "User.find"
         },
         {
-            "command": 
-            {
-                "action": "searchWeb"
+            "command": {
+                "action": "searchWeb",
+                "queryUrl": "%s"
             },
             "id": "User.searchWeb.C5EEC4D3"
         }
@@ -20,8 +19,7 @@
     "defaultInputScope": "alphanumericHalfWidth",
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
     "initialRows": 35,
-    "keybindings": 
-    [
+    "keybindings": [
         {
             "id": "User.find",
             "keys": "ctrl+shift+f"
@@ -39,24 +37,20 @@
             "keys": "ctrl+shift+s"
         }
     ],
-    "newTabMenu": 
-    [
+    "newTabMenu": [
         {
             "type": "remainingProfiles"
         }
     ],
     "newTabPosition": "afterLastTab",
-    "profiles": 
-    {
-        "defaults": 
-        {
+    "profiles": {
+        "defaults": {
             "autoMarkPrompts": true,
             "closeOnExit": "never",
             "colorScheme": "Campbell",
             "showMarksOnScrollbar": true
         },
-        "list": 
-        [
+        "list": [
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "hidden": false,
@@ -85,18 +79,6 @@
                 "hidden": true,
                 "name": "Visual Studio Debug Console",
                 "source": "VSDebugConsole"
-            },
-            {
-                "guid": "{a3b67b7f-f6cf-5fa2-b8d9-7a31938e48b8}",
-                "hidden": false,
-                "name": "Developer Command Prompt for VS 18 [Preview]",
-                "source": "Windows.Terminal.VisualStudio"
-            },
-            {
-                "guid": "{143c767a-85d6-5016-91de-757d2a6bffb7}",
-                "hidden": false,
-                "name": "Developer PowerShell for VS 18 [Preview]",
-                "source": "Windows.Terminal.VisualStudio"
             },
             {
                 "guid": "{db877c8f-9072-5f59-b2d6-f34cd6f7a6f3}",

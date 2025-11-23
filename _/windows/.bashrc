@@ -10,3 +10,5 @@ fi
 
 # Get the aliases and functions
 . "$SHUTILS_ROOT/_/.bashrc"
+
+alias ls='ls --color=auto'
