@@ -91,7 +91,7 @@
                 <PropertyName>Group</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
-                <ScriptBlock>'{0:d} {0:t}' -f $_.LastWriteTime</ScriptBlock>
+                <PropertyName>LastWriteTimeString</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
                 <ScriptBlock>[LSColors.LSColors]::GetSizeString($_.Size)</ScriptBlock>

@@ -163,6 +163,7 @@ function getLocalVersion ($Meta) {
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
       dotnet { (dotnet --version).Split('-', 2)[0]; break }
       gh { (gh version)[0].Split(' ', 4)[2]; break }
+      glow { (glow -v)[0].Split(' ', 4)[2]; break }
       go { (go version).Split(' ', 4)[2].Substring(2); break }
       goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
       pastel { (pastel -V).Split(' ', 3)[1]; break }
@@ -296,9 +297,9 @@ function Install-Release {
       }
       cargo install alacritty@$($Meta.version)
       downloadRelease 'Alacritty.svg', 'alacritty.1.gz', 'alacritty-msg.1.gz', 'alacritty.5.gz', 'alacritty-bindings.5.gz', 'alacritty.bash', 'Alacritty.desktop'
-      Move-Item -LiteralPath $buildDir/alacritty.1.gz, $buildDir/alacritty-msg.1.gz, $buildDir/alacritty.5.gz, $buildDir/alacritty-bindings.5.gz $dataDir/man/man1
-      Move-Item -LiteralPath $buildDir/alacritty.bash $dataDir/bash-completion/completions
-      Move-Item -LiteralPath $buildDir/Alacritty.desktop $dataDir/applications
+      Move-Item -LiteralPath $buildDir/alacritty.1.gz, $buildDir/alacritty-msg.1.gz, $buildDir/alacritty.5.gz, $buildDir/alacritty-bindings.5.gz $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/alacritty.bash $dataDir/bash-completion/completions -Force
+      Move-Item -LiteralPath $buildDir/Alacritty.desktop $dataDir/applications -Force
       update-desktop-database $dataDir/applications
       sudo mv $buildDir/Alacritty.svg /usr/share/pixmaps
       break
@@ -363,7 +364,7 @@ function Install-Release {
       downloadRelease $file, SHASUMS256.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       Expand-Archive -LiteralPath $buildDir/$file $buildDir
-      Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file) $binDir
+      Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file) $binDir -Force
       $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
       break
     }
@@ -454,16 +455,16 @@ function Install-Release {
         }
         default { throw [System.NotImplementedException]::new() }
       }
-      Move-Item -LiteralPath $buildDir/edit$exe $binDir
+      Move-Item -LiteralPath $buildDir/edit$exe $binDir -Force
       break
     }
     fd {
       $base = 'fd-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/fd$exe $binDir
-      Move-Item -LiteralPath $buildDir/$base/fd.1 $dataDir/man/man1
-      Move-Item -LiteralPath $buildDir/$base/autocomplete/fd.bash $dataDir/bash-completion/completions
+      Move-Item -LiteralPath $buildDir/$base/fd$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$base/fd.1 $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/$base/autocomplete/fd.bash $dataDir/bash-completion/completions -Force
       break
     }
     flutter {
@@ -487,6 +488,21 @@ function Install-Release {
       $file = 'gh_{0}_{1}_{2}.{3}' -f $Meta.version, $go.os, $go.arch, $pkgType
       downloadRelease $file
       sudo $pkgManager install -y $buildDir/$file
+      break
+    }
+    glow {
+      $os = switch ($true) {
+        $IsWindows { 'Windows'; break }
+        $IsLinux { 'Linux'; break }
+        $IsMacOS { 'Darwin'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $base = 'glow_{0}_{1}_{2}' -f $Meta.version, $os, $rust.arch
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/glow$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/manpages/glow.1.gz $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/completions/glow.bash $dataDir/bash-completion/completions -Force
       break
     }
     go {
@@ -771,15 +787,6 @@ StartupWMClass=localsend_app
       curl -LsSf 'https://astral.sh/uv/install.sh' | sh
       break
     }
-    xh {
-      $base = 'xh-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/xh$exe $binDir/http$exe -Force
-      Move-Item -LiteralPath $buildDir/$base/doc/xh.1 $dataDir/man/man1 -Force
-      $null = New-Item -ItemType SymbolicLink -Force -Target http$exe $binDir/https$exe
-      break
-    }
     yq {
       $base = 'yq_{0}_{1}' -f $go.os, $go.arch
       downloadRelease $base$ext
@@ -864,7 +871,8 @@ function Update-Software {
       sudo apt install -f
       sudo apt upgrade -y --auto-remove
       if ($Force) {
-        sudo apt install -y $pkgMap.apt
+        $pkgs = $IsWSL ? $pkgMap.wsl.apt : $pkgMap.apt
+        sudo apt install -y $pkgs
       }
       continue
     }
@@ -907,7 +915,8 @@ function Update-Software {
     dnf {
       sudo dnf upgrade -y
       if ($Force) {
-        sudo dnf install -y $pkgMap.dnf
+        $pkgs = $IsWSL ? $pkgMap.wsl.dnf : $pkgMap.dnf
+        sudo dnf install -y $pkgs
       }
       continue
     }
@@ -937,7 +946,9 @@ function Update-Software {
         continue
       }
       [string[]]$pkgs = go list
-      go get $pkgs.ForEach{ "$_@latest" }
+      if ($pkgs) {
+        go get $pkgs.ForEach{ "$_@latest" }
+      }
       continue
     }
     pnpm {
@@ -1023,6 +1034,7 @@ $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::Get
 if ($IsLinux) {
   $IsUbuntu = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=ubuntu')
   $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=fedora')
+  $IsWSL = Test-Path -LiteralPath Env:/WSL_DISTRO_NAME
 }
 
 $binDir = $IsWindows ? "$HOME\tools" : "$HOME/.local/bin"

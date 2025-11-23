@@ -2,7 +2,7 @@ if ((id -u) -cne '0') {
   throw 'needs sudo'
 }
 if ($env:XDG_SESSION_DESKTOP -ceq 'ubuntu') {
-  ln -sf /usr/bin/python3 /usr/bin/python
+  ln -sf python3 /usr/bin/python
 }
 if ((Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=fedora')) {
   # auto update

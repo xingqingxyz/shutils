@@ -45,6 +45,8 @@
   repo: cli/cli
   tag: v2.82.1
   version: 2.82.1
+- name: glow
+  repo: charmbracelet/glow
 - name: go
   repo: golang/go
   tag: go1.25.4
