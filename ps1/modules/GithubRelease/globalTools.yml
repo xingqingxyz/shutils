@@ -13,7 +13,6 @@ apt:
   - nginx
   - ninja-build
   - pandoc
-  - runc
   - shellcheck
   - shfmt
   - vlc
@@ -58,7 +57,6 @@ dnf:
   - pandoc-pdf
   - python3-devel
   - ripgrep
-  - runc
   - shellcheck
   - shfmt
   - strace
@@ -113,7 +111,6 @@ releases:
     - rga
     - rustup
     - uv
-    - xh
     - yq
   windows:
     - diskus
@@ -122,7 +119,6 @@ releases:
     - numbat
     - plantuml
     - rga
-    - xh
   ubuntu:
     - alacritty
     - bat
@@ -154,7 +150,6 @@ releases:
     - rga
     - rustup
     - uv
-    - xh
     - yq
 rustup:
   components:
@@ -209,3 +204,26 @@ winget:
   - sharkdp.pastel
   - Tencent.WeChat
   - VideoLAN.VLC
+wsl:
+  dnf:
+    - clang
+    - clang-tools-extra
+    - cmake
+    - dictd
+    - docker-cli
+    - figlet
+    - gcc
+    - gdb
+    - gh
+    - git-subtree
+    - glibc-langpack-zh
+    - hyperfine
+    - lldb
+    - msedit
+    - ninja-build
+    - openssl-devel
+    - python3-devel
+    - shellcheck
+    - shfmt
+    - strace
+    - valgrind

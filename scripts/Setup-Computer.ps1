@@ -1,13 +1,13 @@
 # env
 . $PSScriptRoot/Export-EnvrionmentVariable.ps1
+# dotfiles
+. $PSScriptRoot/dotfiles.ps1
 # powershell
 Set-PSRepository PSGallery -InstallationPolicy Trusted
 # merge history files
-$historyPath = (Get-PSReadLineOption).HistorySavePath
-$dir = Split-Path $historyPath
-$lines = Get-Content $dir/* | Select-Object -Unique
-$lines > $historyPath
-New-Item -ItemType HardLink -Force -Target $dir/ConsoleHost_history.txt "$(Split-Path $historyPath)/Visual Studio Code Host_history.txt"
+$dir = Split-Path (Get-PSReadLineOption).HistorySavePath
+Out-File -InputObject (Get-Content $dir/* | Select-Object -Unique) -LiteralPath $dir/ConsoleHost_history.txt
+New-Item -ItemType HardLink -Force -Target $dir/ConsoleHost_history.txt "$dir/Visual Studio Code Host_history.txt"
 
 if ($IsWindows) {
   sudo pwsh -nop $PSScriptRoot/Setup-WindowsMachine.ps1
