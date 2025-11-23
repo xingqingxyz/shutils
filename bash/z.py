@@ -153,7 +153,7 @@ class Z:
         for item in reversed(items):
             if os.path.isdir(item[0]):
                 found = True
-                print(item)
+                print(item[0])
                 break
             warning("directory not exist, removing it: " + item[0])
             del self.itemsMap[item[0]]

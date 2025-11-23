@@ -18,3 +18,5 @@
 	rebase = false
 [gui]
 	recentrepo = /home/uv/p/mvext
+[rerere]
+	enabled = true

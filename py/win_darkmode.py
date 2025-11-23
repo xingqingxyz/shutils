@@ -1,30 +1,10 @@
-import ctypes
 import locale
 import os
+import platform
 import sys
 import time
 
-from uiautomation import WindowControl
-
-
-def is_windows_chinese():
-    return sys.platform == "win32" and locale.getlocale()[1] == "936"
-
-
-def rerun_as_admin():
-    if ctypes.windll.shell32.IsUserAnAdmin():
-        return
-    print("未以管理员权限运行")
-    # 如果未以管理员运行，可以尝试重新启动脚本（仅限Windows）
-    ctypes.windll.shell32.ShellExecuteW(
-        None, "runas", sys.executable, " ".join(sys.argv), None, 1
-    )
-    sys.exit()
-
-
-def block_input(block=True):
-    """全局屏蔽/恢复键盘鼠标输入"""
-    ctypes.windll.user32.BlockInput(block)
+import uiautomation as am
 
 
 def set_light_theme(light=False):
@@ -33,16 +13,13 @@ def set_light_theme(light=False):
     time.sleep(1)
 
     # 2. 获取设置窗口
-    window = WindowControl(Name="设置", ClassName="ApplicationFrameWindow")
+    window = am.WindowControl(Name="设置", ClassName="ApplicationFrameWindow")
+    print("window: " + window.Name)
 
-    if not window.Exists():
-        raise RuntimeError("cannot find ms settings window")
-
-    block_input()
     print("activate window and set top most")
     window.SetActive()
     window.SetTopmost()
-    search_box = window.EditControl(AutomationId="TextBox")
+    search_box = window.EditControl(AutomationId="CommandSearchTextBox")
     print("send search text")
     search_box.SendKeys("浅色主题设置")
     print("click first suggestion")
@@ -58,16 +35,11 @@ def set_light_theme(light=False):
     window.SendKeys("{ALT}{F4}")
 
 
-def safe_oper(callback, *args, **kwargs):
-    block_input(True)
-    try:
-        callback(*args, **kwargs)
-    finally:
-        block_input(False)
-
-
 if __name__ == "__main__":
+    if platform.system() != "Windows" or locale.getlocale()[0] != "Chinese (Simplified)_China":
+        raise SystemError("only supports windows chinese")
     if "###" in sys.argv:
-        rerun_as_admin()
-    assert is_windows_chinese(), "only support windows chinese"
-    safe_oper(set_light_theme, len(sys.argv) > 1 and sys.argv[1] == "light")
+        if not am.IsUserAnAdmin():
+            am.RunScriptAsAdmin(sys.argv)
+            exit()
+    set_light_theme(len(sys.argv) > 1 and sys.argv[1] == "light")
