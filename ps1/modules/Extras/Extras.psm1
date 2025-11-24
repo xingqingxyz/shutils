@@ -48,7 +48,7 @@ function Set-Region {
     [string]
     $Name,
     [Parameter(Mandatory, Position = 1)]
-    [AllowNull()]
+    [AllowEmptyCollection()]
     [string[]]
     $Value,
     [Parameter(Mandatory, Position = 2, ParameterSetName = 'LiteralPath')]

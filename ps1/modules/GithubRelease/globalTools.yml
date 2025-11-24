@@ -18,6 +18,14 @@ apt:
   - vlc
   - xclip
   - xsel
+apt-wsl:
+  - build-essential
+  - cmake
+  - curl
+  - docker.io
+  - gcc
+  - libssl-dev
+  - ninja-build
 bun: []
 cargo:
   - cargo-generate
@@ -38,6 +46,7 @@ dnf:
   - docker-cli
   - fcitx5-chinese-addons
   - fd-find
+  - ffmpeg-free
   - figlet
   - gcc
   - gdb
@@ -48,6 +57,7 @@ dnf:
   - gnome-shell-extension-blur-my-shell
   - gnome-shell-extension-dash-to-dock
   - hyperfine
+  - ImageMagick
   - lldb
   - msedit
   - nginx
@@ -64,107 +74,131 @@ dnf:
   - vlc
   - xclip
   - xsel
+dnf-wsl:
+  - aria2
+  - bat
+  - clang
+  - clang-tools-extra
+  - cmake
+  - dictd
+  - docker-cli
+  - fd-find
+  - figlet
+  - gcc
+  - gdb
+  - gh
+  - git-subtree
+  - glibc-langpack-zh
+  - hyperfine
+  - hyperfine
+  - lldb
+  - msedit
+  - ninja-build
+  - openssl-devel
+  - python3-devel
+  - ripgrep
+  - shellcheck
+  - shfmt
+  - strace
+  - valgrind
+fedora:
+  - bun
+  - code
+  - deno
+  - diskus
+  - dotnet
+  - flutter
+  - fzf
+  - go
+  - hexyl
+  - java
+  - jq
+  - mkcert
+  - mdbook
+  - nerdfonts
+  - node
+  - numbat
+  - pastel
+  - plantuml
+  - pwsh
+  - rga
+  - rustup
+  - uv
+  - yq
 flutter: []
 gh: []
 go:
   - golang.org/x/tools/cmd/stringer
 pnpm:
-  allowBuild:
-    - "@vscode/vsce-sign"
-    - esbuild
-    - keytar
-    - tree-sitter-cli
-    - yo
-  packages:
-    - "@vscode/vsce"
-    - generator-code
-    - prettier
-    - tree-sitter-cli
-    - tsx
-    - yo
-ps1: []
+  - "@vscode/vsce"
+  - generator-code
+  - prettier
+  - tree-sitter-cli
+  - tsx
+  - yo
+pnpm-build:
+  - "@vscode/vsce-sign"
+  - esbuild
+  - keytar
+  - tree-sitter-cli
+  - yo
+ps1:
+  - Refresh-EnvironmentVariables
 psm1:
   - PSScriptAnalyzer
   - PSToml
   - Yayaml
-releases:
-  fedora:
-    - bun
-    - code
-    - deno
-    - diskus
-    - dotnet
-    - flutter
-    - fzf
-    - go
-    - hexyl
-    - java
-    - jq
-    - mkcert
-    - mdbook
-    - nerdfonts
-    - node
-    - numbat
-    - pastel
-    - plantuml
-    - pwsh
-    - rga
-    - rustup
-    - uv
-    - yq
-  windows:
-    - diskus
-    - flutter
-    - nerdfonts
-    - numbat
-    - plantuml
-    - rga
-  ubuntu:
-    - alacritty
-    - bat
-    - bun
-    - code
-    - deno
-    - diskus
-    - dotnet
-    - edit
-    - fd
-    - flutter
-    - fzf
-    - gh
-    - go
-    - hexyl
-    - hyperfine
-    - java
-    - jq
-    - less
-    - mkcert
-    - mdbook
-    - nerdfonts
-    - node
-    - numbat
-    - pastel
-    - plantuml
-    - pwsh
-    - rg
-    - rga
-    - rustup
-    - uv
-    - yq
 rustup:
-  components:
-    - clippy
-  targets:
-    - wasm32-unknown-unknown
-  toolchains:
-    - default
+  - default
+rustup-components:
+  - clippy
+rustup-targets:
+  - wasm32-unknown-unknown
+ubuntu:
+  - alacritty
+  - bat
+  - bun
+  - code
+  - deno
+  - diskus
+  - dotnet
+  - edit
+  - fd
+  - flutter
+  - fzf
+  - gh
+  - go
+  - hexyl
+  - hyperfine
+  - java
+  - jq
+  - less
+  - mkcert
+  - mdbook
+  - nerdfonts
+  - node
+  - numbat
+  - pastel
+  - plantuml
+  - pwsh
+  - rg
+  - rga
+  - rustup
+  - uv
+  - yq
 uv:
-  python:
-    - python3.14t
-  tools:
-    - markitdown
-    - ruff
-    - yt-dlp
+  - markitdown
+  - ruff
+  - yt-dlp
+uv-python:
+  - python3.14t
+windows:
+  - diskus
+  - flutter
+  - nerdfonts
+  - numbat
+  - plantuml
+  - rga
 winget:
   - AppiumDevelopers.AppiumInspector
   - aria2.aria2
@@ -205,25 +239,12 @@ winget:
   - Tencent.WeChat
   - VideoLAN.VLC
 wsl:
-  dnf:
-    - clang
-    - clang-tools-extra
-    - cmake
-    - dictd
-    - docker-cli
-    - figlet
-    - gcc
-    - gdb
-    - gh
-    - git-subtree
-    - glibc-langpack-zh
-    - hyperfine
-    - lldb
-    - msedit
-    - ninja-build
-    - openssl-devel
-    - python3-devel
-    - shellcheck
-    - shfmt
-    - strace
-    - valgrind
+  - dotnet
+  - fzf
+  - hexyl
+  - jq
+  - node
+  - pwsh
+  - rga
+  - uv
+  - yq

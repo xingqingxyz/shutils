@@ -37,7 +37,7 @@ if ($IsWindows) {
     }
   }
   # winget command-not-found
-  # note: stdout, stderr are ignored in the scriptblock
+  # note: stdout and stderr are ignored in the scriptblock
   $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
     [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
     if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
@@ -52,7 +52,7 @@ if ($IsWindows) {
       }
       $id = $lines[2].Substring($lines[0].IndexOf('ID') + $add).Split(' ', 2)[0]
       winget show -s winget --id $id | Out-Host
-      $ok = Read-Host "Install? (Y/N)"
+      $ok = Read-Host "Install $id`? (Y/N)"
       if ($ok -eq 'y') {
         sudo winget install -s winget --accept-package-agreements --no-vt --id $id
       }
@@ -76,10 +76,11 @@ Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   zegrep   = 'zegrep', '--color=auto'
   zfgrep   = 'zfgrep', '--color=auto'
   zgrep    = 'zgrep', '--color=auto'
-  rg       = 'rg', ($env:WSL_DISTRO_NAME ? '--hyperlink-format=vscode://file{wslprefix}{path}' : '--hyperlink-format=vscode')
-  tree     = 'tree', '-C', '--gitignore', '--hyperlink'
   plantuml = 'java', '-jar', "$HOME/.local/bin/plantuml.jar"
-  tracexec = 'bash', '-ic', 'tracexec "$0" "$@"'
+  rg       = 'rg', '--hyperlink-format=vscode'
+}
+if ($env:WSL_DISTRO_NAME) {
+  $_executableAliasMap.rg = 'rg', "--hyperlink-format=vscode://file//wsl.localhost/$env:WSL_DISTRO_NAME{path}:{line}:{column}"
 }
 if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
   $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
@@ -108,14 +109,33 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   }
 }
 # command-not-found
-$ExecutionContext.InvokeCommand.CommandNotFoundAction = {
-  [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
-  if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
-    if (Test-Path -LiteralPath /usr/lib/command-not-found) {
-      /usr/lib/command-not-found --ignore-installed --no-failure-msg $e.CommandName
+# note: stdout and stderr are ignored in the scriptblock
+if (Get-Command dnf -CommandType Application -TotalCount 1 -ea Ignore) {
+  $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
+    [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
+    if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
+      $name = dnf repoquery --file=/usr/bin/$($e.CommandName) 2>$null | Select-Object -Index 0
+      if (!$name) {
+        return
+      }
+      dnf info --cacheonly $name 2>$null | Out-Host
+      $ok = Read-Host "Install $name`? (Y/N)"
+      if ($ok -eq 'y') {
+        sudo dnf install -y $name
+      }
     }
-    elseif (Test-Path -LiteralPath /usr/libexec/pk-command-not-found) {
-      /usr/libexec/pk-command-not-found $e.CommandName
+  }
+}
+else {
+  $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
+    [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
+    if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
+      if (Test-Path -LiteralPath /usr/lib/command-not-found) {
+        /usr/lib/command-not-found --ignore-installed --no-failure-msg $e.CommandName
+      }
+      elseif (Test-Path -LiteralPath /usr/libexec/pk-command-not-found) {
+        /usr/libexec/pk-command-not-found $e.CommandName
+      }
     }
   }
 }

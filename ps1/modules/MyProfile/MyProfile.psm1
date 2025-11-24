@@ -14,7 +14,12 @@ function Show-CommandSource {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+        if (Test-Path $WordToComplete*) {
+          [System.Management.Automation.CompletionCompleters]::CompleteFilename($WordToComplete)
+        }
+        else {
+          [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+        }
       })]
     [Parameter(Position = 0)]
     [string]

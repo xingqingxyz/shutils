@@ -1,3 +1,4 @@
+# note: specially for zh_CN users
 $SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
 $DSC_RESOURCE_PATH = $IsWindows ? '' : "$HOME/.local/dsc"
@@ -27,20 +28,20 @@ $FZF_DEFAULT_OPTS = @'
 --cycle
 --bind=alt-/:last
 --bind=alt-\\:first
+--bind=alt-b:preview-page-up
+--bind=alt-f:preview-page-down
 --bind=alt-J:jump
+--bind=alt-n:preview-down
+--bind=alt-p:preview-up
 --bind=alt-z:toggle-wrap
 --bind=ctrl-/:preview-bottom
 --bind=ctrl-\\:preview-top
 --bind=ctrl-a:toggle-all
---bind=ctrl-b:preview-page-up
---bind=ctrl-e:preview-down
---bind=ctrl-f:preview-page-down
---bind=ctrl-m:change-multi
---bind=ctrl-y:preview-up
---bind=ctrl-alt-b:page-up
---bind=ctrl-alt-d:half-page-down
---bind=ctrl-alt-f:page-down
---bind=ctrl-alt-u:half-page-up
+--bind=ctrl-b:page-up
+--bind=ctrl-d:half-page-down
+--bind=ctrl-f:page-down
+--bind=ctrl-u:half-page-up
+--bind=ctrl-alt-m:change-multi
 '@.ReplaceLineEndings(' ')
 
 # proxy
@@ -56,6 +57,7 @@ raw.githubusercontents.com
 '@.ReplaceLineEndings(',')
 
 $commonVar = @{
+  ANDROID_HOME             = $ANDROID_HOME
   DSC_RESOURCE_PATH        = $DSC_RESOURCE_PATH
   EDITOR                   = 'edit'
   FLUTTER_STORAGE_BASE_URL = 'https://storage.flutter-io.cn'
@@ -105,6 +107,7 @@ $SHUTILS_ROOT/scripts
     $PATH += ':/usr/lib/wsl/lib:' + ($env:PATH.Split(':').Where{ $_.StartsWith('/mnt/') } -join ':')
   }
   ($commonVar + @{
+    LANG          = 'zh_CN.UTF-8'
     MANPAGER      = "sh -c `"sed 's/\x1b\[[0-9;]*m\|.\x08//g' 2>/dev/null | bat -plman`""
     MANROFFOPT    = '-c'
     SYSTEMD_PAGER = ''

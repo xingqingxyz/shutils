@@ -39,14 +39,16 @@
   version: 3.35.6
 - name: fzf
   repo: junegunn/fzf
-  tag: v0.66.0
-  version: 0.66.0
+  tag: v0.67.0
+  version: 0.67.0
 - name: gh
   repo: cli/cli
   tag: v2.82.1
   version: 2.82.1
 - name: glow
   repo: charmbracelet/glow
+  tag: v2.1.1
+  version: 2.1.1
 - name: go
   repo: golang/go
   tag: go1.25.4
@@ -92,8 +94,8 @@
   version: 3.4.0
 - name: node
   repo: nodejs/node
-  tag: v25.2.0
-  version: 25.2.0
+  tag: v25.2.1
+  version: 25.2.1
 - name: numbat
   repo: sharkdp/numbat
   tag: v1.16.0
@@ -109,26 +111,28 @@
 - name: pwsh
   repo: PowerShell/PowerShell
   prerelease: true
+  tag: v7.6.0-preview.5
+  version: 7.6.0-preview.5
 - name: rg
   repo: BurntSushi/ripgrep
 - name: rga
   repo: phiresky/ripgrep-all
-  tag: v0.10.9
-  version: 0.10.9
+  tag: v0.10.10
+  version: 0.10.10
 - name: rustup
   repo: rust-lang/rustup
   version: 1.28.2
 - name: uv
   repo: astral-sh/uv
-  version: 0.9.8
-  tag: 0.9.8
+  version: 0.9.11
+  tag: 0.9.11
 - name: xh
   repo: ducaale/xh
   tag: v0.25.0
   version: 0.25.0
 - name: yq
   repo: mikefarah/yq
-  tag: v4.48.1
-  version: 4.48.1
+  tag: v4.49.1
+  version: 4.49.1
 - name: zed
   repo: zed-industries/zed
