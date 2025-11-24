@@ -4,6 +4,7 @@
 . $PSScriptRoot/dotfiles.ps1
 # powershell
 Set-PSRepository PSGallery -InstallationPolicy Trusted
+Update-Help -UICulture en-US
 # merge history files
 $dir = Split-Path (Get-PSReadLineOption).HistorySavePath
 Out-File -InputObject (Get-Content $dir/* | Select-Object -Unique) -LiteralPath $dir/ConsoleHost_history.txt

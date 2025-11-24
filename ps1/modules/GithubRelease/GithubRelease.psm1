@@ -351,10 +351,6 @@ function Install-Release {
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
       }
-      if (Get-Command bun -CommandType Application -TotalCount 1 -ea Ignore) {
-        bun upgrade
-        break
-      }
       $arch = switch ([RuntimeInformation]::OSArchitecture) {
         'Arm64' { 'aarch64'; break }
         'X64' { 'x64'; break }
@@ -499,7 +495,7 @@ function Install-Release {
       }
       $base = 'glow_{0}_{1}_{2}' -f $Meta.version, $os, $rust.arch
       downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/glow$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/manpages/glow.1.gz $dataDir/man/man1 -Force
       Move-Item -LiteralPath $buildDir/completions/glow.bash $dataDir/bash-completion/completions -Force
@@ -844,7 +840,7 @@ function Clear-Module {
 }
 
 function Update-Software {
-  [CmdletBinding()]
+  [CmdletBinding(SupportsShouldProcess)]
   param (
     [Parameter()]
     [ArgumentCompleter({
@@ -853,7 +849,7 @@ function Update-Software {
           [string]$ParameterName,
           [string]$WordToComplete
         )
-        (Get-Content -Raw -LiteralPath $PSScriptRoot/globalTools.yml | ConvertFrom-Yaml).Keys.Where{ $_ -like "$WordToComplete*" }
+        (Get-Content -Raw -LiteralPath $PSScriptRoot/globalTools.yml | ConvertFrom-Yaml).Keys.Where{ !$_.Contains('-') -and $_ -like "$WordToComplete*" }
       })]
     [string[]]
     $Category,
@@ -865,13 +861,25 @@ function Update-Software {
     $Force
   )
   $pkgMap = Get-Content -Raw -LiteralPath $PSScriptRoot/globalTools.yml | ConvertFrom-Yaml
+  [string[]]$pkgs = @()
   switch ($Category) {
+    { $true } {
+      $pkgs = $pkgMap[$_]
+      if (!$pkgs) {
+        $Force = $false
+      }
+    }
     apt {
       sudo apt update
       sudo apt install -f
       sudo apt upgrade -y --auto-remove
       if ($Force) {
-        $pkgs = $IsWSL ? $pkgMap.wsl.apt : $pkgMap.apt
+        if ($IsWSL) {
+          if (!$pkgMap['apt-wsl']) {
+            return
+          }
+          $pkgs = $pkgMap['apt-wsl']
+        }
         sudo apt install -y $pkgs
       }
       continue
@@ -881,7 +889,7 @@ function Update-Software {
         bun upgrade
         bun update -g
         if ($Force) {
-          bun add -g $pkgMap.bun
+          bun add -g $pkgs
         }
         continue
       }
@@ -892,7 +900,7 @@ function Update-Software {
       if ($Global) {
         cargo install-update --all
         if ($Force) {
-          cargo install $pkgMap.cargo
+          cargo install $pkgs
         }
         continue
       }
@@ -905,7 +913,7 @@ function Update-Software {
         deno upgrade
         deno jupyter --install
         if ($Force) {
-          deno install --global $pkgMap.deno
+          deno install --global $pkgs
         }
         continue
       }
@@ -915,7 +923,12 @@ function Update-Software {
     dnf {
       sudo dnf upgrade -y
       if ($Force) {
-        $pkgs = $IsWSL ? $pkgMap.wsl.dnf : $pkgMap.dnf
+        if ($IsWSL) {
+          if (!$pkgMap['dnf-wsl']) {
+            return
+          }
+          $pkgs = $pkgMap['dnf-wsl']
+        }
         sudo dnf install -y $pkgs
       }
       continue
@@ -923,11 +936,10 @@ function Update-Software {
     flutter {
       if ($Global) {
         flutter upgrade --force
-        [string[]]$pkgs = flutter pub global list
         if ($Force) {
-          $pkgs += $pkgMap.flutter
+          $pkgs += flutter pub global list
+          flutter pub global activate $pkgs.ForEach{ "$_@latest" }
         }
-        flutter pub global activate $pkgs.ForEach{ "$_@latest" }
         continue
       }
       flutter pub upgrade
@@ -936,16 +948,20 @@ function Update-Software {
     gh {
       gh extension upgrade --all
       if ($Force) {
-        gh extension install $pkgMap.gh
+        gh extension install $pkgs
       }
       continue
     }
     go {
       if ($Global) {
-        go install $pkgMap.go.ForEach{ "$_@latest" }
+        if (!$Force) {
+          $pkgs = @()
+        }
+        $pkgs += Split-Path -Resolve -LeafBase "$(go env GOPATH)/bin/*"
+        go install $pkgs.ForEach{ "$_@latest" }
         continue
       }
-      [string[]]$pkgs = go list
+      $pkgs = go list
       if ($pkgs) {
         go get $pkgs.ForEach{ "$_@latest" }
       }
@@ -956,7 +972,7 @@ function Update-Software {
         Start-Process pnpm self-update -WorkingDirectory $HOME -Wait -NoNewWindow
         pnpm update -g
         if ($Force) {
-          pnpm add -g $pkgMap.pnpm.packages $pkgMap.pnpm.allowBuild.ForEach{ "--allow-build=$_" }
+          pnpm add -g $pkgs $pkgMap['pnpm-build'].ForEach{ "--allow-build=$_" }
         }
         continue
       }
@@ -967,46 +983,36 @@ function Update-Software {
     ps1 {
       Update-Script
       if ($Force) {
-        Install-Script $pkgMap.ps1
+        Install-Script $pkgs
       }
     }
     psm1 {
       Update-Module
       Clear-Module
       if ($Force) {
-        Install-Module $pkgMap.psm1
+        Install-Module $pkgs
       }
-      continue
-    }
-    releases {
-      $os = switch ($true) {
-        $IsWindows { 'windows'; break }
-        $IsFedora { 'fedora'; break }
-        $IsUbuntu { 'ubuntu'; break }
-        default { throw [System.NotImplementedException]::new() }
-      }
-      Update-Release $pkgMap.releases.$os
       continue
     }
     rustup {
       rustup update
       if ($Force) {
-        rustup toolchain install $pkgMap.rustup.toolchains --component ($pkgMap.rustup.components -join ',') --target ($pkgMap.rustup.targets)
+        rustup toolchain install $pkgs --component ($pkgMap['rustup-components'] -join ',') --target ($pkgMap['rustup-targets'] -join ',')
       }
       continue
     }
     uv {
       if ($Global) {
         uv self update
-        $tools = uv tool list | ForEach-Object {
+        [string[]]$tools = uv tool list | ForEach-Object {
           if ($_.StartsWith('- ')) {
             $_.Substring(2)
           }
         }
         uv tool upgrade $tools
         if ($Force) {
-          $pkgMap.uv.python | ForEach-Object { uv python install $_ }
-          $pkgMap.uv.tools | ForEach-Object { uv tool install $_ }
+          $pkgMap['uv-python'].ForEach{ uv python install $_ }
+          $pkgs.ForEach{ uv tool install $_ }
         }
         continue
       }
@@ -1020,8 +1026,12 @@ function Update-Software {
       }
       sudo winget upgrade -r --accept-package-agreements
       if ($Force) {
-        sudo winget install --accept-package-agreements $pkgMap.winget
+        sudo winget install --accept-package-agreements $pkgs
       }
+      continue
+    }
+    { $_ -ceq 'windows' -or $_ -ceq 'fedora' -or $_ -ceq 'ubuntu' -or $_ -ceq 'wsl' } {
+      Update-Release $pkgs
       continue
     }
     default { throw [System.NotImplementedException]::new() }

@@ -5,6 +5,20 @@ namespace LSColors;
 
 public class LSColors
 {
+  private static readonly string wslPrefix = "";
+
+  static LSColors()
+  {
+    if (Platform.IsLinux)
+    {
+      var distroName = Environment.GetEnvironmentVariable("WSL_DISTRO_NAME");
+      if (distroName != null)
+      {
+        wslPrefix = $"//wsl.localhost/{distroName}";
+      }
+    }
+  }
+
   public static string GetSizeString(long size) => size switch
   {
     < 1000 => PSStyle.Instance.Foreground.Green + size,
@@ -32,7 +46,7 @@ public class LSColors
     {
       color = PSStyle.Instance.FileInfo.Extension[info.Extension];
     }
-    return color + PSStyle.Instance.FormatHyperlink(linkName ?? info.Name, new Uri(info.FullName)) + PSStyle.Instance.Reset + link;
+    return color + PSStyle.Instance.FormatHyperlink(linkName ?? info.Name, new Uri(wslPrefix + info.FullName)) + PSStyle.Instance.Reset + link;
   }
 
   public static string GetNameString(DirectoryInfo info) => GetNameString(info, null);
@@ -49,6 +63,6 @@ public class LSColors
     {
       color = PSStyle.Instance.FileInfo.Directory;
     }
-    return color + PSStyle.Instance.FormatHyperlink(linkName ?? info.Name, new Uri(info.FullName)) + PSStyle.Instance.Reset + link;
+    return color + PSStyle.Instance.FormatHyperlink(linkName ?? info.Name, new Uri(wslPrefix + info.FullName)) + PSStyle.Instance.Reset + link;
   }
 }

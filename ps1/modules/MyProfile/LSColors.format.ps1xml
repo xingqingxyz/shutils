@@ -65,7 +65,7 @@
           </TableColumnHeader>
           <TableColumnHeader>
             <Label>LastWriteTime</Label>
-            <Width>16</Width>
+            <Width>20</Width>
             <Alignment>Right</Alignment>
           </TableColumnHeader>
           <TableColumnHeader>

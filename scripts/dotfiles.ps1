@@ -17,7 +17,7 @@ else {
 }
 
 $files.GetEnumerator().ForEach{
-  if ((Get-Item -LiteralPath $_.Value -ea Ignore).Target -cne $_.Key) {
+  if ((Get-Item -LiteralPath $_.Value -Force -ea Ignore).Target -cne $_.Key) {
     New-Item -Type SymbolicLink -Force -Target $_.Key $_.Value
   }
 }

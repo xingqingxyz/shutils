@@ -8,7 +8,7 @@ PS0='${ LAST_CMD_TIME=$EPOCHREALTIME;}'
 
 _prompt() {
   local dur color left right
-  dur=$(bc <<< "$EPOCHREALTIME-$LAST_CMD_TIME")
+  dur=$(awk "{printf \"%f\", $EPOCHREALTIME-$LAST_CMD_TIME}" <<< '')
   printf -v left '%.0f' "$dur"
   right=${dur: -6}
   # colors: green, cyan, blue, yellow, magenta, red
