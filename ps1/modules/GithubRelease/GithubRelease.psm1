@@ -365,7 +365,7 @@ function Install-Release {
       downloadRelease $file, SHASUMS256.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       Expand-Archive -LiteralPath $buildDir/$file $buildDir
-      Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file) $binDir -Force
+      Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file)/bun $binDir -Force
       $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
       break
     }
@@ -486,9 +486,17 @@ function Install-Release {
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
       }
-      $file = 'gh_{0}_{1}_{2}.{3}' -f $Meta.version, $go.os, $go.arch, $pkgType
-      downloadRelease $file
-      sudo $pkgManager install -y $buildDir/$file
+      $file = 'gh_{0}_{1}_{2}' -f $Meta.version, $go.os, $go.arch
+      if ($IsFedora) {
+        $file += '.rpm'
+        downloadRelease $file
+        sudo dnf install -y $buildDir/$file
+      }
+      elseif ($IsUbuntu -or $IsRaspi) {
+        $file += '.deb'
+        downloadRelease $file
+        sudo apt install -y $buildDir/$file
+      }
       break
     }
     glow {
@@ -498,7 +506,12 @@ function Install-Release {
         $IsMacOS { 'Darwin'; break }
         default { throw [System.NotImplementedException]::new() }
       }
-      $base = 'glow_{0}_{1}_{2}' -f $Meta.version, $os, $rust.arch
+      $arch = switch ([RuntimeInformation]::OSArchitecture) {
+        'Arm64' { 'arm64'; break }
+        'X64' { 'x86_64'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $base = 'glow_{0}_{1}_{2}' -f $Meta.version, $os, $arch
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/glow$exe $binDir -Force
@@ -540,7 +553,7 @@ function Install-Release {
       break
     }
     hexyl {
-      $base = 'hexyl-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      $base = 'hexyl-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir -Force
@@ -712,24 +725,63 @@ StartupWMClass=localsend_app
       break
     }
     pwsh {
-      $file = $(switch ($true) {
-          $IsWindows { 'PowerShell-{0}-win-{1}.msi'; break }
-          $IsMacOS { 'PowerShell-{0}-osx-{1}.pkg'; break }
-          $IsLinux { 'PowerShell-{0}-linux-{1}.tar.gz'; break }
-          default { throw [System.NotImplementedException]::new() }
-        }) -f $Meta.tag.Substring(1), [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-      downloadRelease $file
       if (!$IsLinux) {
-        Invoke-Item -LiteralPath $buildDir/$file
-        break
+        throw [System.NotImplementedException]::new()
       }
-      $suffix = $Meta.prerelease ? '-preview' : ''
-      sudo tar -xf $buildDir/$file -C (sudo New-EmptyDir /opt/microsoft/powershell/7$suffix)
-      sudo ln -sf /opt/microsoft/powershell/7$suffix/pwsh$suffix $sudoBinDir/pwsh
+      $id = $Meta.tag.Substring(1)
+      if ($Meta.prerelease) {
+        $id = 'preview-' + $id.Replace('-', '_')
+      }
+      switch ($true) {
+        $IsFedora {
+          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $id, $rust.arch
+          downloadRelease $file
+          if ($Meta.prerelease) {
+            sudo dnf remove -y powershell
+            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
+          }
+          else {
+            sudo dnf remove -y powershell-preview
+          }
+          sudo dnf install -y $buildDir/$file
+          break
+        }
+        $IsUbuntu {
+          $file = 'powershell-{0}.{1}.deb' -f $id, $rust.arch
+          downloadRelease $file
+          if ($Meta.prerelease) {
+            sudo apt uninstall -y powershell
+            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
+          }
+          else {
+            sudo apt uninstall -y powershell-preview
+          }
+          sudo dpkg -i $buildDir/$file
+          break
+        }
+        $IsRaspi {
+          $file = 'powershell-{0}-linux-arm64.tar.gz' -f $id
+          downloadRelease $file
+          if ($Meta.prerelease) {
+            sudo rm -rf /opt/microsoft/powershell/7
+            sudo tar -xf $buildDir/$file -C /opt/microsoft/powershell/7-preview
+          }
+          else {
+            sudo rm -rf /opt/microsoft/powershell/7-preview
+            sudo tar -xf $buildDir/$file -C /opt/microsoft/powershell/7
+          }
+          break
+        }
+        default { throw [System.NotImplementedException]::new() }
+      }
       break
     }
     rg {
-      $base = 'ripgrep-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      $target = $rust.target
+      if ($rust.arch -ceq 'x86_64') {
+        $target = $target -creplace '-gnu$', '-musl'
+      }
+      $base = 'ripgrep-{0}-{1}' -f $Meta.tag, $target
       downloadRelease $base$ext, $base$ext`.sha256
       checkFileHash $buildDir/$base$ext (Get-Content -Raw -LiteralPath $buildDir/$base$ext`.sha256).Split(' ', 2)[0]
       tar -xf $buildDir/$base$ext -C $buildDir
@@ -739,7 +791,11 @@ StartupWMClass=localsend_app
       break
     }
     rga {
-      $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      $target = $rust.target
+      if ($rust.arch -ceq 'x86_64') {
+        $target = $target -creplace '-gnu$', '-musl'
+      }
+      $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, $target
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       [string[]]$files = 'rga', 'rga-fzf', 'rga-fzf-open', 'rga-preproc'
@@ -756,6 +812,25 @@ StartupWMClass=localsend_app
         break
       }
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+      break
+    }
+    tree-sitter {
+      $os = switch ($true) {
+        $IsLinux { 'linux'; break }
+        $IsWindows { 'windows'; break }
+        $IsMacOS { 'macos'; break }
+        default { throw 'unknown os' }
+      }
+      $base = 'tree-sitter-{0}-{1}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+      downloadRelease $base`.gz
+      if ($IsWindows) {
+        tar -xf $buildDir/$base`.gz -C $binDir
+      }
+      else {
+        gzip -df $buildDir/$base`.gz
+        Move-Item -LiteralPath $buildDir/$base $binDir/tree-sitter -Force
+        chmod +x $binDir/tree-sitter
+      }
       break
     }
     uv {
@@ -793,6 +868,9 @@ StartupWMClass=localsend_app
       break
     }
     default { throw "no install method for $_" }
+  }
+  if ((getLocalVersion $Meta.name) -cne $Meta.version) {
+    Write-Warning "version not match: $($Meta.name), installs may be wrong"
   }
 }
 
@@ -995,7 +1073,7 @@ function Update-Software {
     }
     uv {
       if ($Global) {
-        uv self update
+        Update-Release uv
         [string[]]$tools = uv tool list | ForEach-Object {
           if ($_.StartsWith('- ')) {
             $_.Substring(2)
@@ -1022,7 +1100,7 @@ function Update-Software {
       }
       continue
     }
-    { $_ -ceq 'windows' -or $_ -ceq 'fedora' -or $_ -ceq 'ubuntu' -or $_ -ceq 'wsl' } {
+    { $_ -ceq 'windows' -or $_ -ceq 'fedora' -or $_ -ceq 'ubuntu' -or $_ -ceq 'wsl' -or $_ -ceq 'raspi' } {
       Update-Release $pkgs
       continue
     }
@@ -1036,6 +1114,8 @@ $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::Get
 if ($IsLinux) {
   $IsUbuntu = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=ubuntu')
   $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=fedora')
+  $IsRaspi = [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64 -and
+  (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=debian')
   $IsWSL = Test-Path -LiteralPath Env:/WSL_DISTRO_NAME
 }
 

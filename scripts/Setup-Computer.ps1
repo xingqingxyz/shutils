@@ -18,7 +18,7 @@ if ($IsWindows) {
 elseif ($IsLinux) {
   sudo pwsh -nop $PSScriptRoot/Setup-LinuxMachine.ps1
   . $PSScriptRoot/Setup-LinuxUser.ps1
-  if ($env:XDG_CURRENT_DESKTOP.StartsWith('GNOME') -or $env:GDMSESSION -ceq 'gnome') {
+  if ($env:XDG_CURRENT_DESKTOP -clike 'GNOME*' -or $env:GDMSESSION -ceq 'gnome') {
     . $PSScriptRoot/Setup-Gnome.ps1
   }
 }

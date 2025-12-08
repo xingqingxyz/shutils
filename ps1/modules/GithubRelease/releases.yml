@@ -122,17 +122,19 @@
 - name: rustup
   repo: rust-lang/rustup
   version: 1.28.2
+- name: tree-sitter
+  repo: tree-sitter/tree-sitter
 - name: uv
   repo: astral-sh/uv
-  version: 0.9.11
-  tag: 0.9.11
+  version: 0.9.16
+  tag: 0.9.16
 - name: xh
   repo: ducaale/xh
   tag: v0.25.0
   version: 0.25.0
 - name: yq
   repo: mikefarah/yq
-  tag: v4.49.1
-  version: 4.49.1
+  tag: v4.49.2
+  version: 4.49.2
 - name: zed
   repo: zed-industries/zed
