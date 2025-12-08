@@ -130,17 +130,17 @@ gh: []
 go:
   - golang.org/x/tools/cmd/stringer
 pnpm:
+  - "@qwen-code/qwen-code"
   - "@vscode/vsce"
   - generator-code
   - prettier
-  - tree-sitter-cli
   - tsx
   - yo
 pnpm-build:
+  - "@qwen-code/qwen-code"
   - "@vscode/vsce-sign"
   - esbuild
   - keytar
-  - tree-sitter-cli
   - yo
 ps1:
   - Refresh-EnvironmentVariables
@@ -148,6 +148,27 @@ psm1:
   - PSScriptAnalyzer
   - PSToml
   - Yayaml
+raspi:
+  - bat
+  - bun
+  - diskus
+  - edit
+  - fd
+  - fzf
+  - gh
+  - go
+  - hexyl
+  - hyperfine
+  - jq
+  - mkcert
+  - node
+  - rg
+  - rga
+  - rustup
+  - uv
+  - yq
+  # - dotnet
+  # - pwsh
 rustup:
   - default
 rustup-components:
