@@ -26,7 +26,16 @@ apt-wsl:
   - gcc
   - libssl-dev
   - ninja-build
-bun: []
+bun:
+  - "@qwen-code/qwen-code"
+  - "@tencent-ai/codebuddy-code"
+  - "@vscode/vsce"
+  - generator-code
+  - pnpm
+  - prettier
+  - tree-sitter-cli
+  - tsx
+  - yo
 cargo:
   - cargo-generate
   - cargo-update
@@ -129,22 +138,36 @@ flutter: []
 gh: []
 go:
   - golang.org/x/tools/cmd/stringer
-npm:
-  - "@qwen-code/qwen-code"
-  - "@tencent-ai/codebuddy-code"
-  - "@vscode/vsce"
-  - generator-code
-  - pnpm
-  - prettier
-  - tree-sitter-cli
-  - tsx
-  - yo
-ps1: []
+npm: []
+pnpm: []
+ps1:
+  - Refresh-EnvironmentVariables
 psm1:
   - AudioDeviceCmdlets
   - PSScriptAnalyzer
   - PSToml
   - Yayaml
+raspi:
+  - bat
+  - bun
+  - diskus
+  - edit
+  - fd
+  - fzf
+  - gh
+  - go
+  - hexyl
+  - hyperfine
+  - jq
+  - mkcert
+  - node
+  - rg
+  - rga
+  - rustup
+  - uv
+  - yq
+  # - dotnet
+  # - pwsh
 rustup:
   - default
 rustup-components:
