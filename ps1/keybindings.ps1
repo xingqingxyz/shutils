@@ -147,12 +147,12 @@ Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -S
     }
   }
 }
-Set-PSReadLineKeyHandler -Chord Alt+e -Description 'Eval command line and replace it, except empty results' -ScriptBlock {
+Set-PSReadLineKeyHandler -Chord Alt+e -Description 'Eval command line and replace it, except blanks' -ScriptBlock {
   $text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
-  [string]$result = Invoke-Expression $text
-  if ([string]::IsNullOrWhiteSpace($result)) {
+  if ([string]::IsNullOrWhiteSpace($text)) {
     return
   }
+  [string]$result = Invoke-Expression $text
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, $result)
 }

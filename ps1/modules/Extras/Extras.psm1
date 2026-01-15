@@ -336,6 +336,37 @@ function Use-EnvironmentVariable {
   }
 }
 
+function Update-SessionEnvironment {
+  <#
+  .SYNOPSIS
+  Updates environment variables from registry to current powershell session.
+  #>
+  if (!$IsWindows) {
+    throw [System.SystemException]::new('only supports windows')
+  }
+  $envMap = @{}
+  [Microsoft.Win32.RegistryKey]$reg = Get-Item -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\'
+  $reg.GetValueNames().ForEach{
+    $envMap[$_] = $reg.GetValue($_)
+  }
+  $machinePath = $envMap['Path']
+  $reg = Get-Item -LiteralPath 'HKCU:\Environment\'
+  $reg.GetValueNames().ForEach{
+    $envMap[$_] = $reg.GetValue($_)
+  }
+  # try to find the prepended or appended paths e.g. $PSHOME or venv paths
+  [string]$path = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+  [int]$idx = $env:Path.LastIndexOf($path)
+  $path = $idx -lt 0 ? '' : $env:Path.Substring($idx + $path.Length)
+  $path = $env:Path.Substring(0, [System.Math]::Max(0, $env:Path.IndexOf([System.Environment]::GetEnvironmentVariable('Path', 'Machine')))) + $machinePath + ';' + $envMap['Path'] + $path
+  $envMap['Path'] = $path.Split(';').Where{ $_ } | Join-String -Separator ';' -OutputSuffix ';'
+  # keep common process vars (non-null only)
+  $envMap['PSModulePath'] = $env:PSModulePath
+  $envMap.GetEnumerator().ForEach{
+    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
+  }
+}
+
 function Repair-GitSymlinks {
   git ls-files -s | ForEach-Object {
     [int]$mode, $item = $_ -split '\s+', 4

@@ -78,21 +78,22 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
       }
       'branch' {
         if ($wordToComplete.StartsWith('-')) {
-          '-d', '--delete', '-D', '--create-reflog', '-f', '--force', '-m', '--move', '-M', '-c', '--copy', '-C', '--color', '--color=', '--no-color', '-i', '--ignore-case', '--omit-empty', '--column', '--column=', '--no-column', '-r', '--remotes', '-a', '--all', '-l', '--list', '--show-current', '-v', '-vv', '--verbose', '-q', '--quiet', '--abbrev=', '--no-abbrev', '-t', '--track[=(direct|inherit)]', '--no-track', '--recurse-submodules', '--set-upstream', '-u', '--set-upstream-to=', '--unset-upstream', '--edit-description', '--contains', '--no-contains', '--merged', '--no-merged', '--sort=', '--points-at', '--format'
+          '-d', '--delete', '-D', '--create-reflog', '-f', '--force', '-m', '--move', '-M', '-c', '--copy', '-C', '--color', '--color=', '--no-color', '-i', '--ignore-case', '--omit-empty', '--column', '--column=', '--no-column', '-r', '--remotes', '-a', '--all', '-l', '--list', '--show-current', '-v', '-vv', '--verbose', '-q', '--quiet', '--abbrev=', '--no-abbrev', '-t', '--track', '--track=direct', '--track=inherit', '--no-track', '--recurse-submodules', '--set-upstream', '-u', '--set-upstream-to=', '--unset-upstream', '--edit-description', '--contains', '--no-contains', '--merged', '--no-merged', '--sort=', '--points-at', '--format'
           break
         }
         break
       }
       'bundle' {
         if ($wordToComplete.StartsWith('-')) {
-          'create', 'verify', 'list-heads', 'unbundle', '--progress', '--version=', '-q', '--quiet'
+          '--progress', '--version=', '-q', '--quiet'
           break
         }
+        'create', 'verify', 'list-heads', 'unbundle'
         break
       }
       'checkout' {
         if ($wordToComplete.StartsWith('-')) {
-          '-q', '--quiet', '--progress', '--no-progress', '-f', '--force', '--ours', '--theirs', '-b', '-B', '-t', '--track[=(direct|inherit)]', '--no-track', '--guess', '--no-guess', '-l', '-d', '--detach', '--orphan', '--ignore-skip-worktree-bits', '-m', '--merge', '--conflict=', '-p', '--patch', '--ignore-other-worktrees', '--overwrite-ignore', '--no-overwrite-ignore', '--recurse-submodules', '--no-recurse-submodules', '--overlay', '--no-overlay', '--pathspec-from-file=', '--pathspec-file-nul'
+          '-q', '--quiet', '--progress', '--no-progress', '-f', '--force', '--ours', '--theirs', '-b', '-B', '-t', '--track', '--track=direct', '--track=inherit', '--no-track', '--guess', '--no-guess', '-l', '-d', '--detach', '--orphan', '--ignore-skip-worktree-bits', '-m', '--merge', '--conflict=', '-p', '--patch', '--ignore-other-worktrees', '--overwrite-ignore', '--no-overwrite-ignore', '--recurse-submodules', '--no-recurse-submodules', '--overlay', '--no-overlay', '--pathspec-from-file=', '--pathspec-file-nul'
           break
         }
         break
@@ -141,7 +142,7 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
       }
       'fetch' {
         if ($wordToComplete.StartsWith('-')) {
-          '--all', '--no-all', '-a', '--append', '--atomic', '--depth=', '--deepen=', '--shallow-since=', '--shallow-exclude=', '--unshallow', '--update-shallow', '--negotiation-tip=', '--negotiate-only', '--dry-run', '--porcelain', '--write-fetch-head', '--no-write-fetch-head', '-f', '--force', '-k', '--keep', '--multiple', '--auto-maintenance', '--no-auto-maintenance', '--auto-gc', '--no-auto-gc', '--write-commit-graph', '--no-write-commit-graph', '--prefetch', '-p', '--prune', '-P', '--prune-tags', '-n', '--no-tags', '--refetch', '--refmap=', '-t', '--tags', '--recurse-submodules[=(yes|on-demand|no)]', '-j', '--jobs=', '--no-recurse-submodules', '--set-upstream', '--submodule-prefix=', '--recurse-submodules-default=[yes|on-demand]', '-u', '--update-head-ok', '--upload-pack', '-q', '--quiet', '-v', '--verbose', '--progress', '-o', '--server-option=', '--show-forced-updates', '--no-show-forced-updates', '-4', '--ipv4', '-6', '--ipv6', '--stdin'
+          '--all', '--no-all', '-a', '--append', '--atomic', '--depth=', '--deepen=', '--shallow-since=', '--shallow-exclude=', '--unshallow', '--update-shallow', '--negotiation-tip=', '--negotiate-only', '--dry-run', '--porcelain', '--write-fetch-head', '--no-write-fetch-head', '-f', '--force', '-k', '--keep', '--multiple', '--auto-maintenance', '--no-auto-maintenance', '--auto-gc', '--no-auto-gc', '--write-commit-graph', '--no-write-commit-graph', '--prefetch', '-p', '--prune', '-P', '--prune-tags', '-n', '--no-tags', '--refetch', '--refmap=', '-t', '--tags', '--recurse-submodules=yes', '--recurse-submodules=on-demand', '--recurse-submodules=no', '-j', '--jobs=', '--no-recurse-submodules', '--set-upstream', '--submodule-prefix=', '--recurse-submodules-default=yes', '--recurse-submodules-default=on-demand', '-u', '--update-head-ok', '--upload-pack', '-q', '--quiet', '-v', '--verbose', '--progress', '-o', '--server-option=', '--show-forced-updates', '--no-show-forced-updates', '-4', '--ipv4', '-6', '--ipv6', '--stdin'
           break
         }
         break

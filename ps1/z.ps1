@@ -121,7 +121,7 @@ function Invoke-Z {
   }
   if ($sum -ne $json.rankSum) {
     $json.rankSum = $sum
-    $json | ConvertTo-Json > $_zConfig.dataFile
+    $json | ConvertTo-Json -Compress > $_zConfig.dataFile
   }
 }
 

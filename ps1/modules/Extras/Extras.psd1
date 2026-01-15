@@ -69,7 +69,7 @@
   NestedModules        = @('./Tools.psm1')
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('batf', 'ghQuery', 'icat', 'de', 'de.f', 'figlet.f', 'jq.f', 'rg.f', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Use-EnvironmentVariable', 'Repair-GitSymlinks', 'ConvertTo-RelativeSymlink')
+  FunctionsToExport    = @('batf', 'ghQuery', 'icat', 'de', 'de.f', 'figlet.f', 'jq.f', 'rg.f', 'Get-TypeMember', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Unregister-PSScheduledTask', 'Use-EnvironmentVariable', 'Update-SessionEnvironment', 'Register-PSScheduledTask', 'Repair-GitSymlinks', 'ConvertTo-RelativeSymlink')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()

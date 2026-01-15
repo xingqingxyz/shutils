@@ -2,7 +2,6 @@
 $SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
 $DSC_RESOURCE_PATH = $IsWindows ? '' : "$HOME/.local/dsc"
-$PNPM_HOME = $IsWindows ? "$env:LOCALAPPDATA\pnpm" : "$HOME/.local/share/pnpm"
 
 # PSModulePath
 $PSModulePath = $IsWindows ? "$SHUTILS_ROOT\ps1\modules" : @"
@@ -64,9 +63,7 @@ $commonVar = @{
   FZF_DEFAULT_OPTS         = $FZF_DEFAULT_OPTS
   LESS                     = $LESS
   no_proxy                 = $no_proxy
-  NODE_PATH                = Join-Path $PNPM_HOME 'global/5/node_modules'
   PAGER                    = 'less'
-  PNPM_HOME                = $PNPM_HOME
   PSModulePath             = $PSModulePath
   PUB_HOSTED_URL           = 'https://pub.flutter-io.cn'
   RUSTUP_DIST_SERVER       = 'https://mirrors.tuna.tsinghua.edu.cn/rustup'
@@ -90,13 +87,13 @@ elseif ($IsLinux) {
   # path
   $PATH = @"
 $HOME/.local/bin
+$HOME/.bun/bin
 $HOME/.cargo/bin
 $HOME/go/bin
-$PNPM_HOME
 $ANDROID_HOME/platform-tools
+$SHUTILS_ROOT/scripts
 $HOME/.local/share/powershell/Scripts
 /usr/local/share/powershell/Scripts
-$SHUTILS_ROOT/scripts
 /usr/local/bin
 /usr/bin
 "@.ReplaceLineEndings(':')
