@@ -129,22 +129,19 @@ flutter: []
 gh: []
 go:
   - golang.org/x/tools/cmd/stringer
-pnpm:
+npm:
+  - "@qwen-code/qwen-code"
+  - "@tencent-ai/codebuddy-code"
   - "@vscode/vsce"
   - generator-code
+  - pnpm
   - prettier
   - tree-sitter-cli
   - tsx
   - yo
-pnpm-build:
-  - "@vscode/vsce-sign"
-  - esbuild
-  - keytar
-  - tree-sitter-cli
-  - yo
-ps1:
-  - Refresh-EnvironmentVariables
+ps1: []
 psm1:
+  - AudioDeviceCmdlets
   - PSScriptAnalyzer
   - PSToml
   - Yayaml

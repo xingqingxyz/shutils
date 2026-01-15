@@ -1,13 +1,15 @@
 {
     "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
-    "actions": [
+    "actions": 
+    [
         {
             "command": "find",
             "id": "User.find"
         },
         {
-            "command": {
+            "command": 
+            {
                 "action": "searchWeb",
                 "queryUrl": "%s"
             },
@@ -19,7 +21,8 @@
     "defaultInputScope": "alphanumericHalfWidth",
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
     "initialRows": 35,
-    "keybindings": [
+    "keybindings": 
+    [
         {
             "id": "User.find",
             "keys": "ctrl+shift+f"
@@ -37,20 +40,23 @@
             "keys": "ctrl+shift+s"
         }
     ],
-    "newTabMenu": [
+    "newTabMenu": 
+    [
         {
             "type": "remainingProfiles"
         }
     ],
     "newTabPosition": "afterLastTab",
-    "profiles": {
-        "defaults": {
+    "profiles": 
+    {
+        "defaults": 
+        {
             "autoMarkPrompts": true,
-            "closeOnExit": "never",
             "colorScheme": "Campbell",
             "showMarksOnScrollbar": true
         },
-        "list": [
+        "list": 
+        [
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "hidden": false,

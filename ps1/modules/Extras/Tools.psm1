@@ -11,9 +11,21 @@ function Set-SystemProxy {
     [Parameter()]
     [ValidateRange(0, 9)]
     [int]
-    $MagicDigit = 1
+    $MagicDigit = 1,
+    [Parameter()]
+    [switch]
+    $NoSettings
   )
   $hostName = '192.168.0.10' + $MagicDigit
+  if ($On) {
+    Set-EnvironmentVariable -Scope User http_proxy=http://${hostName}:1234 https_proxy=http://${hostName}:1234 all_proxy=http://${hostName}:1235
+  }
+  else {
+    Set-EnvironmentVariable -Scope User http_proxy= https_proxy= all_proxy=
+  }
+  if ($NoSettings) {
+    return
+  }
   if ($IsWindows) {
     Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyEnable -Value ([int]$On.IsPresent) -Type DWord
     if ($On) {
@@ -33,11 +45,103 @@ function Set-SystemProxy {
       gsettings set org.gnome.system.proxy.socks port 1235
     }
   }
-  if ($On) {
-    Set-EnvironmentVariable -Scope User http_proxy=http://${hostName}:1234 https_proxy=http://${hostName}:1234 all_proxy=http://${hostName}:1235
+}
+
+function Register-PSScheduledTask {
+  <#
+  .SYNOPSIS
+  Register scheduled tasks running powershell code.
+   #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [Parameter(Mandatory, Position = 1)]
+    [string]
+    $ScriptText,
+    [Parameter(Mandatory)]
+    [ValidateSet('monthly', 'weekly', 'daily')]
+    [string[]]
+    $Kind,
+    [Parameter()]
+    [datetime]
+    $At = '0am'
+  )
+  $encodedCommand = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ScriptText))
+  if ($IsLinux) {
+    $Kind.ForEach{
+      $service = @"
+[Unit]
+Description=PowerShell $_ $Name task
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env pwsh -noni -nop -e $encodedCommand
+"@
+      $timer = @"
+[Unit]
+Description=PowerShell $_ $Name task timer
+
+[Timer]
+OnCalendar=$_
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"@
+      $service > ~/.config/systemd/user/pwsh-$_-$Name`.service
+      $timer > ~/.config/systemd/user/pwsh-$_-$Name`.timer
+    }
+    systemctl daemon-reload --user
+    $Kind.ForEach{
+      systemctl enable --user --now pwsh-$_-$Name`.timer
+    }
+  }
+  elseif ($IsWindows) {
+    $Kind.ForEach{
+      $trigger = switch ($_) {
+        'daily' { New-ScheduledTaskTrigger -At $At -Daily; break }
+        'weekly' { New-ScheduledTaskTrigger -At $At -Weekly; break }
+        'monthly' { New-ScheduledTaskTrigger -At $At -Daily -DaysInterval 30; break }
+      }
+      $action = New-ScheduledTaskAction -Execute pwsh -Argument "-noni -nop -w Hidden -e $encodedCommand"
+      Register-ScheduledTask pwsh-$_-$Name -Force -Description "PowerShell $_ $Name task" -Trigger $trigger -Action $action
+    }
   }
   else {
-    Set-EnvironmentVariable -Scope User http_proxy= https_proxy= all_proxy=
+    throw [System.NotImplementedException]::new()
+  }
+}
+
+function Unregister-PSScheduledTask {
+  <#
+  .SYNOPSIS
+  Unregister scheduled tasks running powershell code.
+   #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [Parameter(Mandatory)]
+    [ValidateSet('monthly', 'weekly', 'daily')]
+    [string[]]
+    $Kind
+  )
+  if ($IsLinux) {
+    $Kind.ForEach{
+      systemctl disable --user pwsh-$_-$Name`.timer
+      Remove-Item -LiteralPath ~/.config/systemd/user/pwsh-$_-$Name`.service, ~/.config/systemd/user/pwsh-$_-$Name`.timer -Force
+    }
+    systemctl daemon-reload --user
+  }
+  elseif ($IsWindows) {
+    # it's a $ConfirmPreference = 'High' operation
+    Unregister-ScheduledTask $Kind.ForEach{ "pwsh-$_-$Name" } -Confirm
+  }
+  else {
+    throw [System.NotImplementedException]::new()
   }
 }
 
@@ -359,7 +463,8 @@ function figlet.f ([string]$Value) {
     }
   }
   $Value = $Value.Replace("'", "\'")
-  Split-Path -Resolve -LeafBase /usr/share/figlet/*.flf | fzf --reverse --preview-window=70% "--preview=figlet -f {} -w `"`$FZF_PREVIEW_COLUMNS`" '$Value'" "--bind=enter:become:figlet -f {} -w $([System.Console]::WindowWidth) '$Value'"
+  $envVar = $IsWindows ? '%FZF_PREVIEW_COLUMNS%' : '$FZF_PREVIEW_COLUMNS'
+  Split-Path -Resolve -LeafBase /usr/share/figlet/*.flf | fzf --reverse --preview-window=70% "--preview=figlet -f {} -w $envVar '$Value'" "--bind=enter:become:figlet -f {} -w $([System.Console]::WindowWidth) '$Value'"
 }
 
 function rg.f {
@@ -384,9 +489,10 @@ rg $Options --column --color=always {q} || exit 0
   $open = @'
 code --open-url "vscode://file$(realpath -- {1}):{2}:{3}"
 '@
-  $preview = @'
-bat --number --color=always --terminal-width=$FZF_PREVIEW_COLUMNS --highlight-line={2} {1}
-'@
+  $envVar = $IsWindows ? '%FZF_PREVIEW_COLUMNS%' : '$FZF_PREVIEW_COLUMNS'
+  $preview = @"
+bat --number --color=always --terminal-width=$envVar --highlight-line={2} {1}
+"@
   $ags = @(
     "--query=$Query"
     '--ansi'

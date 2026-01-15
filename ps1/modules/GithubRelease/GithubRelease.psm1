@@ -192,13 +192,17 @@ function updateLatestVersion ($Meta) {
     bash { $Meta.version = '5.3'; break }
     dotnet { $Meta.version = '99.0.0'; break }
     go {
-      if (!$IsLinux) {
-        throw [System.NotImplementedException]::new()
-      }
       $data = Invoke-RestMethod 'https://golang.google.cn/dl/?mode=json'
       $Meta.tag = $data[0].version
       $Meta.version = $Meta.tag.Substring(2)
-      $Meta.sha256 = ($data[0].files | Where-Object filename -CEQ ('{0}.{1}-{2}.tar.gz' -f $Meta.tag, $go.os, $go.arch)).sha256
+      $ext = switch ($true) {
+        $IsWindows { '.msi'; break }
+        $IsLinux { '.tar.gz'; break }
+        $IsMacOS { '.pkg'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $Meta.file = '{0}.{1}-{2}{3}' -f $Meta.tag, $go.os, $go.arch, $ext
+      $Meta.sha256 = ($data[0].files | Where-Object filename -CEQ $Meta.file).sha256
       break
     }
     flutter {
@@ -206,6 +210,7 @@ function updateLatestVersion ($Meta) {
         $IsWindows { 'windows'; break }
         $IsLinux { 'linux'; break }
         $IsMacOS { 'macos'; break }
+        default { throw [System.NotImplementedException]::new() }
       }
       $data = Invoke-RestMethod "https://storage.flutter-io.cn/flutter_infra_release/releases/releases_$os.json"
       $release = $data.releases | Where-Object hash -CEQ $data.current_release.($Meta.prerelease ? 'beta' : 'stable')
@@ -502,15 +507,26 @@ function Install-Release {
       break
     }
     go {
-      if (!$IsLinux) {
-        throw [System.NotImplementedException]::new()
-      }
-      $file = '{0}.{1}-{2}.tar.gz' -f $Meta.tag, $go.os, $go.arch
+      $file = $Meta.file
       downloadFile "https://golang.google.cn/dl/$file"
       checkFileHash $buildDir/$file $Meta.sha256
-      sudo rm -rf $sudoDataDir/go
-      sudo tar -xf $buildDir/$file -C $sudoDataDir --no-same-owner
-      sudo ln -sf $sudoDataDir/go/bin/go $sudoDataDir/go/bin/gofmt $sudoBinDir
+      switch ($true) {
+        $IsWindows {
+          Invoke-Item -LiteralPath $buildDir/$file
+          break
+        }
+        $IsLinux {
+          sudo rm -rf $sudoDataDir/go
+          sudo tar -xf $buildDir/$file -C $sudoDataDir --no-same-owner
+          sudo ln -sf $sudoDataDir/go/bin/go $sudoDataDir/go/bin/gofmt $sudoBinDir
+          break
+        }
+        $IsMacOS {
+          Invoke-Item -LiteralPath $buildDir/$file
+          break
+        }
+        default { throw [System.NotImplementedException]::new() }
+      }
       break
     }
     goreleaser {
@@ -696,42 +712,20 @@ StartupWMClass=localsend_app
       break
     }
     pwsh {
+      $file = $(switch ($true) {
+          $IsWindows { 'PowerShell-{0}-win-{1}.msi'; break }
+          $IsMacOS { 'PowerShell-{0}-osx-{1}.pkg'; break }
+          $IsLinux { 'PowerShell-{0}-linux-{1}.tar.gz'; break }
+          default { throw [System.NotImplementedException]::new() }
+        }) -f $Meta.tag.Substring(1), [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+      downloadRelease $file
       if (!$IsLinux) {
-        throw [System.NotImplementedException]::new()
+        Invoke-Item -LiteralPath $buildDir/$file
+        break
       }
-      $id = $Meta.tag.Substring(1)
-      if ($Meta.prerelease) {
-        $id = 'preview-' + $id.Replace('-', '_')
-      }
-      switch ($true) {
-        $IsFedora {
-          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $id, $rust.arch
-          downloadRelease $file
-          if ($Meta.prerelease) {
-            sudo dnf remove -y powershell
-            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
-          }
-          else {
-            sudo dnf remove -y powershell-preview
-          }
-          sudo dnf install -y $buildDir/$file
-          break
-        }
-        $IsUbuntu {
-          $file = 'powershell-{0}.{1}.deb'
-          downloadRelease $file
-          if ($Meta.prerelease) {
-            sudo apt uninstall -y powershell
-            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
-          }
-          else {
-            sudo apt uninstall -y powershell-preview
-          }
-          sudo dpkg -i $buildDir/$file
-          break
-        }
-        default { throw [System.NotImplementedException]::new() }
-      }
+      $suffix = $Meta.prerelease ? '-preview' : ''
+      sudo tar -xf $buildDir/$file -C (sudo New-EmptyDir /opt/microsoft/powershell/7$suffix)
+      sudo ln -sf /opt/microsoft/powershell/7$suffix/pwsh$suffix $sudoBinDir/pwsh
       break
     }
     rg {
@@ -967,17 +961,15 @@ function Update-Software {
       }
       continue
     }
-    pnpm {
+    npm {
       if ($Global) {
-        Start-Process pnpm self-update -WorkingDirectory $HOME -Wait -NoNewWindow
-        pnpm update -g
+        npm up -g
         if ($Force) {
-          pnpm add -g $pkgs $pkgMap['pnpm-build'].ForEach{ "--allow-build=$_" }
+          npm add -g $pkgs
         }
         continue
       }
-      pnpm self-update
-      pnpm update
+      npm up
       continue
     }
     ps1 {

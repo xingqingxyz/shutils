@@ -1,1 +1,1 @@
-{"ExperimentalFeatures":["PSFeedbackProvider","PSNativeWindowsTildeExpansion","PSRedirectToVariable"]}
+{"ExperimentalFeatures":["PSLoadAssemblyFromNativeCode","PSSerializeJSONLongEnumAsNumber","PSProfileDSCResource"]}

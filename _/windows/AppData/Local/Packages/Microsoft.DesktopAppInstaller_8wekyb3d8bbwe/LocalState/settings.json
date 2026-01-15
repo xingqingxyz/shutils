@@ -1,4 +1,9 @@
 {
   "$schema": "https://aka.ms/winget-settings.schema.json",
-  "source": { "autoUpdateIntervalInMinutes": 30 }
+  "installPrefReq": {
+    "architectures": ["x64", "x86"]
+  },
+  "source": {
+    "autoUpdateIntervalInMinutes": 30
+  }
 }
