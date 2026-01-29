@@ -51,9 +51,10 @@
   version: 2.1.1
 - name: go
   repo: golang/go
-  tag: go1.25.4
-  version: 1.25.4
-  sha256: 9fa5ffeda4170de60f67f3aa0f824e426421ba724c21e133c1e35d6159ca1bec
+  tag: go1.25.6
+  version: 1.25.6
+  sha256: 8368bc6e1eeef015bda240a1f47f244be39a3f285c1c6f2a00c155bc3b5c26b3
+  file: go1.25.6.windows-amd64.msi
 - name: goreleaser
   repo: goreleaser/goreleaser
   tag: v2.12.5
@@ -98,8 +99,8 @@
   version: 25.2.1
 - name: numbat
   repo: sharkdp/numbat
-  tag: v1.16.0
-  version: 1.16.0
+  tag: v1.19.0
+  version: 1.19.0
 - name: pastel
   repo: sharkdp/pastel
   tag: v0.11.0

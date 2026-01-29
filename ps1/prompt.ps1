@@ -59,7 +59,7 @@ function prompt {
     # pwd
     if ($PWD.Provider.Name -ceq 'FileSystem') {
       $PSStyle.FormatHyperlink(
-        ($PWD.ProviderPath[$HOME.Length] -ceq [System.IO.Path]::DirectorySeparatorChar ? '~' + $PWD.ProviderPath.Substring($HOME.Length) : $PWD.ProviderPath),
+        (($PWD.ProviderPath + [System.IO.Path]::DirectorySeparatorChar).StartsWith($HOME + [System.IO.Path]::DirectorySeparatorChar) ? '~' + $PWD.ProviderPath.Substring($HOME.Length) : $PWD.ProviderPath),
         [uri]::new($env:WSL_DISTRO_NAME ? (wslpath -w $PWD.ProviderPath) : $PWD.ProviderPath))
     }
     else {

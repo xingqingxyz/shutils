@@ -1,0 +1,6 @@
+Register-ArgumentCompleter -Native -CommandName wsl -ScriptBlock {
+  param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
+  @(if ($wordToComplete.StartsWith('-')) {
+      '--exec', '-e', '--shell-type=standard', '--shell-type=login', '--shell-type=none', '--cd', '--distribution', '-d', '--distribution-id', '--user', '-u', '--system', '--help', '--debug-shell', '--install', '--enable-wsl1', '--fixed-vhd', '--from-file', '--legacy', '--location', '--name', '--no-distribution', '--no-launch', '-n', '--version', '--vhd-size', '--web-download', '--manage', '--move', '--set-sparse', '-s', '--set-default-user', '--resize', '--mount', '--vhd', '--bare', '--name', '--type', '--options', '--partition', '--set-default-version', '--shutdown', '--force', '--status', '--unmount', '--uninstall', '--update', '--pre-release', '--version', '-v', '--export', '--format=tar', '--format=tar.gz', '--format=tar.xz', '--format=vhd', '--import', '--version', '--vhd', '--import-in-place', '--list', '-l', '--all', '--running', '--quiet', '-q', '--verbose', '-v', '--online', '-o', '--set-default', '-s', '--set-version', '--terminate', '-t', '--unregister'
+    }).Where{ $_ -like "$wordToComplete*" }
+}
