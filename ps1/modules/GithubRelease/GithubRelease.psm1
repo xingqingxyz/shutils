@@ -153,9 +153,9 @@ function installBinary ([string[]]$Path) {
   ln -sf $Path $binDir
 }
 
-function getLocalVersion ($Meta) {
+function getLocalVersion ([string]$Name) {
   try {
-    switch ($Meta.name) {
+    switch ($Name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
       code { (code --version)[0]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
@@ -182,7 +182,7 @@ function getLocalVersion ($Meta) {
     }
   }
   catch {
-    Write-Warning "cannot detect local version for $($Meta.name)"
+    Write-Warning "cannot detect local version for $($Name)"
     '0.0.0'
   }
 }
@@ -267,7 +267,7 @@ function updateLatestVersion ($Meta) {
     }
   }
   try {
-    if ([version]$Meta.version -gt (getLocalVersion $Meta)) {
+    if ([version]$Meta.version -gt (getLocalVersion $Meta.name)) {
       $Meta
     }
     else {
@@ -417,7 +417,7 @@ function Install-Release {
       $file = 'dotnet-sdk-{0}-{1}{2}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(), $fileExt
       downloadFile "https://aka.ms/dotnet/$ChannelQuality/$file"
       if (!$IsLinux) {
-        Invoke-Item $buildDir/$file
+        sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
         break
       }
       sudo rm -rf $sudoDataDir/dotnet
@@ -525,7 +525,7 @@ function Install-Release {
       checkFileHash $buildDir/$file $Meta.sha256
       switch ($true) {
         $IsWindows {
-          Invoke-Item -LiteralPath $buildDir/$file
+          sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
           break
         }
         $IsLinux {
@@ -535,7 +535,7 @@ function Install-Release {
           break
         }
         $IsMacOS {
-          Invoke-Item -LiteralPath $buildDir/$file
+          sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
           break
         }
         default { throw [System.NotImplementedException]::new() }
@@ -693,8 +693,12 @@ StartupWMClass=localsend_app
         default { throw [System.NotImplementedException]::new(); break }
       }
       downloadFile "https://nodejs.org/dist/$($Meta.tag)/$file"
-      if (!$IsLinux) {
-        Invoke-Item $buildDir/$file
+      if ($IsWindows) {
+        sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
+        break
+      }
+      if ($IsMacOS) {
+        sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
         break
       }
       $root = "$dataDir/nodejs/$($Meta.tag)"
@@ -725,14 +729,23 @@ StartupWMClass=localsend_app
       break
     }
     pwsh {
-      if (!$IsLinux) {
-        throw [System.NotImplementedException]::new()
-      }
       $id = $Meta.tag.Substring(1)
-      if ($Meta.prerelease) {
-        $id = 'preview-' + $id.Replace('-', '_')
+      if ($IsLinux) {
+        $id = $id.Replace('-', '_')
       }
       switch ($true) {
+        $IsWindows {
+          $file = 'powershell-{0}-win-{1}.msi' -f $id, $rust.arch
+          downloadRelease $file
+          sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
+          break
+        }
+        $IsMacOS {
+          $file = 'powershell-{0}-osx-{1}.pkg' -f $id, $rust.arch
+          downloadRelease $file
+          sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
+          break
+        }
         $IsFedora {
           $file = 'powershell-{0}-1.rh.{1}.rpm' -f $id, $rust.arch
           downloadRelease $file
@@ -870,7 +883,7 @@ StartupWMClass=localsend_app
     default { throw "no install method for $_" }
   }
   if ((getLocalVersion $Meta.name) -cne $Meta.version) {
-    Write-Warning "version not match: $($Meta.name), installs may be wrong"
+    Write-Warning "version not match after install: $($Meta.name)"
   }
 }
 
