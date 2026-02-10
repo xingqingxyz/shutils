@@ -407,3 +407,28 @@ function Invoke-Sudo {
   Write-CommandDebug $cmd $ags
   Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory .
 }
+
+function x {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [ValidateSet('aria2c', 'msiexec', 'installer')]
+    [string]
+    $CommandName,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $Arg1
+  )
+  $cmd, $ags = switch ($CommandName) {
+    'aria2c' { 'aria2c', '-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')", $Arg1; break }
+    'msiexec' { 'sudo', 'msiexec', '/i', $Arg1, '/quiet', '/norestart', '/log', "Temp:/$Arg1.log"; break }
+    'installer' { 'sudo', 'installer', '-pkg', $Arg1, '-dumplog'; break }
+    default { $CommandName, $Arg1; break }
+  }
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd @ags
+  }
+  else {
+    & $cmd @ags
+  }
+}

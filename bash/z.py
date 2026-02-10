@@ -135,9 +135,11 @@ class Z:
         else:
             now = int(time.time())
             items.sort(
-                key=lambda x: 10000
-                * x[1]["rank"]
-                * (3.75 / (0.0001 * (now - x[1]["time"]) + 1.25))
+                key=lambda x: (
+                    10000
+                    * x[1]["rank"]
+                    * (3.75 / (0.0001 * (now - x[1]["time"]) + 1.25))
+                )
             )
         if list_:
             print("\n".join(map(str, items)))

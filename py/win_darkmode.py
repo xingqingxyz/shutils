@@ -36,7 +36,10 @@ def set_light_theme(light=False):
 
 
 if __name__ == "__main__":
-    if platform.system() != "Windows" or locale.getlocale()[0] != "Chinese (Simplified)_China":
+    if (
+        platform.system() != "Windows"
+        or locale.getlocale()[0] != "Chinese (Simplified)_China"
+    ):
         raise SystemError("only supports windows chinese")
     if "###" in sys.argv:
         if not am.IsUserAnAdmin():

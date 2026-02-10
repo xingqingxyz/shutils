@@ -39,6 +39,9 @@ def set_page_color(default=False):
 
 
 if __name__ == "__main__":
-    if platform.system() != "Windows" or locale.getlocale()[0] != "Chinese (Simplified)_China":
+    if (
+        platform.system() != "Windows"
+        or locale.getlocale()[0] != "Chinese (Simplified)_China"
+    ):
         raise SystemError("only supports windows chinese")
     set_page_color(len(sys.argv) > 1 and sys.argv[1] == "default")

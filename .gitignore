@@ -1,8 +1,8 @@
 __pycache__
 node_modules
 logs
-/LSColors/bin
-/LSColors/obj
+ps1/modules/*/bin
+ps1/modules/*/obj
 
 @AutomationLog.txt
 *.exe

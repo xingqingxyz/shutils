@@ -20,7 +20,7 @@ if not body and args.file:
     if args.file == "-":
         body = sys.stdin.read()
     else:
-        with open(args.file, encoding='utf8') as f:
+        with open(args.file, encoding="utf8") as f:
             body = f.read()
 body = MIMEText(body, "plain", "utf-8")
 body["From"] = sender
