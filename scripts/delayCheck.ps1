@@ -3,28 +3,36 @@ param (
   [Parameter(Mandatory, Position = 0)]
   [timespan]
   $Delay,
-  [Parameter(Position = 1, ParameterSetName = 'ScriptBlock')]
-  [scriptblock]
-  $ScriptBlock,
-  [Parameter(Position = 1, ParameterSetName = 'Base')]
+  [Parameter()]
+  [switch]
+  $AsJob,
+  [Parameter(Mandatory, Position = 1, ParameterSetName = 'Base')]
   [string]
   $Command,
-  [Parameter(Position = 2, ValueFromRemainingArguments, ParameterSetName = 'Base')]
-  [string[]]
+  [Parameter(Mandatory, Position = 1, ParameterSetName = 'ScriptBlock')]
+  [scriptblock]
+  $ScriptBlock,
+  [Parameter(Position = 2, ValueFromRemainingArguments)]
+  [System.Object[]]
   $ArgumentList
 )
 
 $PSNativeCommandUseErrorActionPreference = $true
+if ($AsJob) {
+  $PSBoundParameters.Remove('AsJob')
+  # surprisingly, variables in there is catching from any upstream function local variables
+  return & { $__ags__ = $PSBoundParameters; & $PSCommandPath @__ags__ } &
+}
 Write-Debug "Sleeping $Delay"
 Start-Sleep $Delay
-if ($ScriptBlock) {
-  $description = "{$ScriptBlock}"
-  & $ScriptBlock
+$description = if ($Command) {
+  $ScriptBlock = { &$Command @args }
+  "$Command $ArgumentList"
 }
 else {
-  $description = "$Command $ArgumentList"
-  & $Command $ArgumentList
+  "{$ScriptBlock}"
 }
+& $ScriptBlock @ArgumentList
 $status = $?
 $statusText = $status ? 'completed' : 'failed'
 $message = "PowerShell job $statusText`: $description"

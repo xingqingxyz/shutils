@@ -36,7 +36,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
     $astList = $commandAst.CommandElements | Select-Object -Skip 2
     $commandName = Split-Path -LeafBase $astList[0].Value
     $cursorPosition -= $astList[0].Extent.StartOffset
-    $commandAst = $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+    $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
     return & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
   }
 
