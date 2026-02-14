@@ -118,7 +118,7 @@ function Test-Administrator {
 function Get-EnvironmentVariable {
   [CmdletBinding()]
   [Alias('gev')]
-  [OutputType([System.Collections.DictionaryEntry[]])]
+  [OutputType([string[]])]
   param (
     [ArgumentCompleter({
         param (
@@ -141,14 +141,8 @@ function Get-EnvironmentVariable {
   if ($MyInvocation.ExpectingInput) {
     $ExtraArgs += $input
   }
-  if ($Scope -ceq 'Process') {
-    return Get-Item -LiteralPath $ExtraArgs.ForEach{ "env:$_" }
-  }
   Convert-Path $ExtraArgs.ForEach{ "env:$_" } | ForEach-Object {
-    $value = [System.Environment]::GetEnvironmentVariable($_, $Scope)
-    if ($null -ne $value) {
-      [System.Collections.DictionaryEntry]::new($_, $value)
-    }
+    [System.Environment]::GetEnvironmentVariable($_, $Scope)
   }
 }
 
@@ -277,13 +271,14 @@ function Set-EnvironmentVariablePath {
     $Append,
     [Parameter()]
     [string[]]
-    $Delete,
+    $Delete = @(),
     [Parameter()]
     [switch]
     $PassThru
   )
   [string]$value = [System.Environment]::GetEnvironmentVariable($Name, $Scope)
-  $value = $Prepend + $value.Split([System.IO.Path]::PathSeparator).Where{ !$Delete.Contains($_) } + $Append | Select-Object -Unique | Join-String -Separator ([System.IO.Path]::PathSeparator)
+  [string]$sep = [System.IO.Path]::PathSeparator
+  $value = $Prepend + $value.Split($sep).Where{ $_ -and !$Delete.Contains($_) } + $Append | Select-Object -Unique | Join-String -Separator $sep -OutputSuffix $sep
   [System.Environment]::SetEnvironmentVariable($Name, $value, $Scope)
   if ($PassThru) {
     $value

@@ -412,18 +412,51 @@ function x {
   [CmdletBinding()]
   param (
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('aria2c', 'msiexec', 'installer')]
+    [ValidateSet(
+      'aria2c',
+      'cbc',
+      'claude',
+      'codebuddy',
+      'codex',
+      'copilot',
+      'git',
+      'installer',
+      'msiexec',
+      'qwen',
+      'wsl'
+    )]
     [string]
     $CommandName,
+    [ArgumentCompleter({
+        [OutputType([System.Management.Automation.CompletionResult])]
+        param (
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete,
+          [System.Management.Automation.Language.CommandAst]$CommandAst,
+          [System.Collections.IDictionary]$FakeBoundParameters
+        )
+        $astList = $commandAst.CommandElements | Select-Object -Skip 1
+        $commandAst = [System.Management.Automation.Language.Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+        & (Get-ArgumentCompleter $FakeBoundParameters.CommandName) $wordToComplete $commandAst $CommandAst.CommandElements[-1].Extent.EndOffset
+      })]
     [Parameter(Position = 1, ValueFromRemainingArguments)]
     [string[]]
-    $Arg1
+    $ExtraArgs
   )
   $cmd, $ags = switch ($CommandName) {
-    'aria2c' { 'aria2c', '-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')", $Arg1; break }
-    'msiexec' { 'sudo', 'msiexec', '/i', $Arg1, '/quiet', '/norestart', '/log', "Temp:/$Arg1.log"; break }
-    'installer' { 'sudo', 'installer', '-pkg', $Arg1, '-dumplog'; break }
-    default { $CommandName, $Arg1; break }
+    'aria2c' { @('aria2c', '-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')") + $ExtraArgs; break }
+    'git' { 'delayCheck.ps1', @{Delay = '0:12'; AsJob = $true; Command = 'git'; ArgumentList = $ExtraArgs }; break }
+    'msiexec' { @('sudo', 'msiexec', '/qn', '/norestart', '/log', "Temp:/$($ExtraArgs[0]).log", '/i') + $ExtraArgs; break }
+    'installer' { @('sudo', 'installer', '-dumplog', '-pkg') + $ExtraArgs; break }
+    { $_ -ceq 'cbc' -or
+      $_ -ceq 'codebuddy' -or
+      $_ -ceq 'copilot' -or
+      $_ -ceq 'claude' -or
+      $_ -ceq 'codex' -or
+      $_ -ceq 'qwen' -or
+      $_ -ceq 'wsl' } { ($IsWindows ? @('wt', 'nt', $_) : @('alacritty', '-e', $_)) + $ExtraArgs; break }
+    default { $CommandName, $ExtraArgs; break }
   }
   if ($MyInvocation.ExpectingInput) {
     $input | & $cmd @ags

@@ -417,7 +417,7 @@ function Install-Release {
       $file = 'dotnet-sdk-{0}-{1}{2}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(), $fileExt
       downloadFile "https://aka.ms/dotnet/$ChannelQuality/$file"
       if (!$IsLinux) {
-        sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
+        Install-MSIProduct -LiteralPath $buildDir/$file
         break
       }
       sudo rm -rf $sudoDataDir/dotnet
@@ -525,7 +525,7 @@ function Install-Release {
       checkFileHash $buildDir/$file $Meta.sha256
       switch ($true) {
         $IsWindows {
-          sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
+          Install-MSIProduct -LiteralPath $buildDir/$file
           break
         }
         $IsLinux {
@@ -694,7 +694,7 @@ StartupWMClass=localsend_app
       }
       downloadFile "https://nodejs.org/dist/$($Meta.tag)/$file"
       if ($IsWindows) {
-        sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
+        Install-MSIProduct -LiteralPath $buildDir/$file
         break
       }
       if ($IsMacOS) {
@@ -737,7 +737,7 @@ StartupWMClass=localsend_app
         $IsWindows {
           $file = 'powershell-{0}-win-{1}.msi' -f $id, $rust.arch
           downloadRelease $file
-          sudo msiexec /i $buildDir/$file /quiet /norestart /log $env:TEMP/$file`.log
+          Install-MSIProduct -LiteralPath $buildDir/$file
           break
         }
         $IsMacOS {
