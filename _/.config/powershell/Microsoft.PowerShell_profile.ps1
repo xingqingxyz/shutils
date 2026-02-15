@@ -14,6 +14,8 @@ function Import-EnvironmentVariable {
   }
 }
 
+# gather info
+$InformationPreference = 'Continue'
 # platform init
 if ($IsLinux) {
   # $env:SHUTILS_ROOT

@@ -4,6 +4,7 @@
   repo: balena-io/etcher
 - name: bash
   repo: unknown
+  version: "5.3"
 - name: bat
   repo: sharkdp/bat
   tag: v0.26.0
@@ -25,7 +26,9 @@
   tag: v0.8.0
   version: 0.8.0
 - name: dotnet
-  version: 99.0.0
+  repo: dotnet/dotnet
+  tag: v10.0.103
+  version: 10.0.103
 - name: dsc
   repo: PowerShell/DSC
   prerelease: true
@@ -36,7 +39,9 @@
 - name: fd
   repo: sharkdp/fd
 - name: flutter
-  version: 3.35.6
+  version: 3.41.1
+  file: https://storage.flutter-io.cn/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.1-stable.tar.xz
+  sha256: 68f51b1bb3728d3be5a756f23a38af1f776e05c0729dd3a91d3dcf2c20d78138
 - name: fzf
   repo: junegunn/fzf
   tag: v0.67.0
@@ -53,8 +58,8 @@
   repo: golang/go
   tag: go1.26.0
   version: 1.26.0
-  sha256: cfb446aa6144566f3aac0e74f8a1b5d7936a2bfcd0ee47cc36afb0052db9c872
-  file: go1.26.0.windows-amd64.msi
+  sha256: aac1b08a0fb0c4e0a7c1555beb7b59180b05dfc5a3d62e40e9de90cd42f88235
+  file: go1.26.0.linux-amd64.tar.gz
 - name: goreleaser
   repo: goreleaser/goreleaser
   tag: v2.12.5
@@ -65,6 +70,8 @@
   version: 0.17.0
 - name: hyperfine
   repo: sharkdp/hyperfine
+  tag: v1.20.0
+  version: 1.20.0
 - name: java
   version: 25
 - name: jq
@@ -83,8 +90,8 @@
   version: 1.4.4
 - name: mdbook
   repo: rust-lang/mdBook
-  tag: v0.4.52
-  version: 0.4.52
+  tag: v0.5.2
+  version: 0.5.2
 - name: mold
   repo: rui314/mold
   tag: v2.40.4
@@ -95,8 +102,8 @@
   version: 3.4.0
 - name: node
   repo: nodejs/node
-  tag: v25.6.0
-  version: 25.6.0
+  tag: v25.6.1
+  version: 25.6.1
 - name: numbat
   repo: sharkdp/numbat
   tag: v1.23.0
@@ -127,15 +134,17 @@
   repo: tree-sitter/tree-sitter
 - name: uv
   repo: astral-sh/uv
-  version: 0.9.16
-  tag: 0.9.16
+  version: 0.10.2
+  tag: 0.10.2
+- name: wechat
+  version: 4.1.0
 - name: xh
   repo: ducaale/xh
   tag: v0.25.0
   version: 0.25.0
 - name: yq
   repo: mikefarah/yq
-  tag: v4.49.2
-  version: 4.49.2
+  tag: v4.52.4
+  version: 4.52.4
 - name: zed
   repo: zed-industries/zed

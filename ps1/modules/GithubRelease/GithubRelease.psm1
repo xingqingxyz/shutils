@@ -163,7 +163,7 @@ function getLocalVersion ([string]$Name) {
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
       dotnet { (dotnet --version).Split('-', 2)[0]; break }
       gh { (gh version)[0].Split(' ', 4)[2]; break }
-      glow { (glow -v)[0].Split(' ', 4)[2]; break }
+      glow { (glow -v).Split(' ', 4)[2]; break }
       go { (go version).Split(' ', 4)[2].Substring(2); break }
       goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
       pastel { (pastel -V).Split(' ', 3)[1]; break }
@@ -175,9 +175,22 @@ function getLocalVersion ([string]$Name) {
         (java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
         break
       }
+      rg { (rg -V).Split(' ', 3)[1]; break }
       rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
+      wechat {
+        if ($IsFedora) {
+          (dnf list --installed wechat)[1].Split(' ')[1] -creplace '\.[^.]+$', ''
+          break
+        }
+        break
+      }
       xh { (https -V).Split(' ', 2)[1]; break }
       yq { (yq -V).Split(' ')[-1].Substring(1); break }
+      { $_ -ceq 'localsend' -or
+        $_ -ceq 'nerd-fonts' } {
+        (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -CEQ $_).version
+        break
+      }
       default { (& $_ --version).Split(' ')[-1] -replace '^v', ''; break }
     }
   }
@@ -189,8 +202,11 @@ function getLocalVersion ([string]$Name) {
 
 function updateLatestVersion ($Meta) {
   switch ($Meta.name) {
-    bash { $Meta.version = '5.3'; break }
-    dotnet { $Meta.version = '99.0.0'; break }
+    bash {
+      $html = Invoke-RestMethod 'https://tiswww.case.edu/php/chet/bash/bashtop.html'
+      $Meta.version = [regex]::new('<a href="ftp://ftp.cwru.edu/pub/bash/bash-([\d.]+)\.tar\.gz">bash-\1</a>').Match($html).Groups[1].Value
+      break
+    }
     go {
       $data = Invoke-RestMethod 'https://golang.google.cn/dl/?mode=json'
       $Meta.tag = $data[0].version
@@ -228,7 +244,7 @@ function updateLatestVersion ($Meta) {
         'Arm64' { 'aarch64'; break }
         default { throw "not supported arch $_" }
       }
-      $version = (Invoke-WebRequest https://jdk.java.net).Links[0].href
+      $version = (Invoke-WebRequest 'https://jdk.java.net').Links[0].href
       $url = ((Invoke-WebRequest "https://jdk.java.net$version").Links | Where-Object href -CLike "https://download.java.net/java/GA/*/openjdk-*_linux-$arch*").href
       $Meta.url = $url[0]
       $Meta.sha256 = Invoke-RestMethod $url[1]
@@ -238,6 +254,14 @@ function updateLatestVersion ($Meta) {
     rustup {
       $prefix = $env:RUSTUP_UPDATE_ROOT ?? 'https://static.rust-lang.org/rustup'
       $Meta.version = (Invoke-RestMethod $prefix/release-stable.toml | ConvertFrom-Toml).version
+      break
+    }
+    wechat {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
+      }
+      $html = Invoke-RestMethod 'https://linux.weixin.qq.com'
+      $Meta.version = [regex]::new('<div class="main-section__bd-version" data-v-1556f5f1>([\d.]+)</div>').Match($html).Groups[1].Value
       break
     }
     default {
@@ -266,16 +290,13 @@ function updateLatestVersion ($Meta) {
       break
     }
   }
-  try {
-    if ([version]$Meta.version -gt (getLocalVersion $Meta.name)) {
-      $Meta
-    }
-    else {
-      Write-Warning "pkg $($Meta.name) is already newer than $($Meta.tag)"
-    }
-  }
-  catch {
+  $version = getLocalVersion $Meta.name
+  if ([version]$Meta.version -gt $version) {
     $Meta
+    Write-Information "Upgrading $($Meta.name) from $version to $($Meta.version)"
+  }
+  else {
+    Write-Warning "pkg $($Meta.name)@$version is already newer than $($Meta.version)"
   }
 }
 
@@ -366,7 +387,7 @@ function Install-Release {
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       Expand-Archive -LiteralPath $buildDir/$file $buildDir
       Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file)/bun $binDir -Force
-      $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
+      $null = New-Item -ItemType SymbolicLink -Target -Force bun $binDir/bunx
       break
     }
     code {
@@ -469,10 +490,14 @@ function Install-Release {
       break
     }
     flutter {
+      if (Get-Command flutter -CommandType Application -TotalCount 1 -ea Ignore) {
+        flutter upgrade --force
+        break
+      }
       downloadFile $Meta.file
       $file = Split-Path -Leaf $Meta.file
       checkFileHash $buildDir/$file $Meta.sha256
-      Remove-Item -LiteralPath $dataDir/flutter
+      Remove-Item -LiteralPath $dataDir/flutter -Recurse -Force
       tar -xf $buildDir/$file -C $dataDir
       break
     }
@@ -575,9 +600,7 @@ function Install-Release {
       downloadFile $Meta.url
       $file = Split-Path -Leaf $url
       checkFileHash $buildDir/$file $Meta.sha256
-      sudo rm -rf $sudoDataDir/jdk
-      sudo tar -xf $buildDir/$file -C $sudoDataDir/jdk --no-same-owner --strip-components=1
-      sudo ln -sf $sudoDataDir/jdk/bin/java $sudoBinDir
+      tar -xf $buildDir/$file -C ~/.jdks --no-same-owner
       break
     }
     jq {
@@ -667,7 +690,7 @@ StartupWMClass=localsend_app
       downloadRelease 0xProto.zip
       Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $buildDir
       if ($IsLinux) {
-        Move-Item $buildDir/0xProtoNerdFont*.ttf $dataDir/fonts/truetype
+        Move-Item $buildDir/0xProtoNerdFont*.ttf $dataDir/fonts/truetype -Force
         fc-cache -v
       }
       elseif ($IsWindows) {
@@ -850,19 +873,33 @@ StartupWMClass=localsend_app
       if ($IsWindows) {
         throw [System.NotImplementedException]::new()
       }
-      if ($true) {
-        $base = 'uv-{0}' -f $rust.target
-        downloadRelease $base$ext
-        tar -xf $buildDir/$base$ext -C $buildDir
-        Move-Item -LiteralPath $buildDir/$base/uv$exe, $buildDir/$base/uvx$exe $binDir -Force
-        break
+      $base = 'uv-{0}' -f $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/uv$exe, $buildDir/$base/uvx$exe $binDir -Force
+      break
+    }
+    wechat {
+      if (!$IsLinux) {
+        throw [System.NotImplementedException]::new()
       }
-      # uv use github releases link directly
-      if (Get-Command uv -CommandType Application -TotalCount 1 -ea Ignore) {
-        uv self update
-        break
+      $arch = switch ([RuntimeInformation]::OSArchitecture) {
+        'X64' { 'x86_64'; break }
+        'Arm64' { 'arm64'; break }
+        default { throw "not supported arch $_" }
       }
-      curl -LsSf 'https://astral.sh/uv/install.sh' | sh
+      $ext = switch ($true) {
+        $IsFedora { '.rpm'; break }
+        $IsUbuntu { '.deb'; break }
+        default { '.appimage'; break }
+      }
+      $file = "WeChatLinux_$arch$ext"
+      downloadFile https://dldir1v6.qq.com/weixin/Universal/Linux/$file
+      switch ($true) {
+        $IsFedora { sudo dnf install -y $buildDir/$file; break }
+        $IsUbuntu { sudo dpkg -i $buildDir/$file; break }
+        default { Move-Item -LiteralPath $buildDir/$file $binDir/wechat -Force; chmod +x $binDir/wechat; break }
+      }
       break
     }
     yq {
@@ -882,8 +919,9 @@ StartupWMClass=localsend_app
     }
     default { throw "no install method for $_" }
   }
-  if ((getLocalVersion $Meta.name) -cne $Meta.version) {
-    Write-Warning "version not match after install: $($Meta.name)"
+  $version = getLocalVersion $Meta.name
+  if ($version -cne $Meta.version) {
+    Write-Warning "expected $($Meta.name) installed version $($Meta.version), but got $version"
   }
 }
 

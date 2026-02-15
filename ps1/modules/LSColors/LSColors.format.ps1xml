@@ -65,7 +65,7 @@
           </TableColumnHeader>
           <TableColumnHeader>
             <Label>LastWriteTime</Label>
-            <Width>20</Width>
+            <Width>16</Width>
             <Alignment>Right</Alignment>
           </TableColumnHeader>
           <TableColumnHeader>
@@ -91,7 +91,7 @@
                 <PropertyName>Group</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
-                <PropertyName>LastWriteTimeString</PropertyName>
+                <ScriptBlock>$_.LastWriteTime.ToString('g')</ScriptBlock>
               </TableColumnItem>
               <TableColumnItem>
                 <ScriptBlock>[LSColors.LSColors]::GetSizeString($_.Size)</ScriptBlock>

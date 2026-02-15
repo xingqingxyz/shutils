@@ -1,6 +1,12 @@
 # note: specially for zh_CN users
 $SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
+$JAVA_HOME = switch ($true) {
+  $IsWindows { 'C:\Program Files\Java\jdk-25'; break }
+  $IsLinux { (Get-Item ~/.jdks/openjdk-25.*)[0].FullName; break }
+  $IsMacOS { ''; break }
+  default { ''; break }
+}
 $DSC_RESOURCE_PATH = $IsWindows ? '' : "$HOME/.local/dsc"
 
 # PSModulePath
@@ -61,6 +67,7 @@ $commonVar = @{
   EDITOR                   = 'edit'
   FLUTTER_STORAGE_BASE_URL = 'https://storage.flutter-io.cn'
   FZF_DEFAULT_OPTS         = $FZF_DEFAULT_OPTS
+  JAVA_HOME                = $JAVA_HOME
   LESS                     = $LESS
   no_proxy                 = $no_proxy
   PAGER                    = 'less'
@@ -73,7 +80,6 @@ $commonVar = @{
 
 if ($IsWindows) {
   ($commonVar + @{
-    JAVA_HOME         = 'C:\Program Files\Java\jdk-25'
     UV_PYTHON_BIN_DIR = "$HOME\tools"
     UV_TOOL_BIN_DIR   = "$HOME\tools"
   }).GetEnumerator().ForEach{
@@ -87,13 +93,14 @@ elseif ($IsLinux) {
   # path
   $PATH = @"
 $HOME/.local/bin
-$HOME/.bun/bin
 $HOME/.cargo/bin
 $HOME/go/bin
-$ANDROID_HOME/platform-tools
+$HOME/.bun/bin
 $SHUTILS_ROOT/scripts
 $HOME/.local/share/powershell/Scripts
 /usr/local/share/powershell/Scripts
+$ANDROID_HOME/platform-tools
+$JAVA_HOME/bin
 /usr/local/bin
 /usr/bin
 "@.ReplaceLineEndings(':')
