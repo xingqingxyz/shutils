@@ -3,31 +3,30 @@ function Set-SystemProxy {
   .SYNOPSIS
   Simple impl for surfboard localnet network proxy.
    #>
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName = 'On')]
   param (
+    [Parameter(Mandatory, Position = 0, ParameterSetName = 'On')]
+    [string]
+    $HostName,
+    [Parameter(ParameterSetName = 'Off')]
+    [switch]
+    $Off,
     [Parameter()]
     [switch]
-    $On,
-    [Parameter()]
-    [ValidateRange(0, 9)]
-    [int]
-    $MagicDigit = 1,
-    [Parameter()]
-    [switch]
-    $NoSettings
+    $NoSystem
   )
-  $hostName = '192.168.0.10' + $MagicDigit
+  $On = !$Off.IsPresent
   if ($On) {
     Set-EnvironmentVariable -Scope User http_proxy=http://${hostName}:1234 https_proxy=http://${hostName}:1234 all_proxy=http://${hostName}:1235
   }
   else {
     Set-EnvironmentVariable -Scope User http_proxy= https_proxy= all_proxy=
   }
-  if ($NoSettings) {
+  if ($NoSystem) {
     return
   }
   if ($IsWindows) {
-    Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyEnable -Value ([int]$On.IsPresent) -Type DWord
+    Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyEnable -Value ([int]$On) -Type DWord
     if ($On) {
       Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyServer -Value ${hostName}:1234 -Type String
       Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyOverride -Value (@($env:no_proxy.Split(',').ForEach{ "https://$_" }; '<local>') -join ';') -Type String

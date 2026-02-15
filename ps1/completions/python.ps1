@@ -1,4 +1,4 @@
-Register-ArgumentCompleter -Native -CommandName python, py -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName python, pythonw, py, python3, python3.10, python3.11, python3.12, python3.13, python3.14, python3.13t, python3.14t -ScriptBlock {
   param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {

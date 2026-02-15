@@ -31,6 +31,16 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
     $prev = $text
     $commands += $text
   }
+  $externalCommands = Get-Command -Type Application git-* | ForEach-Object { $_.Name.split('-', 2)[1].split('.')[0] }
+
+  if ($externalCommands.Contains($commands[0])) {
+    $astList = $commandAst.CommandElements | Select-Object -Skip 2
+    $commandName = 'git-' + $commands[0]
+    $cursorPosition = $cursorPosition - $astList[0].Extent.StartOffset + $commandName.Length + 1
+    $commandAst = [Parser]::ParseInput("$commandName $astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+    return & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
+  }
+
   $command = $commands -join ' '
   @(switch ($command) {
       '' {
@@ -38,7 +48,8 @@ Register-ArgumentCompleter -Native -CommandName git -ScriptBlock {
           '-v', '--version', '-h', '--help', '-C', '-c', '--exec-path=', '--html-path', '--man-path', '--info-path', '-p', '--paginate', '-P', '--no-pager', '--no-replace-objects', '--no-lazy-fetch', '--no-optional-locks', '--no-advice', '--bare', '--git-dir=', '--work-tree=', '--namespace=', '--config-env='
           break
         }
-        'add', 'am', 'archive', 'bisect', 'branch', 'bundle', 'checkout', 'cherry-pick', 'citool', 'clean', 'clone', 'commit', 'describe', 'diff', 'fetch', 'format-patch', 'gc', 'gitk', 'grep', 'gui', 'init', 'log', 'maintenance', 'merge', 'mv', 'notes', 'pull', 'push', 'range-diff', 'rebase', 'reset', 'restore', 'revert', 'rm', 'shortlog', 'show', 'sparse-checkout', 'stash', 'status', 'submodule', 'subtree', 'switch', 'tag', 'worktree', 'config', 'fast-export', 'fast-import', 'filter-branch', 'mergetool', 'pack-refs', 'prune', 'reflog', 'refs', 'remote', 'repack', 'replace', 'annotate', 'blame', 'bugreport', 'count-objects', 'diagnose', 'difftool', 'fsck', 'gitweb', 'help', 'instaweb', 'merge-tree', 'rerere', 'show-branch', 'verify-commit', 'verify-tag', 'version', 'whatchanged', 'archimport', 'cvsexportcommit', 'cvsimport', 'cvsserver', 'imap-send', 'p4', 'quiltimport', 'request-pull', 'send-email', 'svn', 'apply', 'checkout-index', 'commit-graph', 'commit-tree', 'hash-object', 'index-pack', 'merge-file', 'merge-index', 'mktag', 'mktree', 'multi-pack-index', 'pack-objects', 'prune-packed', 'read-tree', 'replay', 'symbolic-ref', 'unpack-objects', 'update-index', 'update-ref', 'write-tree', 'cat-file', 'cherry', 'diff-files', 'diff-index', 'diff-tree', 'for-each-ref', 'for-each-repo', 'get-tar-commit-id', 'ls-files', 'ls-remote', 'ls-tree', 'merge-base', 'name-rev', 'pack-redundant', 'rev-list', 'rev-parse', 'show-index', 'show-ref', 'unpack-file', 'var', 'verify-pack', 'daemon', 'fetch-pack', 'http-backend', 'send-pack', 'update-server-info', 'check-attr', 'check-ignore', 'check-mailmap', 'check-ref-format', 'column', 'credential', 'credential-cache', 'credential-store', 'fmt-merge-msg', 'hook', 'interpret-trailers', 'mailinfo', 'mailsplit', 'merge-one-file', 'patch-id', 'sh-i18n', 'sh-setup', 'stripspace', 'attributes', 'cli', 'hooks', 'ignore', 'mailmap', 'modules', 'repository-layout', 'askpass', 'askyesno', 'credential-helper-selector', 'credential-manager', 'flow', 'lfs', 'update-git-for-windows'
+        'add', 'am', 'archive', 'bisect', 'branch', 'bundle', 'checkout', 'cherry-pick', 'citool', 'clean', 'clone', 'commit', 'describe', 'diff', 'fetch', 'format-patch', 'gc', 'gitk', 'grep', 'gui', 'init', 'log', 'maintenance', 'merge', 'mv', 'notes', 'pull', 'push', 'range-diff', 'rebase', 'reset', 'restore', 'revert', 'rm', 'shortlog', 'show', 'sparse-checkout', 'stash', 'status', 'submodule', 'subtree', 'switch', 'tag', 'worktree', 'config', 'fast-export', 'fast-import', 'filter-branch', 'mergetool', 'pack-refs', 'prune', 'reflog', 'refs', 'remote', 'repack', 'replace', 'annotate', 'blame', 'bugreport', 'count-objects', 'diagnose', 'difftool', 'fsck', 'gitweb', 'help', 'instaweb', 'merge-tree', 'rerere', 'show-branch', 'verify-commit', 'verify-tag', 'version', 'whatchanged', 'archimport', 'cvsexportcommit', 'cvsimport', 'cvsserver', 'imap-send', 'p4', 'quiltimport', 'request-pull', 'send-email', 'svn', 'apply', 'checkout-index', 'commit-graph', 'commit-tree', 'hash-object', 'index-pack', 'merge-file', 'merge-index', 'mktag', 'mktree', 'multi-pack-index', 'pack-objects', 'prune-packed', 'read-tree', 'replay', 'symbolic-ref', 'unpack-objects', 'update-index', 'update-ref', 'write-tree', 'cat-file', 'cherry', 'diff-files', 'diff-index', 'diff-tree', 'for-each-ref', 'for-each-repo', 'get-tar-commit-id', 'ls-files', 'ls-remote', 'ls-tree', 'merge-base', 'name-rev', 'pack-redundant', 'rev-list', 'rev-parse', 'show-index', 'show-ref', 'unpack-file', 'var', 'verify-pack', 'daemon', 'fetch-pack', 'http-backend', 'send-pack', 'update-server-info', 'check-attr', 'check-ignore', 'check-mailmap', 'check-ref-format', 'column', 'credential', 'credential-cache', 'credential-store', 'fmt-merge-msg', 'hook', 'interpret-trailers', 'mailinfo', 'mailsplit', 'merge-one-file', 'patch-id', 'sh-i18n', 'sh-setup', 'stripspace', 'attributes', 'cli', 'hooks', 'ignore', 'mailmap', 'modules', 'repository-layout'
+        $externalCommands
         break
       }
       'help' {
