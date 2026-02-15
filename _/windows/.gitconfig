@@ -16,7 +16,7 @@
 [mergetool]
 	prompt = true
 [credential]
-	helper = 
+	helper =
 	helper = manager
 [http]
 	sslbackend = openssl

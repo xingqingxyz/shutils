@@ -1,6 +1,6 @@
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName store -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName store, microsoftstore -ScriptBlock {
   param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {

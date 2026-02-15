@@ -61,8 +61,8 @@
   version: 2.12.5
 - name: hexyl
   repo: sharkdp/hexyl
-  tag: v0.16.0
-  version: 0.16.0
+  tag: v0.17.0
+  version: 0.17.0
 - name: hyperfine
   repo: sharkdp/hyperfine
 - name: java
@@ -103,8 +103,8 @@
   version: 1.23.0
 - name: pastel
   repo: sharkdp/pastel
-  tag: v0.11.0
-  version: 0.11.0
+  tag: v0.12.0
+  version: 0.12.0
 - name: plantuml
   repo: plantuml/plantuml
   tag: v1.2026.0
