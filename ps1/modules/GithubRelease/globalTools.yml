@@ -27,6 +27,7 @@ apt-wsl:
   - libssl-dev
   - ninja-build
 bun:
+  - "@github/copilot"
   - "@qwen-code/qwen-code"
   - "@tencent-ai/codebuddy-code"
   - "@vscode/vsce"
@@ -99,7 +100,6 @@ dnf-wsl:
   - git-subtree
   - glibc-langpack-zh
   - hyperfine
-  - hyperfine
   - lldb
   - msedit
   - ninja-build
@@ -168,8 +168,7 @@ raspi:
   - yq
   # - dotnet
   # - pwsh
-rustup:
-  - default
+rustup: []
 rustup-components:
   - clippy
 rustup-targets:
@@ -207,6 +206,7 @@ ubuntu:
   - uv
   - yq
 uv:
+  - git-filter-repo
   - markitdown
   - ruff
   - yt-dlp
@@ -220,7 +220,6 @@ windows:
   - plantuml
   - rga
 winget:
-  - AppiumDevelopers.AppiumInspector
   - aria2.aria2
   - astral-sh.uv
   - BurntSushi.ripgrep.MSVC
