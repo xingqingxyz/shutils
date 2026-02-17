@@ -297,6 +297,10 @@ filter showFile ([string[]]$ExtraArgs) {
       icat $path
       break
     }
+    '\.(md|markdown)$' {
+      glow $path
+      break
+    }
     default {
       switch -CaseSensitive (file -Lb --mime-encoding $path) {
         binary { sh -c 'hexyl "$@" | less' `-- $path $ExtraArgs <# auto close hexyl pipe #>; break }

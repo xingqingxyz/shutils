@@ -9,14 +9,18 @@
   repo: sharkdp/bat
   tag: v0.26.0
   version: 0.26.0
+- name: binaryen
+  repo: WebAssembly/binaryen
+  tag: version_126
+  version: 126
 - name: bun
   repo: oven-sh/bun
   version: 1.3.1
   tag: bun-v1.3.1
 - name: code
   repo: microsoft/vscode
-  version: 1.106.2
-  tag: 1.106.2
+  version: 1.109.2
+  tag: 1.109.2
 - name: deno
   repo: denoland/deno
   tag: v2.5.4
@@ -130,18 +134,30 @@
 - name: rustup
   repo: rust-lang/rustup
   version: 1.28.2
+- name: taplo
+  repo: tamasfe/taplo
+  tag: 0.10.0
+  version: 0.10.0
 - name: tree-sitter
   repo: tree-sitter/tree-sitter
 - name: uv
   repo: astral-sh/uv
   version: 0.10.2
   tag: 0.10.2
+- name: wabt
+  repo: webassembly/wabt
+  tag: 1.0.39
+  version: 1.0.39
+- name: wasm-bindgen
+  repo: wasm-bindgen/wasm-bindgen
+  tag: 0.2.108
+  version: 0.2.108
+- name: wasm-pack
+  repo: drager/wasm-pack
+  tag: v0.14.0
+  version: 0.14.0
 - name: wechat
   version: 4.1.0
-- name: xh
-  repo: ducaale/xh
-  tag: v0.25.0
-  version: 0.25.0
 - name: yq
   repo: mikefarah/yq
   tag: v4.52.4

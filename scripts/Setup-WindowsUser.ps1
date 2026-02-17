@@ -1,6 +1,6 @@
-function Set-DarkMode ([switch]$On) {
-  Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'SystemUsesLightTheme' -Value (1 - $On.IsPresent) -Type DWord
-  Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'AppsUseLightTheme' -Value (1 - $On.IsPresent) -Type DWord
+function Set-DarkMode ([switch]$Off) {
+  Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'SystemUsesLightTheme' -Value ([int]$Off.IsPresent) -Type DWord
+  Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'AppsUseLightTheme' -Value ([int]$Off.IsPresent) -Type DWord
 }
 
 function Set-DscResourcePath {
@@ -20,7 +20,7 @@ else {
   Remove-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -ea Ignore
 }
 # misc
-Set-DarkMode -On
+Set-DarkMode
 if (Get-Command dsc -CommandType Application -TotalCount 1 -ea Ignore) {
   Set-DscResourcePath
 }

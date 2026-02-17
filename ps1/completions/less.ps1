@@ -1,7 +1,7 @@
 using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName less -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName bzless, less, xzless, zless, zstdless -ScriptBlock {
   param ([string]$wordToComplete)
   @(
     [CompletionResult]::new('-?', '?', [CompletionResultType]::ParameterValue, 'Display help (from command line).')

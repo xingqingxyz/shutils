@@ -1,6 +1,6 @@
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName code, code-insiders, cursor, codex, trae, windsurf -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName code, code-insiders, cursor, qoder, trae, windsurf -ScriptBlock {
   param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
   $command = @(foreach ($i in $commandAst.CommandElements) {
       if ($i.Extent.StartOffset -eq $commandAst.Extent.StartOffset -or $i.Extent.EndOffset -eq $cursorPosition) {
@@ -32,6 +32,7 @@ Register-ArgumentCompleter -Native -CommandName code, code-insiders, cursor, cod
           '--sync' { 'on', 'off'; break }
           '--locale' { 'en-US', 'zh-CN', 'zh-TW'; break }
           '--log' { 'critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'; break }
+          '--profile' { 'lldb', 'gc', 'flutter', 'default'; break }
           '--category' {
             'builtin', 'deprecated', 'disabled', 'enabled', 'featured', 'installed', 'popular', 'recentlyPublished', 'recommended', 'updates', 'workspaceUnsupported', 'ext:', 'id:', 'tag:', 'sort:installs', 'sort:name', 'sort:publishedDate', 'sort:rating', 'sort:updateDate'
             @('ai', 'azure', 'chat', 'data science', 'debuggers', 'education', 'extension packs', 'formatters', 'keymaps', 'language packs', 'linters', 'notebooks', 'machine learning', 'others', 'programming languages', 'scm providers', 'snippets', 'testing', 'themes', 'visualization').ForEach{ "category:`"$_`"" }
