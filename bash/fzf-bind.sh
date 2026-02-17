@@ -89,6 +89,22 @@ _fzf_cd() {
   cd -- "$out"
 }
 
+_fzf_cd_parent() {
+  local query out args=(
+    +m
+    --reverse
+    '--walker=dir,hidden'
+    '--scheme=path'
+    "--query=$query"
+    "--height=${FZF_BIND_HEIGHT:-40%}"
+    '--bind=ctrl-z:ignore'
+  )
+  query=${READLINE_LINE:0:READLINE_POINT}
+  query=${query##* }
+  out=$(find .. -maxdepth 1 -type d -printf '%f\n' | FZF_DEFAULT_OPTS+=" $FZF_ALT_C_OPTS" fzf "${args[@]}") || return
+  cd -- "../$out"
+}
+
 _fzf_z() {
   local query out args=(
     +m
@@ -112,4 +128,5 @@ bind -x '"\C-t": _fzf_file_widget'
 bind -x '"\C-r": _fzf_history'
 bind -x '"\C-o": _fzf_ident'
 bind -x '"\ec": _fzf_cd'
+bind -x '"\eC": _fzf_cd_parent'
 bind -x '"\ez": _fzf_z'

@@ -35,13 +35,11 @@ bun:
   - pnpm
   - prettier
   - tree-sitter-cli
-  - tsx
   - yo
 cargo:
   - cargo-generate
   - cargo-update
   - taplo-cli
-  - wasm-pack
 code: []
 deno: []
 dnf:
@@ -74,7 +72,7 @@ dnf:
   - ninja-build
   - openssl-devel
   - pandoc
-  - pandoc-pdf
+  - poppler-utils
   - python3-devel
   - ripgrep
   - shellcheck
@@ -133,6 +131,7 @@ fedora:
   - rga
   - rustup
   - uv
+  - wasm-pack
   - yq
 flutter: []
 gh: []
@@ -165,6 +164,7 @@ raspi:
   - rga
   - rustup
   - uv
+  - wasm-pack
   - yq
   # - dotnet
   # - pwsh
@@ -204,6 +204,7 @@ ubuntu:
   - rga
   - rustup
   - uv
+  - wasm-pack
   - yq
 uv:
   - git-filter-repo
@@ -219,6 +220,7 @@ windows:
   - numbat
   - plantuml
   - rga
+  - wasm-pack
 winget:
   - aria2.aria2
   - astral-sh.uv

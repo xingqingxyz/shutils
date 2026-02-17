@@ -157,6 +157,7 @@ function getLocalVersion ([string]$Name) {
   try {
     switch ($Name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
+      binaryen { (wasm2js --version).Split(' ', 4)[2]; break }
       code { (code --version)[0]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
       fzf { (fzf --version).Split(' ', 2)[0]; break }
@@ -177,6 +178,7 @@ function getLocalVersion ([string]$Name) {
       }
       rg { (rg -V).Split(' ', 3)[1]; break }
       rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
+      wabt { wat2wasm --version; break }
       wechat {
         if ($IsFedora) {
           (dnf list --installed wechat)[1].Split(' ')[1] -creplace '\.[^.]+$', ''
@@ -281,6 +283,7 @@ function updateLatestVersion ($Meta) {
       }
       $tag = $Meta.tag = execute gh release list -R $Meta.repo --exclude-drafts @extraArgs
       $Meta.version = switch ($Meta.name) {
+        binaryen { $tag.Split('_', 2)[1] + '.0'; break }
         bun { $tag.Substring(5); break }
         dsc { $tag.Split('-', 2)[0]; break }
         less { $tag.Substring(6); break }
@@ -371,6 +374,19 @@ function Install-Release {
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/bat$exe $binDir -Force
+      break
+    }
+    binaryen {
+      $os = switch ($true) {
+        $IsLinux { 'linux'; break }
+        $IsWindows { 'windows'; break }
+        $IsMacOS { 'macos'; break }
+        default { throw 'unknown os' }
+      }
+      $file = 'binaryen-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $rust.arch, $os
+      downloadRelease $file, $file`.sha256
+      checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256).Split(' ', 2)[0]
+      tar -xf $buildDir/$file -C $prefixDir --strip-components=1
       break
     }
     bun {
@@ -850,6 +866,16 @@ StartupWMClass=localsend_app
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
       break
     }
+    taplo {
+      $base = 'taplo-{0}-{1}' -f $go.os, $rust.arch
+      downloadRelease $base`.gz
+      gzip -df $buildDir/$base`.gz
+      Move-Item -LiteralPath $buildDir/$base$exe $binDir/taplo$exe -Force
+      if (!$IsWindows) {
+        chmod +x $binDir/taplo
+      }
+      break
+    }
     tree-sitter {
       $os = switch ($true) {
         $IsLinux { 'linux'; break }
@@ -877,6 +903,34 @@ StartupWMClass=localsend_app
       downloadRelease $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/uv$exe, $buildDir/$base/uvx$exe $binDir -Force
+      break
+    }
+    wabt {
+      $os = switch ($true) {
+        $IsLinux { 'linux'; break }
+        $IsWindows { 'windows'; break }
+        $IsMacOS { 'macos'; break }
+        default { throw 'unknown os' }
+      }
+      $file = 'wabt-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+      downloadRelease $file
+      tar -xf $buildDir/$file -C $prefixDir --strip-components=1
+      break
+    }
+    wasm-bindgen {
+      $base = 'wasm-bindgen-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      $file = "$base.tar.gz"
+      downloadRelease $file, $file`.sha256sum
+      checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
+      tar -xf $buildDir/$file -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/wasm-*$exe $binDir -Force
+      break
+    }
+    wasm-pack {
+      $base = 'wasm-pack-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $base`.tar.gz
+      tar -xf $buildDir/$base`.tar.gz -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/wasm-pack$exe $binDir -Force
       break
     }
     wechat {
@@ -1170,8 +1224,10 @@ if ($IsLinux) {
   $IsWSL = Test-Path -LiteralPath Env:/WSL_DISTRO_NAME
 }
 
-$binDir = $IsWindows ? "$HOME\tools" : "$HOME/.local/bin"
 $dataDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local/share"
+$prefixDir = $IsWindows ? "$env:LOCALAPPDATA\prefix" : "$HOME/.local"
+$binDir = [System.IO.Path]::Join($prefixDir, 'bin')
 
-$sudoBinDir = $IsWindows ? 'C:\tools' : '/usr/local/bin'
 $sudoDataDir = $IsWindows ? $env:ProgramData : '/usr/local/share'
+$sudoPrefixDir = $IsWindows ? "$env:ProgramData\prefix" : '/usr/local'
+$sudoBinDir = [System.IO.Path]::Join($sudoPrefixDir, 'bin')

@@ -1,1 +1,1 @@
-code.ps1
+codex completion powershell | Out-String | Invoke-Expression

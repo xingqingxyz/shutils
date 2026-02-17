@@ -29,10 +29,10 @@ Register-ArgumentCompleter -Native -CommandName adb -ScriptBlock {
 
   @(switch ($command) {
       '' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'devices', 'help', 'version', 'connect', 'disconnect', 'pair', 'forward', 'forward', 'reverse', 'mdns', 'push', 'pull', 'sync', 'shell', 'install', 'install-multiple', 'install-multi-package', 'uninstall', 'bugreport', 'jdwp', 'logcat', 'disable-verity', 'enable-verity', 'keygen', 'wait-for-usb-device', 'wait-for-usb-recovery', 'wait-for-usb-rescue', 'wait-for-usb-sideload', 'wait-for-usb-bootloader', 'wait-for-usb-disconnect', 'wait-for-local-device', 'wait-for-local-recovery', 'wait-for-local-rescue', 'wait-for-local-sideload', 'wait-for-local-bootloader', 'wait-for-local-disconnect', 'wait-for-any-device', 'wait-for-any-recovery', 'wait-for-any-rescue', 'wait-for-any-sideload', 'wait-for-any-bootloader', 'wait-for-any-disconnect', 'get-state', 'get-serialno', 'get-devpath', 'remount', 'reboot', 'sideload', 'root', 'unroot', 'usb', 'tcpip', 'start-server', 'kill-server', 'reconnect', 'attach', 'detach'
+        if ($wordToComplete.StartsWith('-')) {
           break
         }
+        'devices', 'help', 'version', 'connect', 'disconnect', 'pair', 'forward', 'forward', 'reverse', 'mdns', 'push', 'pull', 'sync', 'shell', 'install', 'install-multiple', 'install-multi-package', 'uninstall', 'bugreport', 'jdwp', 'logcat', 'disable-verity', 'enable-verity', 'keygen', 'wait-for-usb-device', 'wait-for-usb-recovery', 'wait-for-usb-rescue', 'wait-for-usb-sideload', 'wait-for-usb-bootloader', 'wait-for-usb-disconnect', 'wait-for-local-device', 'wait-for-local-recovery', 'wait-for-local-rescue', 'wait-for-local-sideload', 'wait-for-local-bootloader', 'wait-for-local-disconnect', 'wait-for-any-device', 'wait-for-any-recovery', 'wait-for-any-rescue', 'wait-for-any-sideload', 'wait-for-any-bootloader', 'wait-for-any-disconnect', 'get-state', 'get-serialno', 'get-devpath', 'remount', 'reboot', 'sideload', 'root', 'unroot', 'usb', 'tcpip', 'start-server', 'kill-server', 'reconnect', 'attach', 'detach'
         break
       }
       'forward' {
@@ -50,10 +50,10 @@ Register-ArgumentCompleter -Native -CommandName adb -ScriptBlock {
         break
       }
       'mdns' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'check', 'services'
+        if ($wordToComplete.StartsWith('-')) {
           break
         }
+        'check', 'services'
         break
       }
       'push' {
@@ -113,10 +113,10 @@ Register-ArgumentCompleter -Native -CommandName adb -ScriptBlock {
         break
       }
       'reconnect' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'device', 'offline'
+        if ($wordToComplete.StartsWith('-')) {
           break
         }
+        'device', 'offline'
         break
       }
     }

@@ -12,7 +12,7 @@ param (
 )
 
 if ($All) {
-  $Path = @(
+  $Path += @(
     'C:\Program Files\Git\mingw64\bin\brotli.exe'
     'C:\Program Files\Git\mingw64\bin\bunzip2.exe'
     'C:\Program Files\Git\mingw64\bin\bzip2.exe'
