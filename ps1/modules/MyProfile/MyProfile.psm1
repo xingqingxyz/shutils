@@ -1,12 +1,12 @@
-function Show-CommandSource {
+function Show-CommandInfo {
   <#
   .SYNOPSIS
-  Show or edit command source.
+  Show command info.
   .PARAMETER List
-  Defaults editing for Invoke-Sudo.
+  Defaults to edit for Invoke-Sudo.
    #>
   [CmdletBinding()]
-  [Alias('l', 'e')]
+  [Alias('e', 'k', 'l')]
   param (
     [ArgumentCompleter({
         param (
@@ -37,6 +37,9 @@ function Show-CommandSource {
     [Parameter()]
     [switch]
     $List = $MyInvocation.InvocationName -ceq 'l',
+    [Parameter()]
+    [switch]
+    $Man = $MyInvocation.InvocationName -ceq 'k',
     [ArgumentCompleter({
         param (
           [string]$CommandName,
@@ -75,6 +78,10 @@ function Show-CommandSource {
           Write-CommandDebug showFile $ExtraArgs
           $paths | showFile $ExtraArgs
         }
+        elseif ($Man) {
+          Write-CommandDebug showHelp $ExtraArgs
+          $paths | showHelp $ExtraArgs
+        }
         else {
           $ExtraArgs = $paths + $ExtraArgs
           Write-CommandDebug $Editor $ExtraArgs
@@ -83,8 +90,12 @@ function Show-CommandSource {
         return
       }
       if ($List) {
-        Write-Debug 'showing help from stdin'
+        Write-Debug 'showing command help from stdin'
         $inputs | bat -plhelp $ExtraArgs
+      }
+      elseif ($Man) {
+        Write-Debug 'showing manual from stdin'
+        $inputs | bat -plman $ExtraArgs
       }
       else {
         Write-CommandDebug $Editor $ExtraArgs
@@ -92,31 +103,75 @@ function Show-CommandSource {
       }
       return
     }
-    if ($List) {
-      if (!$Name) {
-        $Name = '.'
+    if (!$List -and !$Man) {
+      $paths = if ($Name) {
+        Get-Command $Name -ea Ignore | editable
       }
-      $item = (Convert-Path $Name -Force -ea Ignore) ?? (Get-Command $Name -ea Ignore)
-      if (!$item) {
-        return Write-Error "command not found: $Name"
+      else {
+        $MyInvocation.MyCommand.Module.Path
       }
-      Write-CommandDebug show $ExtraArgs
-      $item | show $ExtraArgs
-      return
+      $ExtraArgs = $paths ? (($paths | fsPath) + $ExtraArgs) : @($Name; $ExtraArgs)
+      Write-CommandDebug $Editor $ExtraArgs
+      return & $Editor $ExtraArgs
     }
-    $paths = if ($Name) {
-      Get-Command $Name -ea Ignore | editable
+    if (!$Name) {
+      $Name = $List ? '.' : $MyInvocation.MyCommand.Name
     }
-    else {
-      $MyInvocation.MyCommand.Module.Path
+    $item = (Convert-Path $Name -Force -ea Ignore) ?? (Get-Command $Name -ea Ignore)
+    if (!$item) {
+      return Write-Error "command not found: $Name"
     }
-    $ExtraArgs = $paths ? (($paths | fsPath) + $ExtraArgs) : @($Name; $ExtraArgs)
-    Write-CommandDebug $Editor $ExtraArgs
-    & $Editor $ExtraArgs
+    $showCommand = $List ? 'showSource' : 'showHelp'
+    Write-CommandDebug $showCommand $ExtraArgs
+    $item | & $showCommand $ExtraArgs
   }
 }
 
-filter show ([string[]]$ExtraArgs) {
+$manExe = (Get-Command man -Type Application -TotalCount 1 -ea Ignore).Source
+
+filter showHelp ([string[]]$ExtraArgs) {
+  $item = $_
+  if ($item -is [string]) {
+    $item = Get-Item -LiteralPath $item -ea Ignore
+  }
+  if ($item -is [System.IO.FileInfo]) {
+    if (!$item -or $item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
+      return $item
+    }
+    if ($item.UnixFileMode.HasFlag([System.IO.UnixFileMode]::UserExecute)) {
+      if ($manExe -and (& $manExe -w $item.BaseName)) {
+        return & $manExe $item.BaseName
+      }
+      return & $item $ExtraArgs --help | bat -plhelp
+    }
+    return $item | showFile $ExtraArgs
+  }
+  if ($item -isnot [System.Management.Automation.CommandInfo]) {
+    # other PSProvider info, e.g. gi env:PATH
+    return $item
+  }
+  [System.Management.Automation.CommandInfo]$info = $item
+  if ($info.CommandType -ceq 'Alias') {
+    $info = $info.ResolvedCommand
+  }
+  switch ($info.CommandType) {
+    Application {
+      $baseName = Split-Path -LeafBase $info.Name
+      if ($manExe -and (& $manExe -w $baseName)) {
+        return & $manExe $baseName
+      }
+      return & $info.Source $ExtraArgs --help | bat -plhelp
+    }
+    Configuration {
+      return & $info
+    }
+    default {
+      return Get-Help $info.Name -Category $_ -Full | bat -plman $ExtraArgs
+    }
+  }
+}
+
+filter showSource ([string[]]$ExtraArgs) {
   if ($_ -is [string]) {
     return $_ | showFile $ExtraArgs
   }

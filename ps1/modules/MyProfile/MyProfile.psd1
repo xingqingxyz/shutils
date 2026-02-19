@@ -69,7 +69,7 @@
   # NestedModules        = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('Show-CommandSource', 'Write-CommandDebug', 'Invoke-Npm', 'Invoke-Npx', 'Invoke-Sudo', 'x')
+  FunctionsToExport    = @('Show-CommandInfo', 'Write-CommandDebug', 'Invoke-Npm', 'Invoke-Npx', 'Invoke-Sudo', 'x')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -78,7 +78,7 @@
   VariablesToExport    = @()
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-  AliasesToExport      = @('l', 'e')
+  AliasesToExport      = @('e', 'k', 'l')
 
   # DSC resources to export from this module
   # DscResourcesToExport = @()

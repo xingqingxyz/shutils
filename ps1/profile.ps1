@@ -1,3 +1,4 @@
+#region windows
 if ($IsWindows) {
   function vsdev {
     Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
@@ -60,6 +61,7 @@ if ($IsWindows) {
   }
   return
 }
+#endregion
 
 #region linux
 function mkdir {

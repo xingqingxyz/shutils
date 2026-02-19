@@ -22,7 +22,7 @@ Set-PSReadLineKeyHandler -Chord Ctrl+c -Description 'Add line to PSReadLine hist
   [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($text)
   [Microsoft.PowerShell.PSConsoleReadLine]::CancelLine()
 }
-Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -ScriptBlock {
+Set-PSReadLineKeyHandler -Chord F1 -Description 'Show command help' -ScriptBlock {
   $cursor = 0
   [System.Management.Automation.Language.Token[]]$tokens = $null
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$tokens, [ref]$null, [ref]$cursor)
@@ -30,14 +30,7 @@ Set-PSReadLineKeyHandler -Chord F1 -Description 'Show powershell command help' -
   if (!$name) {
     return
   }
-  $info = Get-Command $name -ea Ignore
-  if ($info.CommandType -ceq 'Alias') {
-    $info = $info.ResolvedCommand
-  }
-  if (!$info) {
-    return
-  }
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $name.Length, "Show-CommandSource -List $name #")
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $name.Length, "Show-CommandInfo -Man $name #")
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell docs in browser about the command' -ScriptBlock {
