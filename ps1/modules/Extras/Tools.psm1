@@ -70,6 +70,11 @@ function Register-PSScheduledTask {
   $encodedCommand = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ScriptText))
   if ($IsLinux) {
     $Kind.ForEach{
+      $date = switch ($_) {
+        'monthly' { '*-*-01'; break }
+        'weekly' { 'Mon *-*-*'; break }
+        'daily' { '*-*-*'; break }
+      }
       $service = @"
 [Unit]
 Description=PowerShell $_ $Name task
@@ -83,8 +88,8 @@ ExecStart=/usr/bin/env pwsh -noni -nop -e $encodedCommand
 Description=PowerShell $_ $Name task timer
 
 [Timer]
-OnCalendar=$_
-Persistent=true
+OnCalendar=$date $($At.ToString('HH:mm:ss'))
+Persistent=$($_ -ceq 'daily' ? 'false' : 'true')
 
 [Install]
 WantedBy=timers.target
