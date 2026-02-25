@@ -26,3 +26,5 @@
 	recentrepo = C:/Users/cmema/p/shutils
 [rerere]
 	enabled = true
+[safe]
+	directory = *

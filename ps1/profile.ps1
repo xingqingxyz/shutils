@@ -1,3 +1,30 @@
+#region common
+Set-Item Function:cbc, Function:codebuddy, Function:qwen, Function:qodercli {
+  # prevent . invoke variable add
+  if ($MyInvocation.InvocationName -ceq '.') {
+    return & $MyInvocation.MyCommand $args
+  }
+  $cmd = (Get-Command $MyInvocation.MyCommand.Name -Type Application -TotalCount 1 -ea Stop).Source
+  [string[]]$ags = $args.ForEach{ if ($null -ne $_) { $_ } }
+  if ($ags.Contains('-p')) {
+    $ags += $MyInvocation.InvocationName -ceq 'qodercli' ? '--yolo' : '-y'
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd $ags | glow
+    }
+    else {
+      & $cmd $ags | glow
+    }
+    return
+  }
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd $ags
+  }
+  else {
+    & $cmd $ags
+  }
+}
+#endregion
+
 #region windows
 if ($IsWindows) {
   function vsdev {
@@ -7,7 +34,7 @@ if ($IsWindows) {
 
   Set-Variable -Option ReadOnly -Force _executableAliasMap @{
     grep     = 'grep', '--color=auto'
-    plantuml = 'java', '-jar', "$HOME\tools\plantuml.jar"
+    plantuml = 'java', '-jar', "$env:LOCALAPPDATA\prefix\bin\plantuml.jar"
     rg       = 'rg', '--hyperlink-format=vscode'
   }
   if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
@@ -23,11 +50,7 @@ if ($IsWindows) {
       return Write-Error "alias not set $cmd"
     }
     # flat iterator args for native passing
-    $cmd, $ags = @($_executableAliasMap[$cmd]) + $args.ForEach{
-      if ($null -ne $_) {
-        $_
-      }
-    }
+    $cmd, $ags = @($_executableAliasMap[$cmd]) + $args.ForEach{ if ($null -ne $_) { $_ } }
     $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
     Write-CommandDebug $cmd $ags
     if ($MyInvocation.ExpectingInput) {
@@ -97,11 +120,7 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     return Write-Error "alias not set $commandName"
   }
   # flat iterator args for native passing
-  [string[]]$ags = @('--') + $_executableAliasMap[$commandName] + $args.ForEach{
-    if ($null -ne $_) {
-      $_
-    }
-  }
+  [string[]]$ags = @('--') + $_executableAliasMap[$commandName] + $args.ForEach{ if ($null -ne $_) { $_ } }
   Write-CommandDebug /usr/bin/env $ags
   if ($MyInvocation.ExpectingInput) {
     $input | /usr/bin/env $ags

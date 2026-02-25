@@ -118,13 +118,13 @@
   version: 0.12.0
 - name: plantuml
   repo: plantuml/plantuml
-  tag: v1.2026.0
-  version: 1.2026.0
+  tag: v1.2026.1
+  version: 1.2026.1
 - name: pwsh
   repo: PowerShell/PowerShell
   prerelease: true
-  tag: v7.6.0-preview.6
-  version: 7.6.0-preview.6
+  tag: v7.6.0-rc.1
+  version: 7.6.0
 - name: rg
   repo: BurntSushi/ripgrep
 - name: rga
