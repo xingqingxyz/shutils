@@ -159,6 +159,7 @@ function getLocalVersion ([string]$Name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
       binaryen { (wasm2js --version).Split(' ', 4)[2]; break }
       code { (code --version)[0]; break }
+      deno { (deno -v).Split(' ', 2)[1]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
       fzf { (fzf --version).Split(' ', 2)[0]; break }
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
@@ -172,10 +173,8 @@ function getLocalVersion ([string]$Name) {
       mold { (mold -v).Split(' ', 3)[1]; break }
       java { (java --version)[0].Split(' ', 3)[1]; break }
       jq { (jq -V).Split('-', 2)[1]; break }
-      plantuml {
-        (java -jar $binDir/plantuml.jar -version | Select-Object -First 1).Split(' ', 4)[2]
-        break
-      }
+      plantuml { (java -jar $binDir/plantuml.jar -version)[0].Split(' ', 4)[2]; break }
+      pwsh { (pwsh -v).Split(' ', 2)[1].Split('-', 2)[0]; break }
       rg { (rg -V).Split(' ', 3)[1]; break }
       rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
       wabt { wat2wasm --version; break }
@@ -189,7 +188,7 @@ function getLocalVersion ([string]$Name) {
       xh { (https -V).Split(' ', 2)[1]; break }
       yq { (yq -V).Split(' ')[-1].Substring(1); break }
       { $_ -ceq 'localsend' -or
-        $_ -ceq 'nerd-fonts' } {
+        $_ -ceq 'nerdfonts' } {
         (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -CEQ $_).version
         break
       }
@@ -202,7 +201,7 @@ function getLocalVersion ([string]$Name) {
   }
 }
 
-function updateLatestVersion ($Meta) {
+function updateLatestVersion ($Meta, [switch]$Force) {
   switch ($Meta.name) {
     bash {
       $html = Invoke-RestMethod 'https://tiswww.case.edu/php/chet/bash/bashtop.html'
@@ -286,12 +285,16 @@ function updateLatestVersion ($Meta) {
         binaryen { $tag.Split('_', 2)[1] + '.0'; break }
         bun { $tag.Substring(5); break }
         dsc { $tag.Split('-', 2)[0]; break }
-        less { $tag.Substring(6); break }
         jq { $tag.Split('-', 2)[1]; break }
+        less { $tag.Substring(6); break }
+        pwsh { $tag.Substring(1).Split('-', 2)[0]; break }
         default { $tag -replace '^v', ''; break }
       }
       break
     }
+  }
+  if ($Force) {
+    return $Meta
   }
   $version = getLocalVersion $Meta.name
   if ([version]$Meta.version -gt $version) {
@@ -772,21 +775,22 @@ StartupWMClass=localsend_app
       if ($IsLinux) {
         $id = $id.Replace('-', '_')
       }
+      $arch = [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
       switch ($true) {
         $IsWindows {
-          $file = 'powershell-{0}-win-{1}.msi' -f $id, $rust.arch
+          $file = 'PowerShell-{0}-win-{1}.msi' -f $id, $arch
           downloadRelease $file
           Install-MSIProduct -LiteralPath $buildDir/$file
           break
         }
         $IsMacOS {
-          $file = 'powershell-{0}-osx-{1}.pkg' -f $id, $rust.arch
+          $file = 'PowerShell-{0}-osx-{1}.pkg' -f $id, $arch
           downloadRelease $file
           sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
           break
         }
         $IsFedora {
-          $file = 'powershell-{0}-1.rh.{1}.rpm' -f $id, $rust.arch
+          $file = 'PowerShell-{0}-1.rh.{1}.rpm' -f $id, $arch
           downloadRelease $file
           if ($Meta.prerelease) {
             sudo dnf remove -y powershell
@@ -799,7 +803,7 @@ StartupWMClass=localsend_app
           break
         }
         $IsUbuntu {
-          $file = 'powershell-{0}.{1}.deb' -f $id, $rust.arch
+          $file = 'PowerShell-{0}.{1}.deb' -f $id, $arch
           downloadRelease $file
           if ($Meta.prerelease) {
             sudo apt uninstall -y powershell
@@ -812,7 +816,7 @@ StartupWMClass=localsend_app
           break
         }
         $IsRaspi {
-          $file = 'powershell-{0}-linux-arm64.tar.gz' -f $id
+          $file = 'PowerShell-{0}-linux-arm64.tar.gz' -f $id
           downloadRelease $file
           if ($Meta.prerelease) {
             sudo rm -rf /opt/microsoft/powershell/7
@@ -992,7 +996,10 @@ function Update-Release {
       })]
     [Parameter(Position = 0)]
     [string[]]
-    $Name
+    $Name,
+    [Parameter()]
+    [switch]
+    $Force
   )
   $pkgMap = [ordered]@{}
   Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | ForEach-Object { $pkgMap[$_.name] = $_ }
@@ -1001,7 +1008,7 @@ function Update-Release {
     if (!$pkgMap.Contains($_)) {
       throw "unknown pkg $_"
     }
-    updateLatestVersion $pkgMap[$_]
+    updateLatestVersion $pkgMap[$_] -Force:$Force
   } | ForEach-Object { Install-Release $_ } -ea 'Continue'
   $pkgMap.Values | ConvertTo-Yaml > $PSScriptRoot/releases.yml
 }
@@ -1138,10 +1145,11 @@ function Update-Software {
         go install $pkgs.ForEach{ "$_@latest" }
         continue
       }
-      $pkgs = go list
-      if ($pkgs) {
-        go get $pkgs.ForEach{ "$_@latest" }
+      if ($Force) {
+        go get go@latest
       }
+      go get -u ./...
+      go mod tidy
       continue
     }
     npm {

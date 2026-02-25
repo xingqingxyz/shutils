@@ -106,10 +106,11 @@ WantedBy=timers.target
     $Kind.ForEach{
       $trigger = switch ($_) {
         'daily' { New-ScheduledTaskTrigger -At $At -Daily; break }
-        'weekly' { New-ScheduledTaskTrigger -At $At -Weekly; break }
+        'weekly' { New-ScheduledTaskTrigger -At $At -Weekly -DaysOfWeek Monday; break }
         'monthly' { New-ScheduledTaskTrigger -At $At -Daily -DaysInterval 30; break }
       }
-      $action = New-ScheduledTaskAction -Execute pwsh -Argument "-noni -nop -w Hidden -e $encodedCommand"
+      # use conhost to run pwsh to avoid windows terminal popping up
+      $action = New-ScheduledTaskAction -Execute conhost -Argument "pwsh -noni -nop -w Hidden -e $encodedCommand"
       Register-ScheduledTask pwsh-$_-$Name -Force -Description "PowerShell $_ $Name task" -Trigger $trigger -Action $action
     }
   }
@@ -142,7 +143,10 @@ function Unregister-PSScheduledTask {
   }
   elseif ($IsWindows) {
     # it's a $ConfirmPreference = 'High' operation
-    Unregister-ScheduledTask $Kind.ForEach{ "pwsh-$_-$Name" } -Confirm
+    $pref = $ConfirmPreference
+    $ConfirmPreference = 'None'
+    Unregister-ScheduledTask $Kind.ForEach{ "pwsh-$_-$Name" }
+    $ConfirmPreference = $pref
   }
   else {
     throw [System.NotImplementedException]::new()

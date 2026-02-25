@@ -16,10 +16,10 @@ HEADERS = {
 
 def parse_m3u8(text):
     iv_hex = key_url = template_url = ""
-    for line in text.split("\r\n" if os.name == "nt" else "\n"):
+    for line in text.split("\n"):
         if line.startswith("#EXT-X-KEY:"):
-            iv_hex = line.split("IV=", 1)[1].split(",")[0]
             key_url = line.split("URI=", 1)[1].split(",")[0][1:-1]
+            iv_hex = line.split("IV=", 1)[1].split(",")[0]
         elif line.startswith("#"):
             continue
         elif line.startswith("https://"):

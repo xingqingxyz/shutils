@@ -56,7 +56,6 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         }
         elseif ($prev.StartsWith('bun')) {
           'a', 'add', 'build', 'create', 'exec', 'i', 'init', 'install', 'link', 'outdated', 'patch', 'pm', 'publish', 'remove', 'repl', 'rm', 'run', 'test', 'unlink', 'update', 'upgrade', 'x'
-          (npm pkg get scripts | ConvertFrom-Json -AsHashtable).Keys
         }
         break
       }
