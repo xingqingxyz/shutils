@@ -14,7 +14,7 @@ function Set-DscResourcePath {
 Install-Script Refresh-EnvironmentVariables
 # alacritty startup
 if (Get-Command alacritty -Type Application -TotalCount 1 -ea Ignore) {
-  $null = New-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -Value 'C:\Program Files\Alacritty\alacritty.exe' -PropertyType String -Force
+  New-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -Value 'C:\Program Files\Alacritty\alacritty.exe' -PropertyType String -Force
 }
 else {
   Remove-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -ea Ignore
@@ -24,3 +24,5 @@ Set-DarkMode
 if (Get-Command dsc -CommandType Application -TotalCount 1 -ea Ignore) {
   Set-DscResourcePath
 }
+# make directory for user data
+New-Item -ItemType Directory -Force $env:LOCALAPPDATA\prefix\bin

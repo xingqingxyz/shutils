@@ -37,7 +37,7 @@ if ($All) {
     'C:\Program Files\Git\usr\bin\sh.exe'
     'C:\Program Files\Git\usr\bin\ssp.exe'
     'C:\Program Files\Git\usr\bin\uname.exe'
-    "$env:ANDROID_HOME\emulator\emulator.exe"
+    'C:\Program Files\Git\usr\bin\winpty.exe'
   )
 }
 
@@ -53,8 +53,12 @@ if ($Go) {
   } -ThrottleLimit $env:NUMBER_OF_PROCESSORS
 }
 
+if (!(Get-Command cl -Type Application -TotalCount 1 -ea Ignore)) {
+  vsdev
+}
+ 
 $Path | ForEach-Object -Parallel {
   $execPath = 'L"\"' + $_.Replace('\', '\\') + '\""'
   $base = [System.IO.Path]::GetFileNameWithoutExtension($_)
-  cl /O1 /Oi /Os /GF /Gy /GL /GA /GS- /Zl /favor:AMD64 /std:c17 /utf-8 /nologo /DEXEC_PATH=$execPath /Fa$env:TEMP\$base /Fo$env:TEMP\$base /Fe$HOME\tools\$base $env:SHUTILS_ROOT\fork\main.c /link /LTCG /OPT:REF /OPT:ICF /MERGE:.rdata=.text kernel32.lib msvcrt.lib
+  cl /O1 /Oi /Os /GF /Gy /GL /GA /GS- /Zl /favor:AMD64 /std:c17 /utf-8 /nologo /DEXEC_PATH=$execPath /Fa$env:TEMP\$base /Fo$env:TEMP\$base /Fe$env:LOCALAPPDATA\prefix\bin\$base $env:SHUTILS_ROOT\fork\main.c /link /LTCG /OPT:REF /OPT:ICF /MERGE:.rdata=.text kernel32.lib msvcrt.lib
 } -ThrottleLimit $env:NUMBER_OF_PROCESSORS

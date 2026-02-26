@@ -174,9 +174,6 @@ function Set-EnvironmentVariable {
   if ($MyInvocation.ExpectingInput) {
     $PSBoundParameters.ExtraArgs = $ExtraArgs += $input
   }
-  if ($Scope -ceq 'Machine' -and !(Test-Administrator)) {
-    return Invoke-Sudo Set-EnvironmentVariable @PSBoundParameters
-  }
   $environment = @{}
   foreach ($arg in $ExtraArgs) {
     if ($arg -cnotmatch '^(\w+)(?:(=|\+=)(.+)?)?$') {
@@ -202,6 +199,9 @@ function Set-EnvironmentVariable {
   Write-Debug "setting env $($environment.GetEnumerator())"
   if ($Scope -ceq 'Process') {
     return
+  }
+  elseif ($Scope -ceq 'Machine' -and !(Test-Administrator)) {
+    return Invoke-Sudo Set-EnvironmentVariable @PSBoundParameters
   }
   if ($IsWindows) {
     # reg faster than [Environment]

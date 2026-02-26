@@ -1,1 +1,6 @@
-grep.ps1
+Register-ArgumentCompleter -Native -CommandName grep -ScriptBlock {
+  param ([string]$wordToComplete)
+  if ($wordToComplete.StartsWith('-')) {
+    @('-E', '--extended-regexp', '-F', '--fixed-strings', '-G', '--basic-regexp', '-P', '--perl-regexp', '-e', '--regexp=', '-f', '--file=', '-i', '--ignore-case', '-w', '--word-regexp', '-x', '--line-regexp', '-z', '--null-data', '-s', '--no-messages', '-v', '--invert-match', '-V', '--version', '--help', '-m', '--max-count=', '--max-count=1', '-b', '--byte-offset', '-n', '--line-number', '--line-buffered', '-H', '--with-filename', '-h', '--no-filename', '--label=', '-o', '--only-matching', '-q', '--quiet', '--silent', '--binary-files=binary', '--binary-files=text', '--binary-files=without-match', '-a', '--text', '-I', '-d', '--directories=read', '-d', '--directories=recurse', '-d', '--directories=skip', '-D', '--devices=read', '-D', '--devices=skip', '-r', '--recursive', '-R', '--dereference-recursive', '--include=', '--exclude=', '--exclude-from=', '--exclude-dir=', '-L', '--files-without-match', '-l', '--files-with-matches', '-c', '--count', '-T', '--initial-tab', '-Z', '--null', '-B', '--before-context=5', '-A', '--after-context=5', '-C', '--context=10', '-10', '--color', '--color=always', '--color=never', '--color=auto', '--colour', '-U', '--binary', '-u', '--unix-byte-offsets').Where{ $_ -like "$wordToComplete*" }
+  }
+}

@@ -47,7 +47,7 @@ e() {
     if [ -p /dev/stdin ]; then
       "$editor" "$@"
     else
-      e e
+      "$editor"
     fi
     return
   fi
@@ -75,4 +75,8 @@ e() {
       fi
       ;;
   esac
+}
+
+k() {
+  bat -plsh
 }

@@ -159,7 +159,7 @@ function getLocalVersion ([string]$Name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
       binaryen { (wasm2js --version).Split(' ', 4)[2]; break }
       code { (code --version)[0]; break }
-      deno { (deno -v).Split(' ', 2)[1]; break }
+      deno { (deno -v).Split(' ', 2)[1].Split('+', 2)[0]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
       fzf { (fzf --version).Split(' ', 2)[0]; break }
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
@@ -188,7 +188,7 @@ function getLocalVersion ([string]$Name) {
       xh { (https -V).Split(' ', 2)[1]; break }
       yq { (yq -V).Split(' ')[-1].Substring(1); break }
       { $_ -ceq 'localsend' -or
-        $_ -ceq 'nerdfonts' } {
+        $_ -ceq 'nerd-fonts' } {
         (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -CEQ $_).version
         break
       }
@@ -457,7 +457,7 @@ function Install-Release {
       $file = 'dotnet-sdk-{0}-{1}{2}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(), $fileExt
       downloadFile "https://aka.ms/dotnet/$ChannelQuality/$file"
       if (!$IsLinux) {
-        Install-MSIProduct -LiteralPath $buildDir/$file
+        Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
         break
       }
       sudo rm -rf $sudoDataDir/dotnet
@@ -569,7 +569,7 @@ function Install-Release {
       checkFileHash $buildDir/$file $Meta.sha256
       switch ($true) {
         $IsWindows {
-          Install-MSIProduct -LiteralPath $buildDir/$file
+          Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
           break
         }
         $IsLinux {
@@ -705,7 +705,7 @@ StartupWMClass=localsend_app
       sudo tar -xf $buildDir/$base$ext -C $sudoDataDir --no-same-owner --strip-components=1
       break
     }
-    nerdfonts {
+    nerd-fonts {
       downloadRelease 0xProto.zip
       Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $buildDir
       if ($IsLinux) {
@@ -736,7 +736,7 @@ StartupWMClass=localsend_app
       }
       downloadFile "https://nodejs.org/dist/$($Meta.tag)/$file"
       if ($IsWindows) {
-        Install-MSIProduct -LiteralPath $buildDir/$file
+        Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
         break
       }
       if ($IsMacOS) {
@@ -780,7 +780,7 @@ StartupWMClass=localsend_app
         $IsWindows {
           $file = 'PowerShell-{0}-win-{1}.msi' -f $id, $arch
           downloadRelease $file
-          Install-MSIProduct -LiteralPath $buildDir/$file
+          Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
           break
         }
         $IsMacOS {
@@ -889,12 +889,9 @@ StartupWMClass=localsend_app
       }
       $base = 'tree-sitter-{0}-{1}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
       downloadRelease $base`.gz
-      if ($IsWindows) {
-        tar -xf $buildDir/$base`.gz -C $binDir
-      }
-      else {
-        gzip -df $buildDir/$base`.gz
-        Move-Item -LiteralPath $buildDir/$base $binDir/tree-sitter -Force
+      gzip -df $buildDir/$base`.gz
+      Move-Item -LiteralPath $buildDir/$base $binDir/tree-sitter$exe -Force
+      if (!$IsWindows) {
         chmod +x $binDir/tree-sitter
       }
       break

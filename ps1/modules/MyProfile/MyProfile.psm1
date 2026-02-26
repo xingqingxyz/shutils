@@ -70,7 +70,7 @@ function Show-CommandInfo {
         $ExtraArgs = @($Name) + $ExtraArgs
       }
       if ($paths) {
-        $paths = Convert-Path -LiteralPath $paths | fsPath
+        $paths = Get-Item -LiteralPath $paths -Force -ea Stop | fsPath
         if (!$paths) {
           return
         }
@@ -94,8 +94,8 @@ function Show-CommandInfo {
         $inputs | bat -plhelp $ExtraArgs
       }
       elseif ($Man) {
-        Write-Debug 'showing manual from stdin'
-        $inputs | bat -plman $ExtraArgs
+        Write-Debug 'showing powershell source from stdin'
+        $inputs | bat -plps1 $ExtraArgs
       }
       else {
         Write-CommandDebug $Editor $ExtraArgs
@@ -110,16 +110,16 @@ function Show-CommandInfo {
       else {
         $MyInvocation.MyCommand.Module.Path
       }
-      $ExtraArgs = $paths ? (($paths | fsPath) + $ExtraArgs) : @($Name; $ExtraArgs)
+      $ExtraArgs = $paths ? ($paths + $ExtraArgs) : @($Name; $ExtraArgs)
       Write-CommandDebug $Editor $ExtraArgs
       return & $Editor $ExtraArgs
     }
     if (!$Name) {
       $Name = $List ? '.' : $MyInvocation.MyCommand.Name
     }
-    $item = (Convert-Path $Name -Force -ea Ignore) ?? (Get-Command $Name -ea Ignore)
+    $item = (Get-Item $Name -Force -ea Ignore) ?? (Get-Command $Name -ea Ignore)
     if (!$item) {
-      return Write-Error "command not found: $Name"
+      return Write-Error "item not found: $Name"
     }
     $showCommand = $List ? 'showSource' : 'showHelp'
     Write-CommandDebug $showCommand $ExtraArgs
@@ -127,20 +127,19 @@ function Show-CommandInfo {
   }
 }
 
-$manExe = (Get-Command man -Type Application -TotalCount 1 -ea Ignore).Source
-
 filter showHelp ([string[]]$ExtraArgs) {
   $item = $_
-  if ($item -is [string]) {
-    $item = Get-Item -LiteralPath $item -ea Ignore
-  }
-  if ($item -is [System.IO.FileInfo]) {
-    if (!$item -or $item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
+  if ($item -is [System.IO.FileSystemInfo]) {
+    if ($item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
       return $item
     }
-    if ($item.UnixFileMode.HasFlag([System.IO.UnixFileMode]::UserExecute)) {
-      if ($manExe -and (& $manExe -w $item.BaseName)) {
-        return & $manExe $item.BaseName
+    if ($IsWindows -and $item.Extension -cmatch '^\.(exe|bat|cmd)$') {
+      return & $item $ExtraArgs --help | bat -plhelp
+    }
+    if ($IsLinux -and $item.UnixFileMode.HasFlag([System.IO.UnixFileMode]::UserExecute)) {
+      $manCmd = Get-Command man -Type Application -TotalCount 1 -ea Ignore
+      if ($manCmd -and (& $manCmd -w $item.BaseName)) {
+        return & $manCmd $item.BaseName
       }
       return & $item $ExtraArgs --help | bat -plhelp
     }
@@ -157,8 +156,9 @@ filter showHelp ([string[]]$ExtraArgs) {
   switch ($info.CommandType) {
     Application {
       $baseName = Split-Path -LeafBase $info.Name
-      if ($manExe -and (& $manExe -w $baseName)) {
-        return & $manExe $baseName
+      $manCmd = Get-Command man -Type Application -TotalCount 1 -ea Ignore
+      if ($manCmd -and (& $manCmd -w $baseName)) {
+        return & $manCmd $baseName
       }
       return & $info.Source $ExtraArgs --help | bat -plhelp
     }
@@ -172,11 +172,7 @@ filter showHelp ([string[]]$ExtraArgs) {
 }
 
 filter showSource ([string[]]$ExtraArgs) {
-  if ($_ -is [string]) {
-    return $_ | showFile $ExtraArgs
-  }
   if ($_ -isnot [System.Management.Automation.CommandInfo]) {
-    # other PSProvider info, e.g. gi env:PATH
     return $_
   }
   [System.Management.Automation.CommandInfo]$info = $_
@@ -204,8 +200,7 @@ filter showSource ([string[]]$ExtraArgs) {
 
 filter fsPath {
   if ($IsWindows) {
-    $item = (Get-Item -LiteralPath $_ -Force -ea Stop)
-    $item.ResolvedTarget ?? $item.FullName
+    $_.ResolvedTarget ?? $_.FullName
   }
   else {
     realpath `-- $_
@@ -275,7 +270,11 @@ filter decompress {
 }
 
 filter showFile ([string[]]$ExtraArgs) {
-  [string]$path = $_ | fsPath
+  $item = Get-Item $_ -Force -ea Stop
+  if ($item -isnot [System.IO.FileSystemInfo]) {
+    return $item
+  }
+  [string]$path = $item | fsPath
   if (Test-Path -LiteralPath $path -PathType Container) {
     $oldValue = $PSStyle.OutputRendering
     $PSStyle.OutputRendering = 'Ansi'
@@ -287,7 +286,6 @@ filter showFile ([string[]]$ExtraArgs) {
     }
     return
   }
-  Get-Item -LiteralPath $path -Force -ea Stop
   switch -CaseSensitive -Regex ($path) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if (($path | decompress | file -L -).Contains('troff')) {

@@ -48,8 +48,8 @@
   sha256: 68f51b1bb3728d3be5a756f23a38af1f776e05c0729dd3a91d3dcf2c20d78138
 - name: fzf
   repo: junegunn/fzf
-  tag: v0.67.0
-  version: 0.67.0
+  tag: v0.68.0
+  version: 0.68.0
 - name: gh
   repo: cli/cli
   tag: v2.82.1
@@ -100,7 +100,7 @@
   repo: rui314/mold
   tag: v2.40.4
   version: 2.40.4
-- name: nerdfonts
+- name: nerd-fonts
   repo: ryanoasis/nerd-fonts
   tag: v3.4.0
   version: 3.4.0

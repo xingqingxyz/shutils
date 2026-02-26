@@ -1,11 +1,13 @@
 # note: specially for zh_CN users
 $SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
-$JAVA_HOME = switch ($true) {
-  $IsWindows { 'C:\Program Files\Java\jdk-25'; break }
-  $IsLinux { (Get-Item ~/.jdks/openjdk-25.*)[0].FullName; break }
-  $IsMacOS { ''; break }
-  default { ''; break }
+if (Get-Command java -CommandType Application -TotalCount 1 -ea Ignore) {
+  $JAVA_HOME = switch ($true) {
+    $IsWindows { 'C:\Program Files\Java\jdk-' + (java --version)[0].Split(' ', 3)[1]; break }
+    $IsLinux { (Get-Item ~/.jdks/openjdk-25.*)[0].FullName; break }
+    $IsMacOS { ''; break }
+    default { ''; break }
+  }
 }
 $DSC_RESOURCE_PATH = $IsWindows ? '' : "$HOME/.local/dsc"
 
@@ -80,8 +82,8 @@ $commonVar = @{
 
 if ($IsWindows) {
   ($commonVar + @{
-    UV_PYTHON_BIN_DIR = "$HOME\tools"
-    UV_TOOL_BIN_DIR   = "$HOME\tools"
+    UV_PYTHON_BIN_DIR = "$env:LOCALAPPDATA\prefix\bin"
+    UV_TOOL_BIN_DIR   = "$env:LOCALAPPDATA\prefix\bin"
   }).GetEnumerator().ForEach{
     [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
     Set-ItemProperty -LiteralPath HKCU:\Environment $_.Key $_.Value

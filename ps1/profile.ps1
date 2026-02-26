@@ -1,4 +1,11 @@
 #region common
+function androidEnv {
+  if (!$env:ANDROID_HOME) {
+    return
+  }
+  $env:PATH += '', "$env:ANDROID_HOME\cmdline-tools\latest\bin", "$env:ANDROID_HOME\emulator", "$env:ANDROID_HOME\platform-tools" -join [System.IO.Path]::PathSeparator
+}
+
 Set-Item Function:cbc, Function:codebuddy, Function:qwen, Function:qodercli {
   # prevent . invoke variable add
   if ($MyInvocation.InvocationName -ceq '.') {
