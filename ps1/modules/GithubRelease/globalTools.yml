@@ -27,19 +27,17 @@ apt-wsl:
   - libssl-dev
   - ninja-build
 bun:
-  - "@github/copilot"
+  - "@qoder-ai/qodercli"
   - "@qwen-code/qwen-code"
   - "@tencent-ai/codebuddy-code"
   - "@vscode/vsce"
   - generator-code
   - pnpm
   - prettier
-  - tree-sitter-cli
   - yo
 cargo:
   - cargo-generate
   - cargo-update
-  - taplo-cli
 code: []
 deno: []
 dnf:
@@ -122,7 +120,6 @@ fedora:
   - jq
   - mkcert
   - mdbook
-  - nerdfonts
   - node
   - numbat
   - pastel
@@ -130,17 +127,19 @@ fedora:
   - pwsh
   - rga
   - rustup
+  - taplo
   - uv
   - wasm-pack
   - yq
 flutter: []
 gh: []
 go:
+  - github.com/golangci/golangci-lint/v2/cmd/golangci-lint
+  - golang.org/x/tools/cmd/goimports
   - golang.org/x/tools/cmd/stringer
 npm: []
 pnpm: []
-ps1:
-  - Refresh-EnvironmentVariables
+ps1: []
 psm1:
   - AudioDeviceCmdlets
   - PSScriptAnalyzer
@@ -150,6 +149,7 @@ raspi:
   - bat
   - bun
   - diskus
+  - dotnet
   - edit
   - fd
   - fzf
@@ -160,14 +160,14 @@ raspi:
   - jq
   - mkcert
   - node
+  - pwsh
   - rg
   - rga
   - rustup
+  - taplo
   - uv
   - wasm-pack
   - yq
-  # - dotnet
-  # - pwsh
 rustup: []
 rustup-components:
   - clippy
@@ -194,7 +194,6 @@ ubuntu:
   - less
   - mkcert
   - mdbook
-  - nerdfonts
   - node
   - numbat
   - pastel
@@ -203,26 +202,28 @@ ubuntu:
   - rg
   - rga
   - rustup
+  - taplo
   - uv
   - wasm-pack
   - yq
 uv:
   - git-filter-repo
-  - markitdown
-  - ruff
+  - markitdown[all]
   - yt-dlp
 uv-python:
   - python3.14t
 windows:
   - diskus
   - flutter
-  - nerdfonts
   - numbat
   - plantuml
   - rga
+  - taplo
   - wasm-pack
 winget:
   - aria2.aria2
+  - astral-sh.ruff
+  - astral-sh.ty
   - astral-sh.uv
   - BurntSushi.ripgrep.MSVC
   - charmbracelet.glow

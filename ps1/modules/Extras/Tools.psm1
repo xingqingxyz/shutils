@@ -1,3 +1,28 @@
+Set-Item Function:claude, Function:codebuddy, Function:codex, Function:copilot, Function:qwen, Function:qodercli {
+  # prevent . invoke variable add
+  if ($MyInvocation.InvocationName -ceq '.') {
+    return & $MyInvocation.MyCommand $args
+  }
+  $cmd = (Get-Command $MyInvocation.MyCommand.Name -Type Application -TotalCount 1 -ea Stop).Source
+  [string[]]$ags = $args.ForEach{ if ($null -ne $_) { $_ } }
+  if ($ags.Contains('-p')) {
+    $ags += $MyInvocation.InvocationName -ceq 'codebuddy' ? '-y' : '--yolo'
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd $ags | glow
+    }
+    else {
+      & $cmd $ags | glow
+    }
+    return
+  }
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd $ags
+  }
+  else {
+    & $cmd $ags
+  }
+}
+
 function Set-SystemProxy {
   <#
   .SYNOPSIS
@@ -180,16 +205,16 @@ function batf {
     return $input | & (getParser $name -Stdin) $name | bat -p --file-name=$name
   }
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
-    return Convert-Path -Force $args | ForEach-Object { & (getParser $_) $_ }
+    return Convert-Path $args -Force | ForEach-Object { & (getParser $_) $_ }
   }
-  Convert-Path -Force $args | ForEach-Object {
+  Convert-Path $args -Force | ForEach-Object {
     & (getParser $_) $_ | bat -p --color=always --file-name=$_
   } | & $env:PAGER
 }
 
 function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
   switch -CaseSensitive -Regex ([System.IO.Path]::GetExtension($Path).Substring(1)) {
-    '^(?:c|m|mm|cpp|cc|cp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|inl|ipp)$' {
+    '^(?:c|m|mm|cpp|cc|cp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|inl|ipp|java|proto|protodevel)$' {
       if ($Inplace) {
         { clang-format -i --style=LLVM `-- $args[0] }
       }
@@ -215,37 +240,46 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
     }
     '^(?:cs|csx|fs|fsi|fsx|vb)$' {
       if ($Inplace) {
-        { dotnet format }
+        { dotnet format --no-restore --include `-- $args[0] }
       }
       elseif ($Stdin) {
-        { $input | dotnet format }
+        {
+          process {
+            $file = [System.IO.Path]::GetRandomFileName() + [System.IO.Path]::GetExtension($args[0])
+            $input > $file
+            dotnet format --no-restore --include `-- $file
+            Get-Content -AsByteStream -LiteralPath $file
+          }
+          clean {
+            Remove-Item -LiteralPath $file -Force
+          }
+        }
       }
       else {
-        { <# dotnet format; #> Get-Content -AsByteStream -LiteralPath $args[0] }
+        {
+          process {
+            $file = [System.IO.Path]::GetTempFileName()
+            Copy-Item -LiteralPath $args[0] $file -Force
+            dotnet format --no-restore --include `-- $args[0]
+            Get-Content -AsByteStream -LiteralPath $args[0]
+          }
+          clean {
+            Copy-Item -LiteralPath $file $args[0] -Force
+            Remove-Item -LiteralPath $file -Force
+          }
+        }
       }
       break
     }
     '^(?:go)$' {
       if ($Inplace) {
-        { gofmt -w `-- $args[0] }
+        { goimports -w `-- $args[0] }
       }
       elseif ($Stdin) {
-        { $input | gofmt }
+        { $input | goimports }
       }
       else {
-        { gofmt `-- $args[0] }
-      }
-      break
-    }
-    '^(?:java)$' {
-      if ($Inplace) {
-        {}
-      }
-      elseif ($Stdin) {
-        { $input }
-      }
-      else {
-        {}
+        { goimports `-- $args[0] }
       }
       break
     }
@@ -309,6 +343,18 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
       }
       break
     }
+    '^(?:toml)$' {
+      if ($Inplace) {
+        { taplo format `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | taplo format - --stdin-filepath=$args[0] }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | taplo format - --stdin-filepath=$args[0] }
+      }
+      break
+    }
     '^(?:lua)$' {
       if ($Inplace) {
         { stylua `-- $args[0] }
@@ -323,13 +369,13 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
     }
     '^(?:zig)$' {
       if ($Inplace) {
-        {}
+        { zig fmt $args[0] }
       }
       elseif ($Stdin) {
-        { $input }
+        { $input | zig fmt --stdin }
       }
       else {
-        {}
+        { Get-Content -AsByteStream -LiteralPath $args[0] | zig fmt --stdin }
       }
       break
     }
@@ -512,4 +558,45 @@ bat --number --color=always --terminal-width=$envVar --highlight-line={2} {1}
     "--bind=ctrl-o:execute:$open"
   )
   fzf @ags
+}
+
+function theme.f {
+  [CmdletBinding()]
+  param (
+    [Parameter(Position = 0)]
+    [ValidateSet('alacritty', 'bat')]
+    [string]
+    $AppName
+  )
+  if (!$AppName) {
+    if ($env:ALACRITTY_LOG) {
+      $AppName = 'alacritty'
+    }
+  }
+  switch ($AppName) {
+    alacritty {
+      [string]$preview = {
+        $configFile = "$env:SHUTILS_ROOT/_/.config/alacritty/alacritty.toml"
+        $importFile = "$($env:SHUTILS_ROOT.Replace('\', '/'))/alacritty-theme/themes/$("$input".Trim(' "')).toml"
+        Set-Region -Inplace import "import = [`"$importFile`"]" $configFile
+        @(0..9 + 21 + 30..36 + 40..46 + 53 + 90..96 + 100..106).ForEach{ "`e[{0}`mhello world`e[0m {0,3}" -f $_ }
+      }
+      $preview = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($preview))
+      $configFile = "$env:SHUTILS_ROOT/_/.config/alacritty/alacritty.toml"
+      $region = Get-Region import $configFile
+      $theme = [regex]::Match($region[0], '([^"/]+)\.toml"$').Groups[1].Value
+      Split-Path -Resolve -LeafBase $env:SHUTILS_ROOT/alacritty-theme/themes/* -ea Stop | fzf --preview="echo {} | pwsh -nop -o Text -e $preview" -q $theme
+      if (!$?) {
+        Set-Region -Inplace import $region $configFile
+      }
+      break
+    }
+    bat {
+      $theme = bat --list-themes | fzf --preview="bat --theme={} -plsh --color=always $HOME/.bashrc" -q "$env:BAT_THEME"
+      if ($theme) {
+        Set-EnvironmentVariable -Scope User BAT_THEME=$theme
+      }
+      break
+    }
+  }
 }

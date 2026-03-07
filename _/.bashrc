@@ -29,7 +29,11 @@ alias cls=clear \
   ll='ls -lah' \
   grep='grep --color=auto' \
   rg='rg --hyperlink-format=vscode' \
-  tree='tree -C --hyperlink --gitignore'
+  tree='tree -C --hyperlink --gitignore' \
+  cd..='cd ..' \
+  ..='cd ..' \
+  ...='cd ../..' \
+  ....='cd ../../..'
 
 if [[ $TERM_PROGRAM != vscode* ]]; then
   alias fd='fd --hyperlink=auto'

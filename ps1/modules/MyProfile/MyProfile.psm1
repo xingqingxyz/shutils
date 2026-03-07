@@ -53,12 +53,12 @@ function Show-CommandInfo {
     $Editor = $env:EDITOR ?? 'edit'
   )
   begin {
-    [string[]]$paths = @()
-    [string[]]$inputs = @()
+    $items = @()
+    $inputs = @()
   }
   process {
     if ($FullName) {
-      $paths += $FullName
+      $items += $FullName
     }
     else {
       $inputs += $InputObject
@@ -69,21 +69,21 @@ function Show-CommandInfo {
       if ($Name) {
         $ExtraArgs = @($Name) + $ExtraArgs
       }
-      if ($paths) {
-        $paths = Get-Item -LiteralPath $paths -Force -ea Stop | fsPath
-        if (!$paths) {
+      if ($items) {
+        $items = Get-Item -LiteralPath $items -Force -ea Stop | resolveItem
+        if (!$items) {
           return
         }
         if ($List) {
           Write-CommandDebug showFile $ExtraArgs
-          $paths | showFile $ExtraArgs
+          $items | showFile $ExtraArgs
         }
         elseif ($Man) {
           Write-CommandDebug showHelp $ExtraArgs
-          $paths | showHelp $ExtraArgs
+          $items | showHelp $ExtraArgs
         }
         else {
-          $ExtraArgs = $paths + $ExtraArgs
+          $ExtraArgs = $items + $ExtraArgs
           Write-CommandDebug $Editor $ExtraArgs
           & $Editor $ExtraArgs
         }
@@ -104,13 +104,13 @@ function Show-CommandInfo {
       return
     }
     if (!$List -and !$Man) {
-      $paths = if ($Name) {
-        Get-Command $Name -ea Ignore | editable
+      $items = if ($Name) {
+        Get-Command $Name -ea Ignore | commandEditable
       }
       else {
         $MyInvocation.MyCommand.Module.Path
       }
-      $ExtraArgs = $paths ? ($paths + $ExtraArgs) : @($Name; $ExtraArgs)
+      $ExtraArgs = $items ? ($items + $ExtraArgs) : @($Name; $ExtraArgs)
       Write-CommandDebug $Editor $ExtraArgs
       return & $Editor $ExtraArgs
     }
@@ -130,8 +130,9 @@ function Show-CommandInfo {
 filter showHelp ([string[]]$ExtraArgs) {
   $item = $_
   if ($item -is [System.IO.FileSystemInfo]) {
+    $item = $item | resolveItem
     if ($item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
-      return $item
+      return $item | showDirectory $ExtraArgs
     }
     if ($IsWindows -and $item.Extension -cmatch '^\.(exe|bat|cmd)$') {
       return & $item $ExtraArgs --help | bat -plhelp
@@ -145,76 +146,83 @@ filter showHelp ([string[]]$ExtraArgs) {
     }
     return $item | showFile $ExtraArgs
   }
-  if ($item -isnot [System.Management.Automation.CommandInfo]) {
-    # other PSProvider info, e.g. gi env:PATH
-    return $item
-  }
-  [System.Management.Automation.CommandInfo]$info = $item
-  if ($info.CommandType -ceq 'Alias') {
-    $info = $info.ResolvedCommand
-  }
-  switch ($info.CommandType) {
-    Application {
-      $baseName = Split-Path -LeafBase $info.Name
-      $manCmd = Get-Command man -Type Application -TotalCount 1 -ea Ignore
-      if ($manCmd -and (& $manCmd -w $baseName)) {
-        return & $manCmd $baseName
+  elseif ($item -is [System.Management.Automation.CommandInfo]) {
+    if ($item.CommandType -ceq 'Alias') {
+      $item = $item.ResolvedCommand
+    }
+    switch ($item.CommandType) {
+      Application {
+        $baseName = Split-Path -LeafBase $item.Name
+        $manCmd = Get-Command man -Type Application -TotalCount 1 -ea Ignore
+        if ($manCmd -and (& $manCmd -w $baseName)) {
+          return & $manCmd $baseName
+        }
+        return & $item.Source $ExtraArgs --help | bat -plhelp
       }
-      return & $info.Source $ExtraArgs --help | bat -plhelp
-    }
-    Configuration {
-      return & $info
-    }
-    default {
-      return Get-Help $info.Name -Category $_ -Full | bat -plman $ExtraArgs
+      Configuration {
+        return & $item
+      }
+      default {
+        return Get-Help $item.Name -Category $_ -Full | bat -plman $ExtraArgs
+      }
     }
   }
+  return $item
 }
 
 filter showSource ([string[]]$ExtraArgs) {
-  if ($_ -isnot [System.Management.Automation.CommandInfo]) {
-    return $_
+  $item = $_
+  if ($item -is [System.IO.FileSystemInfo]) {
+    $item = $item | resolveItem
+    if ($item.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
+      return $item | showDirectory $ExtraArgs
+    }
+    return $item | showFile $ExtraArgs
   }
-  [System.Management.Automation.CommandInfo]$info = $_
-  if ($info.CommandType -ceq 'Alias') {
-    $info = $info.ResolvedCommand
+  elseif ($item -is [System.Management.Automation.CommandInfo]) {
+    if ($item.CommandType -ceq 'Alias') {
+      $item = $item.ResolvedCommand
+    }
+    switch ($item.CommandType) {
+      Application {
+        return $item.Source | showFile $ExtraArgs # for all other files
+      }
+      Cmdlet {
+        return Get-Help $item.Name -Category Cmdlet -Full | bat -plman $ExtraArgs
+      }
+      Configuration {
+        return & $item
+      }
+      { $_ -ceq 'ExternalScript' -or $_ -ceq 'Script' } {
+        return bat -plps1 $item.Source $ExtraArgs
+      }
+      { $_ -ceq 'Filter' -or $_ -ceq 'Function' } {
+        return $item.Definition | bat -plps1 $ExtraArgs
+      }
+      default { return }
+    }
   }
-  switch ($info.CommandType) {
-    Application {
-      return $info.Source | showFile $ExtraArgs # for all other files
-    }
-    Cmdlet {
-      return Get-Help $info.Name -Category Cmdlet -Full | bat -plman $ExtraArgs
-    }
-    Configuration {
-      return & $info
-    }
-    { $_ -ceq 'ExternalScript' -or $_ -ceq 'Script' } {
-      return bat -plps1 $info.Source $ExtraArgs
-    }
-    { $_ -ceq 'Filter' -or $_ -ceq 'Function' } {
-      return $info.Definition | bat -plps1 $ExtraArgs
-    }
-  }
+  return $item
 }
 
-filter fsPath {
+filter resolveItem {
+  [System.IO.FileSystemInfo]$item = $_
   if ($IsWindows) {
-    $_.ResolvedTarget ?? $_.FullName
+    (Get-Item -LiteralPath $item.ResolvedTarget -ea Stop) ?? $item
   }
   else {
-    realpath `-- $_
+    Get-Item -LiteralPath (realpath `-- $item.FullName) -ea Stop
   }
 }
 
-filter editable {
+filter commandEditable {
   [System.Management.Automation.CommandInfo]$info = $_
   if ($info.CommandType -ceq 'Alias') {
     $info = $info.ResolvedCommand
   }
   switch ($info.CommandType) {
     Application {
-      if ($info.Source | shouldEdit) {
+      if ($info.Source | fileEditable) {
         $info.Source
       }
       else {
@@ -238,8 +246,8 @@ filter editable {
   }
 }
 
-filter shouldEdit {
-  $item = Get-Item -LiteralPath $_ -Force -ea Stop
+filter fileEditable {
+  [System.IO.FileInfo]$item = $_
   if ($item.Length -gt 0x300000) {
     return $false # gt 3M
   }
@@ -269,23 +277,21 @@ filter decompress {
   & $cmd $ags
 }
 
+filter showDirectory ([string[]]$ExtraArgs) {
+  [string]$path = $_
+  $oldValue = $PSStyle.OutputRendering
+  $PSStyle.OutputRendering = 'Ansi'
+  try {
+    Get-ChildItem -LiteralPath $path -Force -ea Stop | less $ExtraArgs
+  }
+  finally {
+    $PSStyle.OutputRendering = $oldValue
+  }
+}
+
 filter showFile ([string[]]$ExtraArgs) {
-  $item = Get-Item $_ -Force -ea Stop
-  if ($item -isnot [System.IO.FileSystemInfo]) {
-    return $item
-  }
-  [string]$path = $item | fsPath
-  if (Test-Path -LiteralPath $path -PathType Container) {
-    $oldValue = $PSStyle.OutputRendering
-    $PSStyle.OutputRendering = 'Ansi'
-    try {
-      Get-ChildItem -LiteralPath $path -Force -ea Stop | less
-    }
-    finally {
-      $PSStyle.OutputRendering = $oldValue
-    }
-    return
-  }
+  [System.IO.FileInfo]$_
+  [string]$path = $_
   switch -CaseSensitive -Regex ($path) {
     '\.(?:[1-9n]|[1-9]x|man)\.(?:bz2|[glx]z|lzma|zst|br)$' {
       if (($path | decompress | file -L -).Contains('troff')) {
@@ -469,19 +475,14 @@ function x {
   [CmdletBinding()]
   param (
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet(
-      'aria2c',
-      'cbc',
-      'claude',
-      'codebuddy',
-      'codex',
-      'copilot',
-      'git',
-      'installer',
-      'msiexec',
-      'qwen',
-      'wsl'
-    )]
+    [ArgumentCompleter({
+        param (
+          [string]$CommandName,
+          [string]$ParameterName,
+          [string]$WordToComplete
+        )
+        [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
+      })]
     [string]
     $CommandName,
     [ArgumentCompleter({
@@ -501,24 +502,37 @@ function x {
     [string[]]
     $ExtraArgs
   )
-  $cmd, $ags = switch ($CommandName) {
-    'aria2c' { @('aria2c', '-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')") + $ExtraArgs; break }
-    'git' { 'delayCheck.ps1', @{Delay = '0:12'; AsJob = $true; Command = 'git'; ArgumentList = $ExtraArgs }; break }
-    'msiexec' { @('sudo', 'msiexec', '/qn', '/norestart', '/log', "Temp:/$($ExtraArgs[0]).log", '/i') + $ExtraArgs; break }
-    'installer' { @('sudo', 'installer', '-dumplog', '-pkg') + $ExtraArgs; break }
-    { $_ -ceq 'cbc' -or
-      $_ -ceq 'codebuddy' -or
-      $_ -ceq 'copilot' -or
-      $_ -ceq 'claude' -or
-      $_ -ceq 'codex' -or
-      $_ -ceq 'qwen' -or
-      $_ -ceq 'wsl' } { ($IsWindows ? @('wt', 'nt', $_) : @('alacritty', '-e', $_)) + $ExtraArgs; break }
-    default { $CommandName, $ExtraArgs; break }
+  $ags = switch (Split-Path -LeafBase $CommandName) {
+    'aria2c' { @('-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')") + $ExtraArgs; break }
+    'msiexec' { @($CommandName, '/qn', '/norestart', '/log', "Temp:/$($ExtraArgs[0]).log", '/i') + $ExtraArgs; $CommandName = 'sudo'; break }
+    'installer' { @($CommandName, '-dumplog', '-pkg') + $ExtraArgs; $CommandName = 'sudo'; break }
+    default {
+      if ($IsWindows) {
+        @('nt', $CommandName) + $ExtraArgs
+        $CommandName = 'wt'
+        break
+      }
+      @('-e', $CommandName) + $ExtraArgs
+      $CommandName = 'alacritty'
+      break
+    }
   }
   if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd @ags
+    $input | & $CommandName @ags
   }
   else {
-    & $cmd @ags
+    & $CommandName @ags
   }
+}
+
+function .. {
+  Set-Location -LiteralPath ..
+}
+
+function ... {
+  Set-Location -LiteralPath ../..
+}
+
+function .... {
+  Set-Location -LiteralPath ../../..
 }

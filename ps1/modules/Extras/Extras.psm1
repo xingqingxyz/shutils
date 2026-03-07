@@ -1,3 +1,120 @@
+function androidEnv {
+  if (!$env:ANDROID_HOME) {
+    throw 'ANDROID_HOME environment variable is not set'
+  }
+  $env:PATH += '', "$env:ANDROID_HOME\cmdline-tools\latest\bin", "$env:ANDROID_HOME\emulator", "$env:ANDROID_HOME\platform-tools" -join [System.IO.Path]::PathSeparator
+}
+
+function delay {
+  [CmdletBinding(DefaultParameterSetName = 'Base')]
+  param (
+    [Parameter(Mandatory, Position = 0, ParameterSetName = 'Base')]
+    [string]
+    $Command,
+    [Parameter(Mandatory, Position = 0, ParameterSetName = 'ScriptBlock')]
+    [scriptblock]
+    $ScriptBlock,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [System.Object[]]
+    $ArgumentList,
+    [Parameter()]
+    [timespan]
+    $Delay = '0:12'
+  )
+  $PSNativeCommandUseErrorActionPreference = $true
+  Write-Debug "Sleeping $Delay"
+  Start-Sleep $Delay
+  $description = if ($Command) {
+    $ScriptBlock = { &$Command @args }
+    "$Command $ArgumentList"
+  }
+  else {
+    "{$ScriptBlock}"
+  }
+  & $ScriptBlock @ArgumentList
+  $status = $?
+  $statusText = $status ? 'completed' : 'failed'
+  $message = "PowerShell job $statusText`: $description"
+
+  if ($IsWindows) {
+    Add-Type -AssemblyName System.Windows.Forms
+    $notify = [System.Windows.Forms.NotifyIcon]::new()
+    $notify.BalloonTipIcon = $status ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]::Warning
+    $notify.BalloonTipTitle = $statusText
+    $notify.BalloonTipText = $message
+    $notify.Icon = [System.Drawing.SystemIcons]::Application
+    $notify.Text = 'delayCheck'
+    $notify.Visible = $true
+    $notify.ShowBalloonTip(1000)
+    $null = Register-ObjectEvent $notify -EventName BalloonTipClosed -MaxTriggerCount 1 -Action { $args[0].Dispose() }
+    Start-Sleep 1 # prevent pwsh free BalloonTipIcon
+  }
+  elseif ($IsLinux) {
+    notify-send $statusText $message
+  }
+  else {
+    throw [System.NotImplementedException]::new()
+  }
+}
+
+function Clear-Module {
+  <#
+  .SYNOPSIS
+  Clear outdated modules.
+   #>
+  Get-InstalledModule | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
+    $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
+  } | ForEach-Object { Uninstall-Module $_.Name -MaximumVersion $_.Version }
+}
+
+function Get-MemoryInfo {
+  $os = Get-CimInstance Win32_OperatingSystem
+  $total = $os.TotalVisibleMemorySize / 1MB
+  $free = $os.FreePhysicalMemory / 1MB
+  $used = $total - $free
+  $percent = ($used / $total) * 100
+
+  [pscustomobject]@{
+    'Total(GB)' = [System.Math]::Round($total, 2)
+    'Used(GB)'  = [System.Math]::Round($used, 2)
+    'Free(GB)'  = [System.Math]::Round($free, 2)
+    'Used%'     = [System.Math]::Round($percent, 1)
+  }
+}
+
+function Search-Web {
+  [CmdletBinding()]
+  [Alias('sw')]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [ValidateSet('baidu', 'bing', 'bing-en', 'cargo', 'docker', 'dotnetapi', 'flutter', 'go', 'google', 'jsdelivr', 'jsr', 'maven', 'npm', 'nuget', 'psgallery', 'pypi', 'vcpkg')]
+    [string]
+    $Category,
+    [Parameter(Mandatory, Position = 1)]
+    [string]
+    $Name
+  )
+  switch ($Category) {
+    baidu { Start-Process "https://www.baidu.com/s?wd=$Name"; break }
+    bing { Start-Process "https://www.bing.com/search?q=$Name"; break }
+    bing-en { Start-Process "https://www.bing.com/search?ensearch=1&q=$Name"; break }
+    cargo { Start-Process "https://crates.io/search?q=$Name"; break }
+    docker { Start-Process "https://hub.docker.com/search?q=$Name"; break }
+    dotnetapi { Start-Process "https://learn.microsoft.com/zh-cn/dotnet/api/?term=$Name"; break }
+    flutter { Start-Process "https://pub-web.flutter-io.cn/packages?q=$Name"; break }
+    go { Start-Process "https://pkg.go.dev/search?q=$Name"; break }
+    google { Start-Process "https://www.google.com/search?q=$Name"; break }
+    jsdelivr { Start-Process "https://www.jsdelivr.com/?query=$Name"; break }
+    jsr { Start-Process "https://jsr.io/packages?search=$Name"; break }
+    maven { Start-Process "https://central.sonatype.com/search?q=$Name"; break }
+    npm { Start-Process "https://www.npmjs.com/search?q=$Name"; break }
+    nuget { Start-Process "https://www.nuget.org/packages?q=$Name"; break }
+    psgallery { Start-Process "https://www.powershellgallery.com/packages?q=$Name"; break }
+    pypi { Start-Process "https://pypi.org/search/?q=$Name"; break }
+    vcpkg { Start-Process "https://vcpkg.io/en/packages?query=$Name"; break }
+  }
+}
+
 function Get-TypeMember {
   [CmdletBinding()]
   [Alias('gtm')]
@@ -40,9 +157,60 @@ function Get-TypeMember {
   }
 }
 
+function Get-Region {
+  [CmdletBinding()]
+  [OutputType([string[]])]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [Parameter(Mandatory, Position = 2, ParameterSetName = 'LiteralPath')]
+    [string]
+    $LiteralPath,
+    [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
+    [string]
+    $InputObject,
+    [Parameter()]
+    [string]
+    $LineComment
+  )
+  begin {
+    [string[]]$lines = @()
+  }
+  process {
+    $lines += $InputObject
+  }
+  end {
+    if ($LiteralPath) {
+      $lines = (Get-Content -LiteralPath $LiteralPath -ea Ignore) ?? ''
+    }
+    $found = 0
+    foreach ($line in $lines) {
+      if (!$found -and $line.Trim() -ceq "$LineComment#region $Name") {
+        $found = 1
+      }
+      elseif ($found -eq 1) {
+        if ($line.Trim() -ceq "$LineComment#endregion") {
+          $found = 2
+          break
+        }
+        else {
+          $line
+        }
+      }
+    }
+    if (!$found) {
+      Write-Error "#region $Name mark not found"
+    }
+    elseif ($found -eq 1) {
+      Write-Error '#endregion mark not found'
+    }
+  }
+}
+
 function Set-Region {
   [CmdletBinding()]
-  [OutputType([string])]
+  [OutputType([string[]])]
   param (
     [Parameter(Mandatory, Position = 0)]
     [string]
@@ -93,7 +261,7 @@ function Set-Region {
     }
     if ($found -lt 2) {
       if ($found -eq 1) {
-        Write-Warning 'not found #endregion mark'
+        Write-Warning '#endregion mark not found'
       }
       $newLines = @(
         $lines
@@ -385,6 +553,22 @@ function Repair-GitSymlinks {
     elseif ($item.Target.StartsWith('.' + [System.IO.Path]::DirectorySeparatorChar)) {
       New-Item -ItemType SymbolicLink -Force -Target $item.Target.Substring(2) $item
     }
+  }
+}
+
+function New-RelativeSymlink {
+  [CmdletBinding()]
+  [OutputType([System.IO.FileInfo[]])]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string[]]
+    $Path,
+    [Parameter(Mandatory, Position = 1)]
+    [string]
+    $Target
+  )
+  Get-Item $Path -Force -ea Ignore | ForEach-Object {
+    New-Item -Type SymbolicLink -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $Target)) $_.FullName -Force
   }
 }
 

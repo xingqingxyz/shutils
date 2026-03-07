@@ -52,6 +52,7 @@ _fzf_history() {
 
 _fzf_ident() {
   local query out start args=(
+    -1
     -m
     --reverse
     "--query=^$query"
@@ -87,6 +88,7 @@ _fzf_cd() {
   query=${query##* }
   out=$(FZF_DEFAULT_OPTS+=" $FZF_ALT_C_OPTS" fzf "${args[@]}") || return
   cd -- "$out"
+  echo -e "\\n$out"
 }
 
 _fzf_cd_parent() {
@@ -120,13 +122,19 @@ _fzf_z() {
   cd -- "$out"
 }
 
-# CTRL-T - Paste the selected file path into the command line
-# CTRL-R - Paste the selected command from history into the command line
-# CTRL-O - Select any shell ident
-# ALT-C  - Change to sub directory
+# Ctrl-T - Paste the selected file path into the command line
+# Ctrl-R - Paste the selected command from history into the command line
+# Ctrl-O - Select any shell ident
+# Alt-c  - Change to sub directory
+# Alt-C  - Change to parent directory
+# Alt-z  - Change to directory from z history
+# Alt-s  - Prepend sudo to readline and accept
 bind -x '"\C-t": _fzf_file_widget'
 bind -x '"\C-r": _fzf_history'
 bind -x '"\C-o": _fzf_ident'
 bind -x '"\ec": _fzf_cd'
 bind -x '"\eC": _fzf_cd_parent'
 bind -x '"\ez": _fzf_z'
+# bind -x calcs code by utf8.getbytes(code).sum().mod(0xff); if ret < 0x80: ret = 0xff - ret
+bind -x '"\e\337": READLINE_LINE="sudo $READLINE_LINE"'
+bind '"\es": "\e\337\C-j"'

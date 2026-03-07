@@ -60,14 +60,16 @@
   version: 2.1.1
 - name: go
   repo: golang/go
-  tag: go1.26.0
-  version: 1.26.0
-  sha256: aac1b08a0fb0c4e0a7c1555beb7b59180b05dfc5a3d62e40e9de90cd42f88235
-  file: go1.26.0.linux-amd64.tar.gz
+  tag: go1.26.1
+  version: 1.26.1
+  sha256: 9b1ffb28d6e934bf7683b09b01e1843e9b4baab89c119a81de59b851bd01bf73
+  file: go1.26.1.windows-amd64.msi
 - name: goreleaser
   repo: goreleaser/goreleaser
   tag: v2.12.5
   version: 2.12.5
+- name: gswin64c
+  repo: ArtifexSoftware/ghostpdl-downloads
 - name: hexyl
   repo: sharkdp/hexyl
   tag: v0.17.0
@@ -131,6 +133,8 @@
   repo: phiresky/ripgrep-all
   tag: v0.10.10
   version: 0.10.10
+- name: ruff
+  repo: astral-sh/ruff
 - name: rustup
   repo: rust-lang/rustup
   version: 1.28.2
@@ -140,6 +144,8 @@
   version: 0.10.0
 - name: tree-sitter
   repo: tree-sitter/tree-sitter
+- name: ty
+  repo: astral-sh/ty
 - name: uv
   repo: astral-sh/uv
   version: 0.10.2

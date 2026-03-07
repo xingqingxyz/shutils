@@ -161,7 +161,7 @@ function getLocalVersion ([string]$Name) {
       code { (code --version)[0]; break }
       deno { (deno -v).Split(' ', 2)[1].Split('+', 2)[0]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
-      fzf { (fzf --version).Split(' ', 2)[0]; break }
+      fzf { (fzf --version).Split(' ', 2)[0].Split('-', 2)[0]; break }
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
       dotnet { (dotnet --version).Split('-', 2)[0]; break }
       gh { (gh version)[0].Split(' ', 4)[2]; break }
@@ -177,6 +177,8 @@ function getLocalVersion ([string]$Name) {
       pwsh { (pwsh -v).Split(' ', 2)[1].Split('-', 2)[0]; break }
       rg { (rg -V).Split(' ', 3)[1]; break }
       rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
+      ty { (ty -V).Split(' ', 3)[1]; break }
+      uv { (uv -V).Split(' ', 3)[1]; break }
       wabt { wat2wasm --version; break }
       wechat {
         if ($IsFedora) {
@@ -237,16 +239,19 @@ function updateLatestVersion ($Meta, [switch]$Force) {
       break
     }
     java {
-      if (!$IsLinux) {
-        throw [System.NotImplementedException]::new()
+      $os = switch ($true) {
+        $IsWindows { 'windows'; break }
+        $IsLinux { 'linux'; break }
+        $IsMacOS { 'macos'; break }
+        default { throw [System.NotImplementedException]::new() }
       }
       $arch = switch ([RuntimeInformation]::OSArchitecture) {
         'X64' { 'x64'; break }
         'Arm64' { 'aarch64'; break }
-        default { throw "not supported arch $_" }
+        default { throw [System.NotImplementedException]::new() }
       }
       $version = (Invoke-WebRequest 'https://jdk.java.net').Links[0].href
-      $url = ((Invoke-WebRequest "https://jdk.java.net$version").Links | Where-Object href -CLike "https://download.java.net/java/GA/*/openjdk-*_linux-$arch*").href
+      $url = ((Invoke-WebRequest "https://jdk.java.net$version").Links | Where-Object href -CLike "https://download.java.net/java/GA/*/openjdk-*_$os-$arch*").href
       $Meta.url = $url[0]
       $Meta.sha256 = Invoke-RestMethod $url[1]
       $Meta.version = $url[0].Split('/', 7)[5].Substring(3)
@@ -258,9 +263,6 @@ function updateLatestVersion ($Meta, [switch]$Force) {
       break
     }
     wechat {
-      if (!$IsLinux) {
-        throw [System.NotImplementedException]::new()
-      }
       $html = Invoke-RestMethod 'https://linux.weixin.qq.com'
       $Meta.version = [regex]::new('<div class="main-section__bd-version" data-v-1556f5f1>([\d.]+)</div>').Match($html).Groups[1].Value
       break
@@ -285,6 +287,7 @@ function updateLatestVersion ($Meta, [switch]$Force) {
         binaryen { $tag.Split('_', 2)[1] + '.0'; break }
         bun { $tag.Substring(5); break }
         dsc { $tag.Split('-', 2)[0]; break }
+        gswin64c { $tag.Substring(0, 2) + '.' + $tag.Substring(2, 2) + '.' + $tag.Substring(4); break }
         jq { $tag.Split('-', 2)[1]; break }
         less { $tag.Substring(6); break }
         pwsh { $tag.Substring(1).Split('-', 2)[0]; break }
@@ -426,12 +429,8 @@ function Install-Release {
       break
     }
     deno {
-      if (!$IsLinux) {
+      if ($IsWindows) {
         throw [System.NotImplementedException]::new()
-      }
-      if (Get-Command deno -CommandType Application -TotalCount 1 -ea Ignore) {
-        deno upgrade
-        break
       }
       $file = 'deno-{0}.zip' -f $rust.target
       downloadRelease $file, $file`.sha256sum
@@ -451,21 +450,25 @@ function Install-Release {
       $ChannelQuality = $Meta.prerelease ? '11.0/preview' : '10.0'
       $os, $fileExt = switch ($true) {
         $IsWindows { 'win', '.exe'; break }
-        $IsLinux { 'linux', '.tar.gz'; break }
         $IsMacOS { 'osx', '.pkg'; break }
+        $IsLinux { 'linux', '.tar.gz'; break }
+        default { throw [System.NotImplementedException]::new() }
       }
       $file = 'dotnet-sdk-{0}-{1}{2}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(), $fileExt
       downloadFile "https://aka.ms/dotnet/$ChannelQuality/$file"
-      if (!$IsLinux) {
-        Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
-        break
+      switch ($true) {
+        $IsWindows { sudo $buildDir/$file; break }
+        $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log; break }
+        $IsLinux {
+          sudo rm -rf $sudoDataDir/dotnet
+          sudo mkdir -p $sudoDataDir/dotnet
+          sudo tar -xf $buildDir/$file -C $sudoDataDir/dotnet --no-same-owner
+          sudo ln -sf $sudoDataDir/dotnet/dotnet $sudoDataDir/dotnet/dnx $sudoBinDir
+          sudo mkdir -p /etc/dotnet
+          $null = "$sudoDataDir/dotnet" | sudo tee /etc/dotnet/install_location_x64
+          break
+        }
       }
-      sudo rm -rf $sudoDataDir/dotnet
-      sudo mkdir -p $sudoDataDir/dotnet
-      sudo tar -xf $buildDir/$file -C $sudoDataDir/dotnet --no-same-owner
-      sudo ln -sf $sudoDataDir/dotnet/dotnet $sudoDataDir/dotnet/dnx $sudoBinDir
-      sudo mkdir -p /etc/dotnet
-      $null = "$sudoDataDir/dotnet" | sudo tee /etc/dotnet/install_location_x64
       break
     }
     dsc {
@@ -596,6 +599,15 @@ function Install-Release {
       Move-Item -LiteralPath $buildDir/completions/goreleaser.bash $dataDir/bash-completion/completions -Force
       break
     }
+    gswin64c {
+      if (!$IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      $file = '{0}w64.exe' -f $Meta.tag
+      downloadRelease $file
+      sudo $buildDir/$file
+      break
+    }
     hexyl {
       $base = 'hexyl-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $base$ext
@@ -627,7 +639,7 @@ function Install-Release {
         $IsLinux { 'linux'; break }
         $IsWindows { 'windows'; break }
         $IsMacOS { 'macos'; break }
-        default { throw 'unknown os' }
+        default { throw [System.NotImplementedException]::new() }
       }
       $file = 'jq-{0}-{1}{2}' -f $os, $go.arch, $exe
       downloadRelease $file
@@ -708,17 +720,19 @@ StartupWMClass=localsend_app
     nerd-fonts {
       downloadRelease 0xProto.zip
       Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $buildDir
-      if ($IsLinux) {
-        Move-Item $buildDir/0xProtoNerdFont*.ttf $dataDir/fonts/truetype -Force
-        fc-cache -v
-      }
-      elseif ($IsWindows) {
-        $shellApp = New-Object -ComObject shell.application
-        $fonts = $shellApp.NameSpace(0x14)
-        Convert-Path $buildDir/0xProtoNerdFont*.ttf | ForEach-Object { $fonts.MoveHere($_) }
-      }
-      else {
-        throw [System.NotImplementedException]::new()
+      switch ($true) {
+        $IsWindows {
+          $shellApp = New-Object -ComObject shell.application
+          $fonts = $shellApp.NameSpace(0x14)
+          Convert-Path $buildDir/0xProtoNerdFont*.ttf | ForEach-Object { $fonts.MoveHere($_) }
+          break
+        }
+        $IsLinux {
+          sudo mv $buildDir/0xProtoNerdFont*.ttf /usr/share/fonts/truetype/
+          sudo fc-cache -v
+          break
+        }
+        default { throw [System.NotImplementedException]::new() }
       }
       break
     }
@@ -726,27 +740,25 @@ StartupWMClass=localsend_app
       $arch = switch ([RuntimeInformation]::OSArchitecture) {
         'X64' { 'x64'; break }
         'Arm64' { 'arm64'; break }
-        default { throw "not supported arch $_" }
+        default { throw [System.NotImplementedException]::new() }
       }
       $file = switch ($true) {
         $IsWindows { "node-$($Meta.tag)-$arch.msi"; break }
         $IsLinux { "node-$($Meta.tag)-linux-$arch.tar.xz"; break }
         $IsMacOS { "node-$($Meta.tag).pkg"; break }
-        default { throw [System.NotImplementedException]::new(); break }
+        default { throw [System.NotImplementedException]::new() }
       }
       downloadFile "https://nodejs.org/dist/$($Meta.tag)/$file"
-      if ($IsWindows) {
-        Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
-        break
+      switch ($true) {
+        $IsWindows { Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file; break }
+        $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log; break }
+        $IsLinux {
+          $root = "$dataDir/nodejs/$($Meta.tag)"
+          tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
+          installBinary $root/bin/node, $root/bin/npm
+          break
+        }
       }
-      if ($IsMacOS) {
-        sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
-        break
-      }
-      $root = "$dataDir/nodejs/$($Meta.tag)"
-      tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
-      installBinary $root/bin/node, $root/bin/npm
-      break
     }
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
@@ -860,12 +872,12 @@ StartupWMClass=localsend_app
       break
     }
     rustup {
-      if ($IsWindows) {
-        throw [System.NotImplementedException]::new()
-      }
       if (Get-Command rustup -CommandType Application -TotalCount 1 -ea Ignore) {
         rustup self update
         break
+      }
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
       }
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
       break
@@ -885,7 +897,7 @@ StartupWMClass=localsend_app
         $IsLinux { 'linux'; break }
         $IsWindows { 'windows'; break }
         $IsMacOS { 'macos'; break }
-        default { throw 'unknown os' }
+        default { throw [System.NotImplementedException]::new() }
       }
       $base = 'tree-sitter-{0}-{1}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
       downloadRelease $base`.gz
@@ -896,22 +908,12 @@ StartupWMClass=localsend_app
       }
       break
     }
-    uv {
-      if ($IsWindows) {
-        throw [System.NotImplementedException]::new()
-      }
-      $base = 'uv-{0}' -f $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/uv$exe, $buildDir/$base/uvx$exe $binDir -Force
-      break
-    }
     wabt {
       $os = switch ($true) {
         $IsLinux { 'linux'; break }
         $IsWindows { 'windows'; break }
         $IsMacOS { 'macos'; break }
-        default { throw 'unknown os' }
+        default { throw [System.NotImplementedException]::new() }
       }
       $file = 'wabt-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
       downloadRelease $file
@@ -941,7 +943,7 @@ StartupWMClass=localsend_app
       $arch = switch ([RuntimeInformation]::OSArchitecture) {
         'X64' { 'x86_64'; break }
         'Arm64' { 'arm64'; break }
-        default { throw "not supported arch $_" }
+        default { throw [System.NotImplementedException]::new() }
       }
       $ext = switch ($true) {
         $IsFedora { '.rpm'; break }
@@ -970,6 +972,22 @@ StartupWMClass=localsend_app
         throw [System.NotImplementedException]::new()
       }
       curl -f 'https://zed.dev/install.sh' | sh
+      break
+    }
+    { $_ -ceq 'uv' -or $_ -ceq 'ruff' -or $_ -ceq 'ty' } {
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      $base = '{0}-{1}' -f $_, $rust.target
+      downloadRelease $base$ext
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/$_$exe $binDir -Force
+      if ($_ -ceq 'uv') {
+        Move-Item -LiteralPath $buildDir/$base/uvx$exe $binDir -Force
+        if ($IsWindows) {
+          Move-Item -LiteralPath $buildDir/$base/uvw$exe $binDir -Force
+        }
+      }
       break
     }
     default { throw "no install method for $_" }
@@ -1008,16 +1026,6 @@ function Update-Release {
     updateLatestVersion $pkgMap[$_] -Force:$Force
   } | ForEach-Object { Install-Release $_ } -ea 'Continue'
   $pkgMap.Values | ConvertTo-Yaml > $PSScriptRoot/releases.yml
-}
-
-function Clear-Module {
-  <#
-  .SYNOPSIS
-  Clear outdated modules.
-   #>
-  Get-InstalledModule | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
-    $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
-  } | ForEach-Object { Uninstall-Module $_.Name -MaximumVersion $_.Version }
 }
 
 function Update-Software {
@@ -1135,15 +1143,20 @@ function Update-Software {
     }
     go {
       if ($Global) {
-        if (!$Force) {
-          $pkgs = @()
+        if ($Force) {
+          $pkgs.ForEach{
+            go install "$_@latest"
+          }
+          continue
         }
-        $pkgs += Split-Path -Resolve -LeafBase "$(go env GOPATH)/bin/*"
-        go install $pkgs.ForEach{ "$_@latest" }
+        $binDir = go env GOBIN
+        if (!$binDir) {
+          $binDir = [System.IO.Path]::Join((go env GOPATH), 'bin')
+        }
+        Convert-Path $binDir/* | ForEach-Object {
+          go install ((go version -m $_)[1].Split("`t")[-1] + '@latest')
+        }
         continue
-      }
-      if ($Force) {
-        go get go@latest
       }
       go get -u ./...
       go mod tidy
@@ -1158,6 +1171,19 @@ function Update-Software {
         continue
       }
       npm up
+      continue
+    }
+    pnpm {
+      if ($Global) {
+        Start-Process pnpm self-update -WorkingDirectory $HOME -NoNewWindow -Wait
+        pnpm up -g
+        if ($Force) {
+          pnpm add -g $pkgs
+        }
+        continue
+      }
+      pnpm self-update
+      pnpm up
       continue
     }
     ps1 {
@@ -1183,13 +1209,7 @@ function Update-Software {
     }
     uv {
       if ($Global) {
-        Update-Release uv
-        [string[]]$tools = uv tool list | ForEach-Object {
-          if ($_.StartsWith('- ')) {
-            $_.Substring(2)
-          }
-        }
-        uv tool upgrade $tools
+        uv tool upgrade --all
         if ($Force) {
           $pkgMap['uv-python'].ForEach{ uv python install $_ }
           $pkgs.ForEach{ uv tool install $_ }
@@ -1201,7 +1221,7 @@ function Update-Software {
     }
     winget {
       if (!$IsWindows) {
-        Write-Warning 'Calling winget on non-Windows platform'
+        Write-Warning 'calling winget on non-Windows platform'
         continue
       }
       sudo winget upgrade -r --accept-package-agreements

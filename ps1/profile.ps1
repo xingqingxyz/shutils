@@ -1,37 +1,3 @@
-#region common
-function androidEnv {
-  if (!$env:ANDROID_HOME) {
-    return
-  }
-  $env:PATH += '', "$env:ANDROID_HOME\cmdline-tools\latest\bin", "$env:ANDROID_HOME\emulator", "$env:ANDROID_HOME\platform-tools" -join [System.IO.Path]::PathSeparator
-}
-
-Set-Item Function:cbc, Function:codebuddy, Function:qwen, Function:qodercli {
-  # prevent . invoke variable add
-  if ($MyInvocation.InvocationName -ceq '.') {
-    return & $MyInvocation.MyCommand $args
-  }
-  $cmd = (Get-Command $MyInvocation.MyCommand.Name -Type Application -TotalCount 1 -ea Stop).Source
-  [string[]]$ags = $args.ForEach{ if ($null -ne $_) { $_ } }
-  if ($ags.Contains('-p')) {
-    $ags += $MyInvocation.InvocationName -ceq 'qodercli' ? '--yolo' : '-y'
-    if ($MyInvocation.ExpectingInput) {
-      $input | & $cmd $ags | glow
-    }
-    else {
-      & $cmd $ags | glow
-    }
-    return
-  }
-  if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd $ags
-  }
-  else {
-    & $cmd $ags
-  }
-}
-#endregion
-
 #region windows
 if ($IsWindows) {
   function vsdev {
@@ -68,24 +34,29 @@ if ($IsWindows) {
     }
   }
   # winget command-not-found
-  # note: stdout and stderr are ignored in the scriptblock
+  # note: stdout and stderr are ignored in this scriptblock
   $ExecutionContext.InvokeCommand.CommandNotFoundAction = {
     [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
     if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
-      [string[]]$lines = winget search -s winget -n 1 --no-vt --cmd (Split-Path -LeafBase $e.CommandName)
-      if ($lines.Count -ne 3) {
+      $lines = winget search -s winget -n 1 --no-vt (Split-Path -LeafBase $e.CommandName)
+      if (!$?) {
         return
       }
-      $add = switch ((Get-Culture).Name) {
-        en-US { 0; break }
-        zh-CN { 2; break }
-        default { return }
+      $id = [regex]::Match($lines[2], '(?<= )[-\w]+\.[-\w]+(?= )').Value
+      if (!$id) {
+        throw "cannot find winget package ($($lines[2]))"
       }
-      $id = $lines[2].Substring($lines[0].IndexOf('ID') + $add).Split(' ', 2)[0]
       winget show -s winget --id $id | Out-Host
+      if (!$?) {
+        throw "cannot show winget package ($id)"
+      }
       $ok = Read-Host "Install $id`? (Y/N)"
       if ($ok -eq 'y') {
         sudo winget install -s winget --accept-package-agreements --no-vt --id $id
+        if ($?) {
+          $e.CommandScriptBlock = { Update-SessionEnvironment; & $e.CommandName }
+          $e.StopSearch = $true
+        }
       }
     }
   }
@@ -150,6 +121,10 @@ if (Get-Command dnf -CommandType Application -TotalCount 1 -ea Ignore) {
       $ok = Read-Host "Install $name`? (Y/N)"
       if ($ok -eq 'y') {
         sudo dnf install -y $name
+        if ($?) {
+          $e.CommandScriptBlock = { & $e.CommandName }
+          $e.StopSearch = $true
+        }
       }
     }
   }
@@ -163,6 +138,13 @@ else {
       }
       elseif (Test-Path -LiteralPath /usr/libexec/pk-command-not-found) {
         /usr/libexec/pk-command-not-found $e.CommandName
+      }
+      else {
+        return
+      }
+      if ($?) {
+        $e.CommandScriptBlock = { & $e.CommandName }
+        $e.StopSearch = $true
       }
     }
   }

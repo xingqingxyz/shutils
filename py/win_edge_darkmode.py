@@ -5,7 +5,7 @@ import sys
 import uiautomation as am
 
 
-def set_page_color(default=False):
+def set_page_color(reset=False):
     window = am.WindowControl(SubName="Edge", ClassName="Chrome_WidgetWin_1")
     print("window: " + window.Name)
 
@@ -27,12 +27,12 @@ def set_page_color(default=False):
     color_grp = page.GroupControl(ClassName="content-container").GroupControl(
         Name="页面颜色", ClassName="sections-container"
     )
-    print("focus color select button")
+    print("focus color button")
     color_grp.ButtonControl(RegexName="^页面颜色 ").SetFocus()
     window.SendKeys(" ")
-    color_name = "系统" if default else "水生"
-    print(f"click {color_name} menu-item")
-    color_grp.MenuItemControl(Name=color_name).Click()
+    color_name = "系统" if reset else "水生"
+    print(f"click {color_name} radio")
+    color_grp.MenuControl(Name="页面颜色").RadioButtonControl(Name=color_name).Click()
 
     print("close tab")
     window.SendKeys("{CTRL}w")
@@ -44,4 +44,4 @@ if __name__ == "__main__":
         or locale.getlocale()[0] != "Chinese (Simplified)_China"
     ):
         raise SystemError("only supports windows chinese")
-    set_page_color(len(sys.argv) > 1 and sys.argv[1] == "default")
+    set_page_color(len(sys.argv) > 1 and sys.argv[1] == "off")

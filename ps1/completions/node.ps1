@@ -14,7 +14,7 @@ Register-ArgumentCompleter -Native -CommandName node, tsx -ScriptBlock {
         '--no-cache', '--tsconfig'
       }
     }
-    elseif ($prev -eq '--run') {
-      (npm pkg get scripts | ConvertFrom-Json -AsHashtable).Keys
+    elseif ($prev -ceq '--run') {
+      jq -r '.scripts | keys[]' package.json
     }).Where{ $_ -like "$wordToComplete*" }
 }

@@ -110,7 +110,7 @@ $JAVA_HOME/bin
     $PATH += ':/snap/bin'
   }
   if ($env:WSL_DISTRO_NAME) {
-    $PATH += ':/usr/lib/wsl/lib:' + ($env:PATH.Split(':').Where{ $_.StartsWith('/mnt/') } -join ':')
+    $PATH += ':/usr/lib/wsl/lib:' + ((bash --norc -c 'echo "$PATH"').Split(':').Where{ $_.StartsWith('/mnt/') } -join ':')
   }
   ($commonVar + @{
     LANG          = 'zh_CN.UTF-8'

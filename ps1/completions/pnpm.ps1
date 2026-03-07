@@ -25,6 +25,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
       't' { 'test'; break }
       'ln' { 'link'; break }
       'rb' { 'rebuild'; break }
+      'run-script' { 'run'; break }
       default { $_; break }
     }
   }
@@ -32,13 +33,23 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
   if ($command.StartsWith('exec ')) {
     $command = '#exec'
   }
+
+  $cursorPosition -= $wordToComplete.Length
+  foreach ($i in $commandAst.CommandElements) {
+    if ($i.Extent.StartOffset -ge $cursorPosition) {
+      break
+    }
+    $prev = $i
+  }
+  $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
+
   @(switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
           '-r', '--recursive'
         }
         else {
-          'add', 'approve-builds', 'audit', 'cat-file', 'cat-index', 'exec', 'find-hash', 'help', 'i', 'import', 'install-test', 'install', 'it', 'licenses', 'link', 'list', 'ln', 'ls', 'outdated', 'pack', 'prune', 'publish', 'rb', 'rebuild', 'remove', 'rm', 'root', 'run', 'self-update', 'start', 'store', 't', 'test', 'unlink', 'up', 'update'
+          'add', 'approve-builds', 'audit', 'cat-file', 'cat-index', 'exec', 'find-hash', 'help', 'i', 'import', 'install-test', 'install', 'it', 'licenses', 'link', 'list', 'ln', 'ls', 'outdated', 'pack', 'prune', 'publish', 'rb', 'rebuild', 'remove', 'rm', 'root', 'run', 'run-script', 'self-update', 'start', 'store', 't', 'test', 'unlink', 'up', 'update'
           break
         }
         break
@@ -67,7 +78,9 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
       'exec' {
         if ($wordToComplete.StartsWith('-')) {
           '--color', '--no-color', '--aggregate-output', '--parallel', '--reporter', '-C', '--dir', '-h', '--help', '--loglevel=debug', '--loglevel=info', '--loglevel=warn', '--loglevel=error', '--silent', '--no-reporter-hide-prefix', '--parallel', '-r', '--recursive', '--report-summary', '--resume-from', '-c', '--shell-mode', '--stream', '--use-stderr', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern'
-          break
+        }
+        elseif ($prev -ceq 'exec') {
+          Split-Path node_modules/.bin/* -LeafBase -Resolve | Sort-Object -Unique
         }
         break
       }
@@ -90,6 +103,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
           $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
           & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
         }
+        break
       }
       'licenses' {
         if ($wordToComplete.StartsWith('-')) {
@@ -119,13 +133,6 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         }
         break
       }
-      'run' {
-        if ($wordToComplete.StartsWith('-')) {
-          '--color', '--no-color', '--aggregate-output', '-C', '--dir', '-h', '--help', '--if-present', '--loglevel=debug', '--loglevel=info', '--loglevel=warn', '--loglevel=error', '--silent', '--no-bail', '--parallel', '-r', '--recursive', '--report-summary', '--reporter-hide-prefix', '--resume-from', '--sequential', '--stream', '--use-stderr', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern', '--test-pattern'
-          break
-        }
-        break
-      }
       'pack' {
         if ($wordToComplete.StartsWith('-')) {
           '--json', '--pack-destination'
@@ -136,6 +143,7 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
       'publish' {
         if ($wordToComplete.StartsWith('-')) {
           '--access', '--dry-run', '--force', '--ignore-scripts', '--json', '--no-git-checks', '--otp', '--publish-branch', '-r', '--recursive', '--report-summary', '--tag', '--changed-files-ignore-pattern', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern'
+          break
         }
         break
       }
@@ -150,8 +158,8 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         if ($wordToComplete.StartsWith('-')) {
           break
         }
-        break
         'add', 'path', 'prune', 'status'
+        break
       }
       'store prune' {
         if ($wordToComplete.StartsWith('-')) {
@@ -202,6 +210,15 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
           if ($_ -clike '*[dD]ependencies') {
             $json.$_.Keys
           }
+        }
+        break
+      }
+      'run' {
+        if ($wordToComplete.StartsWith('-')) {
+          '--color', '--no-color', '--aggregate-output', '-C', '--dir', '-h', '--help', '--if-present', '--loglevel', '--no-bail', '--parallel', '-r', '--recursive', '--report-summary', '--reporter-hide-prefix', '--resume-from', '--sequential', '--stream', '--use-stderr', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern'
+        }
+        elseif ($prev -ceq 'run') {
+          jq -r '.scripts | keys[]' package.json
         }
         break
       }

@@ -85,8 +85,8 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         if ($wordToComplete.StartsWith('-')) {
           '--silent', '--filter', '-b', '--bun', '--shell', '--watch', '--hot', '--no-clear-screen', '--smol', '-r', '--preload', '--inspect', '--inspect-wait', '--inspect-brk', '--if-present', '--no-install', '--install', '-e', '--eval', '--print', '--prefer-offline', '--prefer-latest', '-p', '--port', '--conditions', '--fetch-preconnect', '--max-http-header-size', '--main-fields', '--extension-order', '--tsconfig-override', '-d', '--define', '--drop', '-l', '--loader', '--no-macros', '--jsx-factory', '--jsx-fragment', '--jsx-import-source', '--jsx-runtime', '--ignore-dce-annotations', '--env-file', '--cwd', '-c', '--config', '-h', '--help'
         }
-        elseif ($prev.StartsWith('run')) {
-          (npm pkg get scripts | ConvertFrom-Json -AsHashtable).Keys
+        elseif ($prev -ceq 'run') {
+          jq -r '.scripts | keys[]' package.json
         }
         break
       }

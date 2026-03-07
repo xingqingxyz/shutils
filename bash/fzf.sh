@@ -95,7 +95,7 @@ _fzf_completion_loader() {
 
 _fzf_setup_completion() {
   local -A commands=(
-    [command]='vw sudo npx pnpx env'
+    [command]='l e sudo bunx uvx dnx npx pnpx env'
     [dir]='cd pushd rmdir mkdir tree z'
     [file]='vim vi code bat less grep cat cp rm'
     [alias]='alias unalias'

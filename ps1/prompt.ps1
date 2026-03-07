@@ -33,7 +33,7 @@ function Format-Duration {
           '{0}h{1}m' -f $Duration.Hours, $Duration.Minutes
           break
         }
-        { $Duration.TotalDays -lt 31 } {
+        default {
           31
           '{0}d{1}h' -f $Duration.Days, $Duration.Hours
           break

@@ -1,12 +1,14 @@
-if ((BASH_VERSINFO[0] < 5 || BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] < 3)); then
-  return
+declare LAST_CMD_DUR_C LAST_CMD_DUR_T LAST_CMD_TIME=$EPOCHREALTIME
+has_bash53=$((BASH_VERSINFO[0] > 5 || BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 3))
+
+if ((has_bash53)); then
+  PS0='${ LAST_CMD_TIME=$EPOCHREALTIME;}'
 fi
 
-declare LAST_CMD_DUR_C LAST_CMD_DUR_T LAST_CMD_TIME=$EPOCHREALTIME
-
-PS0='${ LAST_CMD_TIME=$EPOCHREALTIME;}'
-
 _prompt() {
+  if ((!has_bash53)); then
+    return
+  fi
   local dur color left right
   dur=$(awk "{printf \"%f\", $EPOCHREALTIME-$LAST_CMD_TIME}" <<< '')
   printf -v left '%.0f' "$dur"
@@ -52,8 +54,11 @@ MAPFILE=(
   '\[\e[$((31 + !$?))m\]$?\[\e[0m\]'
   '(\!:\[\e[${LAST_CMD_DUR_C}m\]$LAST_CMD_DUR_T\[\e[0m\])'
   '\[\e]8;;file://$PWD\e\\\\\]\w\[\e]8;;\e\\\\\]'
-  '$'
+  '$ '
 )
+if ((!has_bash53)); then
+  MAPFILE[1]='\!'
+fi
 case "$OSTYPE" in
   msys | cygwin)
     MAPFILE[2]=${MAPFILE[2]/'$PWD'/'$(cygpath -w "$PWD")'}
@@ -65,6 +70,6 @@ case "$OSTYPE" in
     ;;
 esac
 if declare -Fp __git_ps1 &> /dev/null; then
-  MAPFILE[3]='$(__git_ps1)'${MAPFILE[3]}
+  MAPFILE[2]+='$(__git_ps1)'
 fi
-printf -v PS1 '%s ' "${MAPFILE[@]}"
+PS1=${MAPFILE[*]}

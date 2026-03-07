@@ -9,7 +9,7 @@
 @{
 
   # Script module or binary module file associated with this manifest.
-  RootModule           = './obj/Release/net10.0/LSColors.dll'
+  RootModule           = './bin/Release/net10.0/LSColors.dll'
 
   # Version number of this module.
   ModuleVersion        = '0.1.0'

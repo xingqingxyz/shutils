@@ -27,3 +27,7 @@ Convert-Path -Force $env:SHUTILS_ROOT/ps1/*.ps1 | ForEach-Object { . $_ }
 Set-Alias npm Invoke-Npm
 Set-Alias npx Invoke-Npx
 Set-Alias sudo Invoke-Sudo
+Set-Alias cbc Extras\codebuddy
+Set-Alias codebuddy Extras\codebuddy
+Set-Alias qwen Extras\qwen
+Set-Alias qodercli Extras\qodercli
