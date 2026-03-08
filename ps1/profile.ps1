@@ -65,7 +65,7 @@ function mkdir {
   .FORWARDHELPTARGETNAME New-Item
   .FORWARDHELPCATEGORY Cmdlet
    #>
-  New-Item @args -Type Directory
+  New-Item @args -Type Directory -Force
 }
 
 Set-Alias ls Get-ChildItem

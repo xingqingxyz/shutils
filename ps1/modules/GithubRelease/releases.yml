@@ -26,6 +26,10 @@
   repo: github/copilot-cli
   tag: v1.0.2
   version: 1.0.2
+- name: crush
+  repo: charmbracelet/crush
+  tag: v0.47.2
+  version: 0.47.2
 - name: deno
   repo: denoland/deno
   tag: v2.7.4
@@ -69,6 +73,8 @@
   version: 1.26.1
   sha256: 031f088e5d955bab8657ede27ad4e3bc5b7c1ba281f05f245bcc304f327c987a
   file: go1.26.1.linux-amd64.tar.gz
+- name: golangci-lint
+  repo: golangci/golangci-lint
 - name: goreleaser
   repo: goreleaser/goreleaser
   tag: v2.12.5
@@ -134,6 +140,8 @@
   version: 7.6.0
 - name: rg
   repo: BurntSushi/ripgrep
+  tag: 15.1.0
+  version: 15.1.0
 - name: rga
   repo: phiresky/ripgrep-all
   tag: v0.10.10

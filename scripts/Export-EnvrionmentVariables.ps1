@@ -2,11 +2,11 @@
 $SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
 if (Get-Command java -CommandType Application -TotalCount 1 -ea Ignore) {
-  $JAVA_HOME = switch ($true) {
+  [string]$JAVA_HOME = switch ($true) {
     $IsWindows { 'C:\Program Files\Java\jdk-' + (java --version)[0].Split(' ', 3)[1]; break }
-    $IsLinux { (Get-Item ~/.jdks/openjdk-25.*)[0].FullName; break }
-    $IsMacOS { ''; break }
-    default { ''; break }
+    $IsLinux { (Get-Item ~/.jdks/openjdk-25.* -Force -ea Ignore)?[0].FullName; break }
+    $IsMacOS { break }
+    default { break }
   }
 }
 $DSC_RESOURCE_PATH = $IsWindows ? '' : "$HOME/.local/dsc"
@@ -102,7 +102,6 @@ $SHUTILS_ROOT/scripts
 $HOME/.local/share/powershell/Scripts
 /usr/local/share/powershell/Scripts
 $ANDROID_HOME/platform-tools
-$JAVA_HOME/bin
 /usr/local/bin
 /usr/bin
 "@.ReplaceLineEndings(':')

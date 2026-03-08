@@ -1,16 +1,25 @@
+$ErrorActionPreference = 'Stop'
 # env
-. $PSScriptRoot/Export-EnvrionmentVariable.ps1
+. $PSScriptRoot/Export-EnvrionmentVariables.ps1
 # dotfiles
 . $PSScriptRoot/Initialize-Dotfiles.ps1
 # tasks
 . $PSScriptRoot/Initialize-Tasks.ps1
 # powershell
 Set-PSRepository PSGallery -InstallationPolicy Trusted
-Update-Help -UICulture en-US
+# modules
+git submodule init ./alacritty-theme
+git submodule update --depth 1 ./alacritty-theme
+Install-Module PSToml, Yayaml
+Update-Release dotnet, uv
+dotnet build -c Release
+uv sync --upgrade
 # merge history files
 $dir = Split-Path (Get-PSReadLineOption).HistorySavePath
 Out-File -InputObject (Get-Content $dir/* | Select-Object -Unique) -LiteralPath $dir/ConsoleHost_history.txt
 New-Item -ItemType HardLink -Force -Target $dir/ConsoleHost_history.txt "$dir/Visual Studio Code Host_history.txt"
+# update help
+Update-Help -UICulture en-US -ea Ignore
 
 if ($IsWindows) {
   sudo pwsh -nop $PSScriptRoot/Initialize-WindowsMachine.ps1

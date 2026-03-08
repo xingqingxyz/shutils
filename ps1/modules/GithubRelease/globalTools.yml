@@ -1,4 +1,5 @@
 apt:
+  - alacritty
   - aria2
   - build-essential
   - cmake
@@ -6,7 +7,23 @@ apt:
   - docker.io
   - gcc
   - gnome-browser-connector
-  - gnome-shell-extension-appindicator
+  - libncurses-dev
+  - libpcre2-dev
+  - libssl-dev
+  - nginx
+  - ninja-build
+  - pandoc
+  - shellcheck
+  - shfmt
+  - vlc
+  - xclip
+  - xsel
+apt-raspi:
+  - aria2
+  - build-essential
+  - cmake
+  - curl
+  - gcc
   - libncurses-dev
   - libpcre2-dev
   - libssl-dev
@@ -59,9 +76,6 @@ dnf:
   - gh
   - git-subtree
   - gnome-browser-connector
-  - gnome-shell-extension-appindicator
-  - gnome-shell-extension-blur-my-shell
-  - gnome-shell-extension-dash-to-dock
   - hyperfine
   - ImageMagick
   - lldb
@@ -109,12 +123,15 @@ dnf-wsl:
 fedora:
   - bun
   - code
+  - copilot
   - deno
   - diskus
   - dotnet
   - flutter
   - fzf
+  - glow
   - go
+  - golangci-lint
   - hexyl
   - java
   - jq
@@ -126,15 +143,16 @@ fedora:
   - plantuml
   - pwsh
   - rga
+  - ruff
   - rustup
   - taplo
+  - ty
   - uv
   - wasm-pack
   - yq
 flutter: []
 gh: []
 go:
-  - github.com/golangci/golangci-lint/v2/cmd/golangci-lint
   - golang.org/x/tools/cmd/goimports
   - golang.org/x/tools/cmd/stringer
 npm: []
@@ -146,15 +164,20 @@ psm1:
   - PSToml
   - Yayaml
 raspi:
+  - bash
   - bat
   - bun
+  - copilot
+  - deno
   - diskus
   - dotnet
   - edit
   - fd
   - fzf
   - gh
+  - glow
   - go
+  - golangci-lint
   - hexyl
   - hyperfine
   - jq
@@ -163,21 +186,24 @@ raspi:
   - pwsh
   - rg
   - rga
+  - ruff
   - rustup
   - taplo
+  - ty
   - uv
-  - wasm-pack
   - yq
-rustup: []
-rustup-components:
-  - clippy
+rustup:
+  - stable
+  - nightly
+rustup-components: []
 rustup-targets:
   - wasm32-unknown-unknown
 ubuntu:
-  - alacritty
+  - bash
   - bat
   - bun
   - code
+  - copilot
   - deno
   - diskus
   - dotnet
@@ -186,7 +212,9 @@ ubuntu:
   - flutter
   - fzf
   - gh
+  - glow
   - go
+  - golangci-lint
   - hexyl
   - hyperfine
   - java
@@ -201,8 +229,10 @@ ubuntu:
   - pwsh
   - rg
   - rga
+  - ruff
   - rustup
   - taplo
+  - ty
   - uv
   - wasm-pack
   - yq
@@ -213,8 +243,11 @@ uv:
 uv-python:
   - python3.14t
 windows:
+  - copilot
   - diskus
   - flutter
+  - golangci-lint
+  - gswin64c
   - numbat
   - plantuml
   - rga
@@ -263,6 +296,7 @@ winget:
 wsl:
   - dotnet
   - fzf
+  - glow
   - hexyl
   - jq
   - node

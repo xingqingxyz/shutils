@@ -361,8 +361,8 @@ function Install-Release {
     bash {
       $base = 'bash-{0}' -f $Meta.version
       $file = "$base.tar.gz"
-      downloadFile "https://mirrors.ustc.edu.cn/gnu/bash/$file"
-      downloadFile "https://mirrors.ustc.edu.cn/gnu/bash/$file.sig"
+      downloadFile "https://mirrors.tuna.tsinghua.edu.cn/gnu/bash/$file"
+      downloadFile "https://mirrors.tuna.tsinghua.edu.cn/gnu/bash/$file.sig"
       gpg --verify $buildDir/$file`.sig $buildDir/$file
       tar -xf $buildDir/$file -C $buildDir
       Push-Location -LiteralPath $buildDir/$base
@@ -447,6 +447,24 @@ function Install-Release {
       tar -xf $buildDir/$file -C $binDir
       break
     }
+    crush {
+      $file = switch ($true) {
+        $IsWindows { 'crush_{0}_Windows_{1}.zip' -f $Meta.version, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(); break }
+        $IsMacOS { 'crush_{0}_Darwin_{1}.tar.gz' -f $Meta.version, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(); break }
+        $IsFedora { 'crush-{0}-{1}-1.rpm' -f $Meta.version, $rust.arch; break }
+        ($IsUbuntu -or $IsRaspi) { 'crush_{0}_{1}.deb' -f $Meta.version, $go.arch; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      downloadRelease $file, checksums.txt
+      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/checksums.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
+      switch ($true) {
+        $IsWindows { Expand-Archive $buildDir/$file $binDir; break }
+        $IsMacOS { tar -xf $buildDir/$file -C $binDir; chmod +x $binDir/crush; break }
+        $IsFedora { sudo dnf install -y $buildDir/$file; break }
+        ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$file; break }
+      }
+      break
+    }
     deno {
       if ($IsWindows) {
         throw [System.NotImplementedException]::new()
@@ -467,13 +485,13 @@ function Install-Release {
     }
     dotnet {
       $ChannelQuality = $Meta.prerelease ? '11.0/preview' : '10.0'
-      $os, $fileExt = switch ($true) {
+      $os, $ext = switch ($true) {
         $IsWindows { 'win', '.exe'; break }
         $IsMacOS { 'osx', '.pkg'; break }
         $IsLinux { 'linux', '.tar.gz'; break }
         default { throw [System.NotImplementedException]::new() }
       }
-      $file = 'dotnet-sdk-{0}-{1}{2}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(), $fileExt
+      $file = 'dotnet-sdk-{0}-{1}{2}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(), $ext
       downloadFile "https://aka.ms/dotnet/$ChannelQuality/$file"
       switch ($true) {
         $IsWindows { sudo $buildDir/$file; break }
@@ -608,6 +626,23 @@ function Install-Release {
       }
       break
     }
+    golangci-lint {
+      $base = 'golangci-lint-{0}-{1}-{2}' -f $Meta.version, $go.os, $go.arch
+      $ext = switch ($true) {
+        $IsWindows { '.zip'; break }
+        $IsFedora { '.rpm'; break }
+        ($IsUbuntu -or $IsRaspi) { '.deb'; break }
+        default { '.tar.gz'; break }
+      }
+      downloadRelease $base$ext, "golangci-lint-$($Meta.version)-checksums.txt"
+      checkFileHash $buildDir/$base$ext (Get-Content -LiteralPath $buildDir/"golangci-lint-$($Meta.version)-checksums.txt" | Select-String -Raw -SimpleMatch $base$ext).Split(' ', 2)[0]
+      switch ($true) {
+        $IsFedora { sudo dnf install -y $buildDir/$base$ext; break }
+        ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$base$ext; break }
+        default { tar -xf $buildDir/$base$ext -C $binDir; break }
+      }
+      break
+    }
     goreleaser {
       $os = $go.os.Substring(0, 1).ToUpperInvariant() + $go.os.Substring(1)
       $base = 'goreleaser_{0}_{1}' -f $os, $rust.arch
@@ -648,9 +683,11 @@ function Install-Release {
         throw [System.NotImplementedException]::new()
       }
       downloadFile $Meta.url
-      $file = Split-Path -Leaf $url
+      $file = Split-Path -Leaf $Meta.url
       checkFileHash $buildDir/$file $Meta.sha256
-      tar -xf $buildDir/$file -C ~/.jdks --no-same-owner
+      tar -xf $buildDir/$file -C ~/.jdks
+      ln -sf ~/.jdks/jdk-$($Meta.version)/bin/java $binDir
+      ln -sf ~/.jdks/jdk-$($Meta.version)/bin/javac $binDir
       break
     }
     jq {
@@ -666,7 +703,7 @@ function Install-Release {
       if (!$IsWindows) {
         chmod +x $binDir/jq
       }
-      downloadFile https://kkgithub.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt $dataDir/man/man1/jq.1
+      downloadFile "https://github.com/$($Meta.repo)/raw/HEAD/jq.1.prebuilt" $dataDir/man/man1/jq.1
       break
     }
     less {
@@ -867,7 +904,7 @@ StartupWMClass=localsend_app
       if ($IsWindows) {
         throw [System.NotImplementedException]::new()
       }
-      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+      curl -sSf https://sh.rustup.rs | bash -s `-- -y
       break
     }
     taplo {
@@ -1040,23 +1077,27 @@ function Update-Software {
   $pkgMap = Get-Content -Raw -LiteralPath $PSScriptRoot/globalTools.yml | ConvertFrom-Yaml
   [string[]]$pkgs = @()
   switch ($Category) {
-    { $true } {
-      $pkgs = $pkgMap[$_]
-      if (!$pkgs) {
-        $Force = $false
-      }
-    }
+    { $true } { $pkgs = $pkgMap[$_] }
     apt {
       sudo apt update
       sudo apt install -f
       sudo apt upgrade -y --auto-remove
-      if ($Force) {
-        if ($IsWSL) {
-          if (!$pkgMap['apt-wsl']) {
-            return
-          }
-          $pkgs = $pkgMap['apt-wsl']
+      if (!$Force) {
+        continue
+      }
+      if ($IsWSL) {
+        if (!$pkgMap['apt-wsl']) {
+          continue
         }
+        $pkgs = $pkgMap['apt-wsl']
+      }
+      elseif ($IsRaspi) {
+        if (!$pkgMap['apt-raspi']) {
+          continue
+        }
+        $pkgs = $pkgMap['apt-raspi']
+      }
+      if ($pkgs) {
         sudo apt install -y $pkgs
       }
       continue
@@ -1064,9 +1105,12 @@ function Update-Software {
     bun {
       if ($Global) {
         bun upgrade
-        bun update -g
-        if ($Force) {
-          bun add -g $pkgs
+        $PSNativeCommandUseErrorActionPreference = $false
+        # this fails with code 1 when there is nothing to update
+        bun update -g --latest
+        $PSNativeCommandUseErrorActionPreference = $true
+        if ($Force -and $pkgs) {
+          bun add -g --trust $pkgs
         }
         continue
       }
@@ -1075,8 +1119,10 @@ function Update-Software {
     }
     cargo {
       if ($Global) {
-        cargo install-update --all
-        if ($Force) {
+        if (Get-Command cargo-install-update -CommandType Application -TotalCount 1 -ea Ignore) {
+          cargo install-update --all
+        }
+        if ($Force -and $pkgs) {
           cargo install $pkgs
         }
         continue
@@ -1089,7 +1135,7 @@ function Update-Software {
       if ($Global) {
         deno upgrade
         deno jupyter --install
-        if ($Force) {
+        if ($Force -and $pkgs) {
           deno install --global $pkgs
         }
         continue
@@ -1102,19 +1148,20 @@ function Update-Software {
       if ($Force) {
         if ($IsWSL) {
           if (!$pkgMap['dnf-wsl']) {
-            return
+            continue
           }
           $pkgs = $pkgMap['dnf-wsl']
         }
-        sudo dnf install -y $pkgs
+        if ($pkgs) {
+          sudo dnf install -y $pkgs
+        }
       }
       continue
     }
     flutter {
       if ($Global) {
         flutter upgrade --force
-        if ($Force) {
-          $pkgs += flutter pub global list
+        if ($Force -and $pkgs) {
           flutter pub global activate $pkgs.ForEach{ "$_@latest" }
         }
         continue
@@ -1124,7 +1171,7 @@ function Update-Software {
     }
     gh {
       gh extension upgrade --all
-      if ($Force) {
+      if ($Force -and $pkgs) {
         gh extension install $pkgs
       }
       continue
@@ -1135,13 +1182,11 @@ function Update-Software {
         if (!$binDir) {
           $binDir = [System.IO.Path]::Join((go env GOPATH), 'bin')
         }
-        Convert-Path $binDir/* | ForEach-Object {
+        Convert-Path $binDir/* -ea Ignore | ForEach-Object {
           go install ((go version -m $_)[1].Split("`t")[-1] + '@latest')
         }
         if ($Force) {
-          $pkgs.ForEach{
-            go install "$_@latest"
-          }
+          $pkgs.ForEach{ go install "$_@latest" }
         }
         continue
       }
@@ -1152,7 +1197,7 @@ function Update-Software {
     npm {
       if ($Global) {
         npm up -g
-        if ($Force) {
+        if ($Force -and $pkgs) {
           npm add -g $pkgs
         }
         continue
@@ -1164,7 +1209,7 @@ function Update-Software {
       if ($Global) {
         Start-Process pnpm self-update -WorkingDirectory $HOME -NoNewWindow -Wait
         pnpm up -g
-        if ($Force) {
+        if ($Force -and $pkgs) {
           pnpm add -g $pkgs
         }
         continue
@@ -1175,22 +1220,28 @@ function Update-Software {
     }
     ps1 {
       Update-Script
-      if ($Force) {
+      if ($Force -and $pkgs) {
         Install-Script $pkgs
       }
     }
     psm1 {
       Update-Module
       Clear-Module
-      if ($Force) {
+      if ($Force -and $pkgs) {
         Install-Module $pkgs
       }
       continue
     }
     rustup {
       rustup update
-      if ($Force) {
-        rustup toolchain install $pkgs --component ($pkgMap['rustup-components'] -join ',') --target ($pkgMap['rustup-targets'] -join ',')
+      if ($Force -and $pkgs) {
+        if ($pkgMap['rustup-components']) {
+          $pkgs += @('--component', ($pkgMap['rustup-components'] -join ','))
+        }
+        if ($pkgMap['rustup-targets']) {
+          $pkgs += @('--target', ($pkgMap['rustup-targets'] -join ','))
+        }
+        rustup toolchain install $pkgs
       }
       continue
     }
@@ -1212,13 +1263,15 @@ function Update-Software {
         continue
       }
       sudo winget upgrade -r --accept-package-agreements
-      if ($Force) {
+      if ($Force -and $pkgs) {
         sudo winget install --accept-package-agreements $pkgs
       }
       continue
     }
     { $_ -ceq 'windows' -or $_ -ceq 'fedora' -or $_ -ceq 'ubuntu' -or $_ -ceq 'wsl' -or $_ -ceq 'raspi' } {
-      Update-Release $pkgs
+      if ($pkgs) {
+        Update-Release $pkgs
+      }
       continue
     }
     default { throw [System.NotImplementedException]::new() }
