@@ -5,6 +5,11 @@ function androidEnv {
   $env:PATH += '', "$env:ANDROID_HOME\cmdline-tools\latest\bin", "$env:ANDROID_HOME\emulator", "$env:ANDROID_HOME\platform-tools" -join [System.IO.Path]::PathSeparator
 }
 
+function vsdev {
+  Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
+  Enter-VsDevShell 1da1aa76 -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
+}
+
 function delay {
   [CmdletBinding(DefaultParameterSetName = 'Base')]
   param (
@@ -68,17 +73,56 @@ function Clear-Module {
 }
 
 function Get-MemoryInfo {
-  $os = Get-CimInstance Win32_OperatingSystem
-  $total = $os.TotalVisibleMemorySize / 1MB
-  $free = $os.FreePhysicalMemory / 1MB
+  if ($IsWindows) {
+    $os = Get-CimInstance Win32_OperatingSystem
+    # Win32_OperatingSystem 中的内存单位为 KB
+    $total = $os.TotalVisibleMemorySize / 1MB
+    $free = $os.FreePhysicalMemory / 1MB
+  }
+  elseif ($IsMacOS) {
+    # 总内存字节数
+    [long]$totalBytes = sysctl -n hw.memsize
+    # vm_stat 输出各类页数
+    $vmStats = @{}
+    vm_stat | ForEach-Object {
+      if ($_ -cmatch '^(?<name>.+):\s+(?<count>\d+)') {
+        $vmStats[$Matches.name.Trim()] = [int]$Matches.count
+      }
+    }
+    [long]$pageSize = sysctl -n hw.pagesize
+    $freeBytes = ($vmStats['Pages free'] + $vmStats['Pages inactive']) * $pageSize
+    # 统一以 GB 为单位 (1MB*1024 == 1GB)
+    $total = $totalBytes / 1GB
+    $free = $freeBytes / 1GB
+  }
+  elseif ($IsLinux) {
+    # /proc/meminfo 中的内存单位为 KB
+    $info = @{}
+    Get-Content -LiteralPath /proc/meminfo | ForEach-Object {
+      if ($_ -cmatch '^(?<k>\w+):\s+(?<v>\d+)') {
+        $info[$Matches.k] = [long]$Matches.v
+      }
+    }
+    $freeKb = if ($info.ContainsKey('MemAvailable')) {
+      $info.MemAvailable
+    }
+    else {
+      $info.MemFree + $info.Buffers + $info.Cached
+    }
+    $total = $info.MemTotal / 1MB
+    $free = $freeKb / 1MB
+  }
+  else {
+    throw [System.NotImplementedException]::new('unsupported platform')
+  }
+
   $used = $total - $free
   $percent = ($used / $total) * 100
-
   [pscustomobject]@{
-    'Total(GB)' = [System.Math]::Round($total, 2)
-    'Used(GB)'  = [System.Math]::Round($used, 2)
-    'Free(GB)'  = [System.Math]::Round($free, 2)
-    'Used%'     = [System.Math]::Round($percent, 1)
+    'Total(GB)' = $total
+    'Used(GB)'  = $used
+    'Free(GB)'  = $free
+    'Used%'     = $percent
   }
 }
 
@@ -568,7 +612,7 @@ function New-RelativeSymlink {
     $Target
   )
   Get-Item $Path -Force -ea Ignore | ForEach-Object {
-    New-Item -Type SymbolicLink -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $Target)) $_.FullName -Force
+    New-Item -Type SymbolicLink -Force -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $Target)) $_.FullName
   }
 }
 

@@ -1,10 +1,5 @@
 #region windows
 if ($IsWindows) {
-  function vsdev {
-    Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
-    Enter-VsDevShell 1da1aa76 -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
-  }
-
   Set-Variable -Option ReadOnly -Force _executableAliasMap @{
     grep     = 'grep', '--color=auto'
     plantuml = 'java', '-jar', "$env:LOCALAPPDATA\prefix\bin\plantuml.jar"
@@ -54,7 +49,7 @@ if ($IsWindows) {
       if ($ok -eq 'y') {
         sudo winget install -s winget --accept-package-agreements --no-vt --id $id
         if ($?) {
-          $e.CommandScriptBlock = { Update-SessionEnvironment; & $e.CommandName }
+          $e.CommandScriptBlock = [scriptblock]::Create('Update-SessionEnvironment; & ' + $e.CommandName)
           $e.StopSearch = $true
         }
       }
@@ -66,7 +61,11 @@ if ($IsWindows) {
 
 #region linux
 function mkdir {
-  New-Item -ItemType Directory $args
+  <#
+  .FORWARDHELPTARGETNAME New-Item
+  .FORWARDHELPCATEGORY Cmdlet
+   #>
+  New-Item @args -Type Directory
 }
 
 Set-Alias ls Get-ChildItem
@@ -122,7 +121,7 @@ if (Get-Command dnf -CommandType Application -TotalCount 1 -ea Ignore) {
       if ($ok -eq 'y') {
         sudo dnf install -y $name
         if ($?) {
-          $e.CommandScriptBlock = { & $e.CommandName }
+          $e.CommandScriptBlock = [scriptblock]::Create('& ' + $e.CommandName)
           $e.StopSearch = $true
         }
       }
@@ -143,7 +142,7 @@ else {
         return
       }
       if ($?) {
-        $e.CommandScriptBlock = { & $e.CommandName }
+        $e.CommandScriptBlock = [scriptblock]::Create('& ' + $e.CommandName)
         $e.StopSearch = $true
       }
     }

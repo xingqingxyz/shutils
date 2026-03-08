@@ -1,9 +1,10 @@
 - name: alacritty
-  repo: alacritty/alacrtty
+  repo: alacritty/alacritty
+  tag: v0.16.1
+  version: 0.16.1
 - name: balenaEtcher
   repo: balena-io/etcher
 - name: bash
-  repo: unknown
   version: "5.3"
 - name: bat
   repo: sharkdp/bat
@@ -15,20 +16,24 @@
   version: 126
 - name: bun
   repo: oven-sh/bun
-  version: 1.3.1
-  tag: bun-v1.3.1
+  version: 1.3.10
+  tag: bun-v1.3.10
 - name: code
   repo: microsoft/vscode
-  version: 1.109.2
-  tag: 1.109.2
+  version: 1.110.1
+  tag: 1.110.1
+- name: copilot
+  repo: github/copilot-cli
+  tag: v1.0.2
+  version: 1.0.2
 - name: deno
   repo: denoland/deno
-  tag: v2.5.4
-  version: 2.5.4
+  tag: v2.7.4
+  version: 2.7.4
 - name: diskus
   repo: sharkdp/diskus
-  tag: v0.8.0
-  version: 0.8.0
+  tag: v0.9.0
+  version: 0.9.0
 - name: dotnet
   repo: dotnet/dotnet
   tag: v10.0.103
@@ -48,8 +53,8 @@
   sha256: 68f51b1bb3728d3be5a756f23a38af1f776e05c0729dd3a91d3dcf2c20d78138
 - name: fzf
   repo: junegunn/fzf
-  tag: v0.68.0
-  version: 0.68.0
+  tag: v0.70.0
+  version: 0.70.0
 - name: gh
   repo: cli/cli
   tag: v2.82.1
@@ -62,8 +67,8 @@
   repo: golang/go
   tag: go1.26.1
   version: 1.26.1
-  sha256: 9b1ffb28d6e934bf7683b09b01e1843e9b4baab89c119a81de59b851bd01bf73
-  file: go1.26.1.windows-amd64.msi
+  sha256: 031f088e5d955bab8657ede27ad4e3bc5b7c1ba281f05f245bcc304f327c987a
+  file: go1.26.1.linux-amd64.tar.gz
 - name: goreleaser
   repo: goreleaser/goreleaser
   tag: v2.12.5
@@ -108,8 +113,8 @@
   version: 3.4.0
 - name: node
   repo: nodejs/node
-  tag: v25.6.1
-  version: 25.6.1
+  tag: v25.8.0
+  version: 25.8.0
 - name: numbat
   repo: sharkdp/numbat
   tag: v1.23.0
@@ -120,8 +125,8 @@
   version: 0.12.0
 - name: plantuml
   repo: plantuml/plantuml
-  tag: v1.2026.1
-  version: 1.2026.1
+  tag: v1.2026.2
+  version: 1.2026.2
 - name: pwsh
   repo: PowerShell/PowerShell
   prerelease: true
@@ -135,6 +140,8 @@
   version: 0.10.10
 - name: ruff
   repo: astral-sh/ruff
+  tag: 0.15.5
+  version: 0.15.5
 - name: rustup
   repo: rust-lang/rustup
   version: 1.28.2
@@ -144,12 +151,16 @@
   version: 0.10.0
 - name: tree-sitter
   repo: tree-sitter/tree-sitter
+  tag: v0.26.6
+  version: 0.26.6
 - name: ty
   repo: astral-sh/ty
+  tag: 0.0.21
+  version: 0.0.21
 - name: uv
   repo: astral-sh/uv
-  version: 0.10.2
-  tag: 0.10.2
+  version: 0.10.9
+  tag: 0.10.9
 - name: wabt
   repo: webassembly/wabt
   tag: 1.0.39

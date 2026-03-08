@@ -28,6 +28,9 @@ Set-Alias npm Invoke-Npm
 Set-Alias npx Invoke-Npx
 Set-Alias sudo Invoke-Sudo
 Set-Alias cbc Extras\codebuddy
+Set-Alias claude Extras\claude
 Set-Alias codebuddy Extras\codebuddy
-Set-Alias qwen Extras\qwen
+Set-Alias codex Extras\codex
+Set-Alias copilot Extras\copilot
 Set-Alias qodercli Extras\qodercli
+Set-Alias qwen Extras\qwen

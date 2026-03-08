@@ -1,5 +1,22 @@
-$files = @{}
+[CmdletBinding()]
+param (
+  [Parameter()]
+  [string[]]
+  $Install
+)
 
+$ErrorActionPreference = 'Stop'
+
+if ($Install) {
+  Convert-Path $Install | ForEach-Object {
+    $path = $_.Replace($HOME, "$env:SHUTILS_ROOT/_")
+    Copy-Item -LiteralPath $_ (New-Item $path -Force) -Force
+    New-Item -ItemType SymbolicLink -Force -Target $path $_
+  }
+  return
+}
+
+$files = @{}
 if ($IsWindows) {
   Repair-GitSymlinks
   $root = "$env:SHUTILS_ROOT\_\windows"

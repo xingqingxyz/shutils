@@ -159,6 +159,7 @@ function getLocalVersion ([string]$Name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
       binaryen { (wasm2js --version).Split(' ', 4)[2]; break }
       code { (code --version)[0]; break }
+      copilot { (copilot -v)[0].Split(' ')[-1].TrimEnd('.'); break }
       deno { (deno -v).Split(' ', 2)[1].Split('+', 2)[0]; break }
       dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
       fzf { (fzf --version).Split(' ', 2)[0].Split('-', 2)[0]; break }
@@ -173,7 +174,7 @@ function getLocalVersion ([string]$Name) {
       mold { (mold -v).Split(' ', 3)[1]; break }
       java { (java --version)[0].Split(' ', 3)[1]; break }
       jq { (jq -V).Split('-', 2)[1]; break }
-      plantuml { (java -jar $binDir/plantuml.jar -version)[0].Split(' ', 4)[2]; break }
+      plantuml { (java -jar $binDir/plantuml.jar --version)[0].Split(' ', 4)[2]; break }
       pwsh { (pwsh -v).Split(' ', 2)[1].Split('-', 2)[0]; break }
       rg { (rg -V).Split(' ', 3)[1]; break }
       rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
@@ -409,7 +410,7 @@ function Install-Release {
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       Expand-Archive -LiteralPath $buildDir/$file $buildDir
       Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file)/bun $binDir -Force
-      $null = New-Item -ItemType SymbolicLink -Target -Force bun $binDir/bunx
+      $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
       break
     }
     code {
@@ -418,14 +419,32 @@ function Install-Release {
           sudo dnf install -y 'https://update.code.visualstudio.com/latest/linux-rpm-x64/stable'
           break
         }
-        $IsUbuntu {
-          downloadFile 'https://update.code.visualstudio.com/latest/linux-deb-x64/stable'
+        ($IsUbuntu -or $IsRaspi) {
+          $arch = [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+          downloadFile "https://update.code.visualstudio.com/latest/linux-deb-$arch/stable"
           $file = Split-Path -Resolve -Leaf $buildDir/code_$($Meta.version)-*.deb
           sudo dpkg -i $buildDir/$file
           break
         }
         default { throw [System.NotImplementedException]::new() }
       }
+      break
+    }
+    copilot {
+      $arch = [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+      $file = if ($IsWindows) {
+        'copilot-{0}.exe' -f $arch
+      }
+      else {
+        'copilot-{0}-{1}.tar.gz' -f $rust.os, $arch
+      }
+      downloadRelease $file, SHA256SUMS.txt
+      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHA256SUMS.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
+      if ($IsWindows) {
+        Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
+        break
+      }
+      tar -xf $buildDir/$file -C $binDir
       break
     }
     deno {
@@ -784,9 +803,6 @@ StartupWMClass=localsend_app
     }
     pwsh {
       $id = $Meta.tag.Substring(1)
-      if ($IsLinux) {
-        $id = $id.Replace('-', '_')
-      }
       $arch = [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
       switch ($true) {
         $IsWindows {
@@ -796,48 +812,20 @@ StartupWMClass=localsend_app
           break
         }
         $IsMacOS {
-          $file = 'PowerShell-{0}-osx-{1}.pkg' -f $id, $arch
+          $file = 'powershell-{0}-osx-{1}.pkg' -f $id, $arch
           downloadRelease $file
           sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
           break
         }
-        $IsFedora {
-          $file = 'PowerShell-{0}-1.rh.{1}.rpm' -f $id, $arch
+        $IsLinux {
+          $file = 'powershell-{0}-linux-{1}.tar.gz' -f $id, $arch
           downloadRelease $file
-          if ($Meta.prerelease) {
-            sudo dnf remove -y powershell
-            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
-          }
-          else {
-            sudo dnf remove -y powershell-preview
-          }
-          sudo dnf install -y $buildDir/$file
-          break
-        }
-        $IsUbuntu {
-          $file = 'PowerShell-{0}.{1}.deb' -f $id, $arch
-          downloadRelease $file
-          if ($Meta.prerelease) {
-            sudo apt uninstall -y powershell
-            sudo ln -sf /usr/bin/pwsh-preview /usr/bin/pwsh
-          }
-          else {
-            sudo apt uninstall -y powershell-preview
-          }
-          sudo dpkg -i $buildDir/$file
-          break
-        }
-        $IsRaspi {
-          $file = 'PowerShell-{0}-linux-arm64.tar.gz' -f $id
-          downloadRelease $file
-          if ($Meta.prerelease) {
-            sudo rm -rf /opt/microsoft/powershell/7
-            sudo tar -xf $buildDir/$file -C /opt/microsoft/powershell/7-preview
-          }
-          else {
-            sudo rm -rf /opt/microsoft/powershell/7-preview
-            sudo tar -xf $buildDir/$file -C /opt/microsoft/powershell/7
-          }
+          $baseDir = '/opt/microsoft/powershell/7'
+          sudo rm -rf $baseDir
+          sudo mkdir -p $baseDir
+          sudo tar -xf $buildDir/$file -C $baseDir
+          sudo chmod +x $baseDir/pwsh
+          sudo ln -sf $baseDir/pwsh $binDir
           break
         }
         default { throw [System.NotImplementedException]::new() }
@@ -1143,18 +1131,17 @@ function Update-Software {
     }
     go {
       if ($Global) {
-        if ($Force) {
-          $pkgs.ForEach{
-            go install "$_@latest"
-          }
-          continue
-        }
         $binDir = go env GOBIN
         if (!$binDir) {
           $binDir = [System.IO.Path]::Join((go env GOPATH), 'bin')
         }
         Convert-Path $binDir/* | ForEach-Object {
           go install ((go version -m $_)[1].Split("`t")[-1] + '@latest')
+        }
+        if ($Force) {
+          $pkgs.ForEach{
+            go install "$_@latest"
+          }
         }
         continue
       }

@@ -1,7 +1,7 @@
 # ui no_proxy
 gsettings set org.gnome.system.proxy ignore-hosts ($env:no_proxy.Split(',') | ConvertTo-Json)
 # gnome-shell
-gsettings set org.gnome.shell favorite-apps "['microsoft-edge.desktop', 'org.gnome.Nautilus.desktop', 'Alacritty.desktop']"
+gsettings set org.gnome.shell favorite-apps "['microsoft-edge.desktop', 'Alacritty.desktop', 'org.gnome.Nautilus.desktop']"
 # gnome-shell-extensions
 # dash-to-dock
 gsettings set org.gnome.shell.extensions.dash-to-dock always-center-icons true
@@ -65,7 +65,7 @@ gsettings set org.gnome.desktop.wm.keybindings switch-panels-backward []
 gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']"
 gsettings set org.gnome.desktop.wm.keybindings toggle-maximized []
 # wm preferences
-gsettings set org.gnome.desktop.wm.preferences button-layout ':close'
+gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,close'
 # gnome-software
 if ($env:XDG_SESSION_DESKTOP -ceq 'ubuntu') {
   gsettings set com.ubuntu.update-manager first-run false

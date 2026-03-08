@@ -208,10 +208,10 @@ filter showSource ([string[]]$ExtraArgs) {
 filter resolveItem {
   [System.IO.FileSystemInfo]$item = $_
   if ($IsWindows) {
-    (Get-Item -LiteralPath $item.ResolvedTarget -ea Stop) ?? $item
+    (Get-Item -LiteralPath $item.ResolvedTarget -Force -ea Stop) ?? $item
   }
   else {
-    Get-Item -LiteralPath (realpath `-- $item.FullName) -ea Stop
+    Get-Item -LiteralPath (realpath `-- $item.FullName) -Force -ea Stop
   }
 }
 
@@ -512,8 +512,8 @@ function x {
         $CommandName = 'wt'
         break
       }
-      @('-e', $CommandName) + $ExtraArgs
-      $CommandName = 'alacritty'
+      @('-f', '--', 'alacritty', '-e', $CommandName) + $ExtraArgs
+      $CommandName = 'setsid'
       break
     }
   }
