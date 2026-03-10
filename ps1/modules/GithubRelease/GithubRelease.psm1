@@ -118,21 +118,6 @@ function execute {
   }
 }
 
-function downloadFile ([string]$Url, [string]$Path) {
-  if ($Path) {
-    $dir = Split-Path $Path
-    $file = Split-Path -Leaf $Path
-  }
-  else {
-    $dir = $buildDir
-    $file = Split-Path -Leaf $Url
-    $Path = "$dir/$file"
-  }
-  $null = New-Item -Type Directory -Force $dir
-  Remove-Item -LiteralPath $Path -Force -ea Ignore
-  execute aria2c $Url -d $dir -o $file >> $buildDir/aria2c.log
-}
-
 function checkFileHash ([string]$Path, [string]$Sha256) {
   Write-Debug "checking file hash: $Path"
   if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash -ne $Sha256) {
@@ -140,23 +125,47 @@ function checkFileHash ([string]$Path, [string]$Sha256) {
   }
 }
 
-function New-EmptyDir ([string]$Path) {
-  Remove-Item -Recurse -Force -ea Ignore -LiteralPath $Path
+function New-EmptyDir ([string[]]$Path) {
+  Remove-Item -LiteralPath $Path -Recurse -Force -ea Ignore
   New-Item -ItemType Directory -Force $Path
 }
 
 function installBinary ([string[]]$Path) {
-  if ($IsWindows) {
-    $Path.ForEach{ "@`"$([System.IO.Path]::GetFullPath($_))`" %*" > $binDir\$([System.IO.Path]::GetFileNameWithoutExtension($_)).cmd }
-    return
+  $Path.ForEach{
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($_)
+    $fullName = [System.IO.Path]::GetFullPath($_)
+    $cmd = '"' + $fullName.Replace('"', ($IsWindows ? '""' : '\"')) + '"'
+    switch ([System.IO.Path]::GetExtension($_)) {
+      '.jar' {
+        if ($IsWindows) {
+          "@java -jar $cmd %*" > $binDir/$name`.cmd
+        }
+        else {
+          # exec -a requires bash
+          "#!/bin/bash`nexec -a $name java -jar $cmd `"$@`"" > $binDir/$name
+          chmod +x $binDir/$name
+        }
+        break
+      }
+      default {
+        if ($IsWindows) {
+          "@$cmd %*" > $binDir/$name`.cmd
+        }
+        else {
+          chmod +x $fullName
+          ln -sf $fullName $binDir/$name
+        }
+        break
+      }
+    }
   }
-  ln -sf $Path $binDir
 }
 
 function getLocalVersion ([string]$Name) {
   try {
     switch ($Name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
+      bat { (bat -V).Split(' ', 3)[1]; break }
       binaryen { (wasm2js --version).Split(' ', 4)[2]; break }
       code { (code --version)[0]; break }
       copilot { (copilot -v)[0].Split(' ')[-1].TrimEnd('.'); break }
@@ -166,11 +175,13 @@ function getLocalVersion ([string]$Name) {
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
       dotnet { (dotnet --version).Split('-', 2)[0]; break }
       gh { (gh version)[0].Split(' ', 4)[2]; break }
+      ghostty { (ghostty --version)[0].Split(' ', 2)[1]; break }
       glow { (glow -v).Split(' ', 4)[2]; break }
       go { (go version).Split(' ', 4)[2].Substring(2); break }
       goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
       pastel { (pastel -V).Split(' ', 3)[1]; break }
-      less { (less --version 2>$null)[0].Split(' ', 3)[1]; break }
+      less { (less --version 2>$null)[0].Split(' ', 3)[1] + '.0'; break }
+      magick { (magick -version)[0].Split(' ', 4)[2].Replace('-', '.'); break }
       mold { (mold -v).Split(' ', 3)[1]; break }
       java { (java --version)[0].Split(' ', 3)[1]; break }
       jq { (jq -V).Split('-', 2)[1]; break }
@@ -178,8 +189,18 @@ function getLocalVersion ([string]$Name) {
       pwsh { (pwsh -v).Split(' ', 2)[1].Split('-', 2)[0]; break }
       rg { (rg -V).Split(' ', 3)[1]; break }
       rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
+      tmux { (tmux -V).Split(' ', 2)[1] -creplace '\D+$', ''; break }
       ty { (ty -V).Split(' ', 3)[1]; break }
       uv { (uv -V).Split(' ', 3)[1]; break }
+      vncviewer {
+        if ($cmd = Get-Command vncviewer -CommandType Application -TotalCount 1 -ea Ignore) {
+          (& $cmd --version 2>&1)[1].ToString().Split(' ', 4)[2].Substring(1)
+        }
+        else {
+          (java -jar $binDir/vncviewer.jar --version 2>&1)[1].ToString().Split(' ', 5)[3].Substring(1)
+        }
+        break
+      }
       wabt { wat2wasm --version; break }
       wechat {
         if ($IsFedora) {
@@ -288,10 +309,13 @@ function updateLatestVersion ($Meta, [switch]$Force) {
         binaryen { $tag.Split('_', 2)[1] + '.0'; break }
         bun { $tag.Substring(5); break }
         dsc { $tag.Split('-', 2)[0]; break }
+        ghostty { $tag.Split('-~'.ToCharArray(), 2)[0]; break }
         gswin64c { $tag.Substring(0, 2) + '.' + $tag.Substring(2, 2) + '.' + $tag.Substring(4); break }
         jq { $tag.Split('-', 2)[1]; break }
-        less { $tag.Substring(6); break }
+        less { $tag.Substring(6) + '.0'; break }
+        magick { $tag.Replace('-', '.'); break }
         pwsh { $tag.Substring(1).Split('-', 2)[0]; break }
+        tmux { $tag.Substring(1) -creplace '\D+$', ''; break }
         default { $tag -replace '^v', ''; break }
       }
       break
@@ -310,29 +334,50 @@ function updateLatestVersion ($Meta, [switch]$Force) {
   }
 }
 
+function downloadFile ([string]$Url, [string]$Path) {
+  if ($Path) {
+    $dir = Split-Path $Path
+    $file = Split-Path -Leaf $Path
+  }
+  else {
+    $dir = $buildDir
+    $file = Split-Path -Leaf $Url
+    $Path = "$dir/$file"
+  }
+  $null = New-Item -Type Directory -Force $dir
+  Remove-Item -LiteralPath $Path -Force -ea Ignore
+  execute aria2c $Url -x2 -j32 "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" -d $dir -o $file >> $buildDir/aria2c.log
+}
+
+function downloadRelease ($Meta, [string[]]$Name) {
+  $Name.ForEach{
+    if (Test-Path -LiteralPath $buildDir/$_) {
+      execute aria2c "http://github.com/$($Meta.repo)/releases/download/$($Meta.tag)/$_" -c -x2 -j32 "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" -d $buildDir >> $buildDir/aria2c.log
+      return
+    }
+    execute gh release download -R $Meta.repo -p $_ -D $buildDir $Meta.tag
+  }
+}
+
 function Install-Release {
   [CmdletBinding(SupportsShouldProcess)]
   param (
     [Parameter(Mandatory, Position = 0)]
     $Meta
   )
-  $ext = $IsWindows ? '.zip' : '.tar.gz'
-  $exe = $IsWindows ? '.exe' : ''
   if (!$PSCmdlet.ShouldProcess("$($Meta.name)@$($Meta.version)", 'install')) {
     return
   }
   Write-Debug "Installing $($Meta.name)@$($Meta.version) by tag $($Meta.tag)"
-  function downloadRelease ([string[]]$Pattern) {
-    $Pattern = $Pattern.ForEach{ "-p$_" }
-    execute gh release download -R $Meta.repo @Pattern -D $buildDir --skip-existing $Meta.tag
-  }
+  $ext = $IsWindows ? '.zip' : '.tar.gz'
+  $exe = $IsWindows ? '.exe' : ''
   switch ($Meta.name) {
     alacritty {
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
       }
       cargo install alacritty@$($Meta.version)
-      downloadRelease 'Alacritty.svg', 'alacritty.1.gz', 'alacritty-msg.1.gz', 'alacritty.5.gz', 'alacritty-bindings.5.gz', 'alacritty.bash', 'Alacritty.desktop'
+      downloadRelease $Meta 'Alacritty.svg', 'alacritty.1.gz', 'alacritty-msg.1.gz', 'alacritty.5.gz', 'alacritty-bindings.5.gz', 'alacritty.bash', 'Alacritty.desktop'
       Move-Item -LiteralPath $buildDir/alacritty.1.gz, $buildDir/alacritty-msg.1.gz, $buildDir/alacritty.5.gz, $buildDir/alacritty-bindings.5.gz $dataDir/man/man1 -Force
       Move-Item -LiteralPath $buildDir/alacritty.bash $dataDir/bash-completion/completions -Force
       Move-Item -LiteralPath $buildDir/Alacritty.desktop $dataDir/applications -Force
@@ -344,13 +389,13 @@ function Install-Release {
       switch ($true) {
         $IsFedora {
           $file = "balena-etcher-$($Meta.version)-1.x86_64.rpm"
-          downloadRelease $file
+          downloadRelease $Meta $file
           sudo dnf install -y $buildDir/$file
           break
         }
         $IsUbuntu {
           $file = "balena-etcher_$($Meta.version)_amd64.deb"
-          downloadRelease $file
+          downloadRelease $Meta $file
           sudo dpkg -i $buildDir/$file
           break
         }
@@ -378,9 +423,10 @@ function Install-Release {
     }
     bat {
       $base = 'bat-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/bat$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/bat.1 $dataDir/man/man1 -Force
       break
     }
     binaryen {
@@ -391,7 +437,7 @@ function Install-Release {
         default { throw 'unknown os' }
       }
       $file = 'binaryen-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $rust.arch, $os
-      downloadRelease $file, $file`.sha256
+      downloadRelease $Meta $file, $file`.sha256
       checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256).Split(' ', 2)[0]
       tar -xf $buildDir/$file -C $prefixDir --strip-components=1
       break
@@ -406,11 +452,17 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
       $file = 'bun-{0}-{1}.zip' -f $go.os, $arch
-      downloadRelease $file, SHASUMS256.txt
+      downloadRelease $Meta $file, SHASUMS256.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       Expand-Archive -LiteralPath $buildDir/$file $buildDir
       Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file)/bun $binDir -Force
       $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
+      break
+    }
+    cargo-generate {
+      $file = 'cargo-generate-{0}-{1}.tar.gz' -f $Meta.tag, $rust.target
+      downloadRelease $Meta $file
+      tar -xf $buildDir/$file -C $binDir
       break
     }
     code {
@@ -421,9 +473,8 @@ function Install-Release {
         }
         ($IsUbuntu -or $IsRaspi) {
           $arch = [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-          downloadFile "https://update.code.visualstudio.com/latest/linux-deb-$arch/stable"
-          $file = Split-Path -Resolve -Leaf $buildDir/code_$($Meta.version)-*.deb
-          sudo dpkg -i $buildDir/$file
+          downloadFile "https://update.code.visualstudio.com/latest/linux-deb-$arch/stable" $buildDir/code.deb
+          sudo dpkg -i $buildDir/code.deb
           break
         }
         default { throw [System.NotImplementedException]::new() }
@@ -438,7 +489,7 @@ function Install-Release {
       else {
         'copilot-{0}-{1}.tar.gz' -f $rust.os, $arch
       }
-      downloadRelease $file, SHA256SUMS.txt
+      downloadRelease $Meta $file, SHA256SUMS.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHA256SUMS.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       if ($IsWindows) {
         Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
@@ -455,7 +506,7 @@ function Install-Release {
         ($IsUbuntu -or $IsRaspi) { 'crush_{0}_{1}.deb' -f $Meta.version, $go.arch; break }
         default { throw [System.NotImplementedException]::new() }
       }
-      downloadRelease $file, checksums.txt
+      downloadRelease $Meta $file, checksums.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/checksums.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       switch ($true) {
         $IsWindows { Expand-Archive $buildDir/$file $binDir; break }
@@ -470,14 +521,14 @@ function Install-Release {
         throw [System.NotImplementedException]::new()
       }
       $file = 'deno-{0}.zip' -f $rust.target
-      downloadRelease $file, $file`.sha256sum
+      downloadRelease $Meta $file, $file`.sha256sum
       checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
       Expand-Archive $buildDir/$file $binDir
       break
     }
     diskus {
       $base = 'diskus-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/diskus$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/diskus.1 $dataDir/man/man1 -Force
@@ -497,12 +548,12 @@ function Install-Release {
         $IsWindows { sudo $buildDir/$file; break }
         $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log; break }
         $IsLinux {
-          sudo rm -rf $sudoDataDir/dotnet
-          sudo mkdir -p $sudoDataDir/dotnet
-          sudo tar -xf $buildDir/$file -C $sudoDataDir/dotnet --no-same-owner
-          sudo ln -sf $sudoDataDir/dotnet/dotnet $sudoDataDir/dotnet/dnx $sudoBinDir
+          sudo rm -rf $sudoPrefixDir/dotnet
+          sudo mkdir -p $sudoPrefixDir/dotnet
+          sudo tar -xf $buildDir/$file -C $sudoPrefixDir/dotnet
+          sudo ln -sf $sudoPrefixDir/dotnet/dotnet $sudoPrefixDir/dotnet/dnx $sudoBinDir
           sudo mkdir -p /etc/dotnet
-          $null = "$sudoDataDir/dotnet" | sudo tee /etc/dotnet/install_location_x64
+          $null = "$sudoPrefixDir/dotnet" | sudo tee /etc/dotnet/install_location_x64
           break
         }
       }
@@ -515,23 +566,24 @@ function Install-Release {
       else {
         'DSC-{0}-{1}' -f $Meta.version, $rust.target
       }
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $dataDir/dsc)
-      installBinary $dataDir/dsc/dsc$exe
+      downloadRelease $Meta $base$ext
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
+      installBinary $prefixDir/dsc/dsc$exe
       break
     }
     edit {
       switch ($true) {
-        $IsLinux {
-          $base = 'edit-{0}-{1}-linux-gnu' -f $Meta.version, $rust.arch
-          downloadRelease $base`.tar.zst
-          tar -xf $buildDir/$base`.tar.zst --zstd -C $buildDir
-          break
-        }
         $IsWindows {
           $base = 'edit-{0}-{1}-windows' -f $Meta.version, $rust.arch
-          downloadRelease $base`.zip
+          downloadRelease $Meta $base`.zip
           Expand-Archive -LiteralPath $buildDir/$base`.zip -DestinationPath $buildDir
+          break
+        }
+        $IsLinux {
+          break # FIXME: after edit-1.2.1
+          $base = 'edit-{0}-{1}-linux-gnu' -f $Meta.version, $rust.arch
+          downloadRelease $Meta $base`.tar.zst
+          tar -xf $buildDir/$base`.tar.zst --zstd -C $buildDir
           break
         }
         default { throw [System.NotImplementedException]::new() }
@@ -541,7 +593,7 @@ function Install-Release {
     }
     fd {
       $base = 'fd-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/fd$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/fd.1 $dataDir/man/man1 -Force
@@ -554,15 +606,18 @@ function Install-Release {
         break
       }
       downloadFile $Meta.file
-      $file = Split-Path -Leaf $Meta.file
+      $file = [System.IO.Path]::GetFileName($Meta.file)
       checkFileHash $buildDir/$file $Meta.sha256
-      Remove-Item -LiteralPath $dataDir/flutter -Recurse -Force
-      tar -xf $buildDir/$file -C $dataDir
+      Remove-Item -LiteralPath $prefixDir/flutter -Recurse -Force -ea Ignore
+      tar -xf $buildDir/$file -C $prefixDir
+      $baseDir = "$prefixDir/flutter/bin"
+      $exe = $IsWindows ? '.bat' : ''
+      installBinary $baseDir/flutter$exe, $baseDir/flutter-dev$exe, $baseDir/dart$exe
       break
     }
     fzf {
       $base = 'fzf-{0}-{1}_{2}' -f $Meta.version, $go.os, $go.arch
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $binDir
       break
     }
@@ -573,15 +628,35 @@ function Install-Release {
       $file = 'gh_{0}_{1}_{2}' -f $Meta.version, $go.os, $go.arch
       if ($IsFedora) {
         $file += '.rpm'
-        downloadRelease $file
+        downloadRelease $Meta $file
         sudo dnf install -y $buildDir/$file
       }
       elseif ($IsUbuntu -or $IsRaspi) {
         $file += '.deb'
-        downloadRelease $file
+        downloadRelease $Meta $file
         sudo apt install -y $buildDir/$file
       }
       break
+    }
+    ghostty {
+      switch ($true) {
+        $IsMacOS {
+          downloadFile "https://release.files.ghostty.org/$($Meta.version)/Ghostty.dmg"
+          sudo installer -pkg $buildDir/Ghostty.dmg -dumplog > Temp:/$file`.log
+          break
+        }
+        $IsFedora {
+          sudo dnf copr enable scottames/ghostty
+          sudo dnf install -y ghostty
+          break
+        }
+        ($IsUbuntu -or $IsRaspi) {
+          sudo add-apt-repository ppa:mkasberg/ghostty-ubuntu
+          sudo apt install -y ghostty
+          break
+        }
+        default { throw [System.NotImplementedException]::new() }
+      }
     }
     glow {
       $os = switch ($true) {
@@ -596,7 +671,7 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
       $base = 'glow_{0}_{1}_{2}' -f $Meta.version, $os, $arch
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/glow$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/manpages/glow.1.gz $dataDir/man/man1 -Force
@@ -613,9 +688,9 @@ function Install-Release {
           break
         }
         $IsLinux {
-          sudo rm -rf $sudoDataDir/go
-          sudo tar -xf $buildDir/$file -C $sudoDataDir --no-same-owner
-          sudo ln -sf $sudoDataDir/go/bin/go $sudoDataDir/go/bin/gofmt $sudoBinDir
+          sudo rm -rf $sudoPrefixDir/go
+          sudo tar -xf $buildDir/$file -C $sudoPrefixDir
+          sudo ln -sf $sudoPrefixDir/go/bin/go $sudoPrefixDir/go/bin/gofmt $sudoBinDir
           break
         }
         $IsMacOS {
@@ -634,7 +709,7 @@ function Install-Release {
         ($IsUbuntu -or $IsRaspi) { '.deb'; break }
         default { '.tar.gz'; break }
       }
-      downloadRelease $base$ext, "golangci-lint-$($Meta.version)-checksums.txt"
+      downloadRelease $Meta $base$ext, "golangci-lint-$($Meta.version)-checksums.txt"
       checkFileHash $buildDir/$base$ext (Get-Content -LiteralPath $buildDir/"golangci-lint-$($Meta.version)-checksums.txt" | Select-String -Raw -SimpleMatch $base$ext).Split(' ', 2)[0]
       switch ($true) {
         $IsFedora { sudo dnf install -y $buildDir/$base$ext; break }
@@ -646,7 +721,7 @@ function Install-Release {
     goreleaser {
       $os = $go.os.Substring(0, 1).ToUpperInvariant() + $go.os.Substring(1)
       $base = 'goreleaser_{0}_{1}' -f $os, $rust.arch
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/goreleaser$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/manpages/goreleaser.1.gz $dataDir/man/man1 -Force
@@ -658,13 +733,13 @@ function Install-Release {
         throw [System.NotImplementedException]::new()
       }
       $file = '{0}w64.exe' -f $Meta.tag
-      downloadRelease $file
+      downloadRelease $Meta $file
       sudo $buildDir/$file
       break
     }
     hexyl {
       $base = 'hexyl-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/hexyl.1 $dataDir/man/man1 -Force
@@ -672,7 +747,7 @@ function Install-Release {
     }
     hyperfine {
       $base = 'hyperfine-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/hyperfine$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/hyperfine.1 $dataDir/man/man1 -Force
@@ -685,9 +760,9 @@ function Install-Release {
       downloadFile $Meta.url
       $file = Split-Path -Leaf $Meta.url
       checkFileHash $buildDir/$file $Meta.sha256
-      tar -xf $buildDir/$file -C ~/.jdks
-      ln -sf ~/.jdks/jdk-$($Meta.version)/bin/java $binDir
-      ln -sf ~/.jdks/jdk-$($Meta.version)/bin/javac $binDir
+      sudo tar -xf $buildDir/$file -C $sudoPrefixDir
+      sudo ln -sf $sudoPrefixDir/jdk-$($Meta.version)/bin/java $binDir
+      sudo ln -sf $sudoPrefixDir/jdk-$($Meta.version)/bin/javac $binDir
       break
     }
     jq {
@@ -698,7 +773,7 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
       $file = 'jq-{0}-{1}{2}' -f $os, $go.arch, $exe
-      downloadRelease $file
+      downloadRelease $Meta $file
       Move-Item -LiteralPath $buildDir/$file $binDir/jq$exe -Force
       if (!$IsWindows) {
         chmod +x $binDir/jq
@@ -710,14 +785,14 @@ function Install-Release {
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
       }
-      $base = 'less-{0}' -f $Meta.version
+      $base = 'less-{0}' -f $Meta.version.Split('.', 2)[0]
       downloadFile "http://www.greenwoodsoftware.com/less/$base.tar.gz"
       downloadFile "http://www.greenwoodsoftware.com/less/$base.sig"
       gpg --verify $buildDir/$base`.sig $buildDir/$base`.tar.gz
       tar -xf $buildDir/$base`.tar.gz -C $buildDir
       Push-Location -LiteralPath $buildDir/$base
       try {
-        ./configure --with-editor=vim --with-regex=pcre2
+        ./configure --with-editor=edit --with-regex=pcre2
         make
         sudo make install
       }
@@ -731,12 +806,12 @@ function Install-Release {
         throw [System.NotImplementedException]::new()
       }
       $base = 'LocalSend-{0}-{1}-x86-64' -f $Meta.version, $rust.os
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $dataDir/localsend)
+      downloadRelease $Meta $base$ext
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/localsend)
       @"
 [Desktop Entry]
-Icon=$dataDir/localsend/data/flutter_assets/assets/img/logo-512.png
-Exec=$dataDir/localsend/localsend_app %u
+Icon=$prefixDir/localsend/data/flutter_assets/assets/img/logo-512.png
+Exec=$prefixDir/localsend/localsend_app %u
 Version=1.0
 Type=Application
 Categories=Network
@@ -749,19 +824,29 @@ StartupWMClass=localsend_app
       update-desktop-database $dataDir/applications
       break
     }
-    mkcert {
-      $file = 'mkcert-{0}-{1}-{2}{3}' -f $Meta.tag, $go.os, $go.arch, $exe
-      downloadRelease $file
-      Move-Item -LiteralPath $buildDir/$file $binDir/mkcert$exe
-      if (!$IsWindows) {
-        chmod +x $binDir/mkcert
+    magick {
+      if (!$IsLinux -or [RuntimeInformation]::OSArchitecture -cne 'X64') {
+        throw [System.NotImplementedException]::new()
       }
+      $pattern = 'ImageMagick-*-gcc-x86_64.AppImage'
+      downloadRelease $Meta $pattern
+      Move-Item $buildDir/$pattern $binDir/magick -Force
+      chmod +x $binDir/magick
       break
     }
     mdbook {
       $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $binDir
+      break
+    }
+    mkcert {
+      $file = 'mkcert-{0}-{1}-{2}{3}' -f $Meta.tag, $go.os, $go.arch, $exe
+      downloadRelease $Meta $file
+      Move-Item -LiteralPath $buildDir/$file $binDir/mkcert$exe
+      if (!$IsWindows) {
+        chmod +x $binDir/mkcert
+      }
       break
     }
     mold {
@@ -769,12 +854,12 @@ StartupWMClass=localsend_app
         throw [System.NotImplementedException]::new()
       }
       $base = 'mold-{0}-{1}-{2}' -f $Meta.version, $rust.arch, $rust.os
-      downloadRelease $base$ext
-      sudo tar -xf $buildDir/$base$ext -C $sudoDataDir --no-same-owner --strip-components=1
+      downloadRelease $Meta $base$ext
+      sudo tar -xf $buildDir/$base$ext -C $sudoPrefixDir --strip-components=1
       break
     }
     nerd-fonts {
-      downloadRelease 0xProto.zip
+      downloadRelease $Meta 0xProto.zip
       Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $buildDir
       switch ($true) {
         $IsWindows {
@@ -809,7 +894,7 @@ StartupWMClass=localsend_app
         $IsWindows { Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file; break }
         $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log; break }
         $IsLinux {
-          $root = "$dataDir/nodejs/$($Meta.tag)"
+          $root = "$prefixDir/nodejs/$($Meta.tag)"
           tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
           installBinary $root/bin/node, $root/bin/npm
           break
@@ -818,14 +903,14 @@ StartupWMClass=localsend_app
     }
     numbat {
       $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $dataDir/numbat) --strip-components=1
-      installBinary $dataDir/numbat/numbat$exe
+      downloadRelease $Meta $base$ext
+      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
+      installBinary $prefixDir/numbat/numbat$exe
       break
     }
     pastel {
       $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/pastel$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/autocomplete/pastel.bash $dataDir/bash-completion/completions -Force
@@ -834,8 +919,9 @@ StartupWMClass=localsend_app
     }
     plantuml {
       $file = 'plantuml-gplv2-{0}.jar' -f $Meta.version
-      downloadRelease $file
-      Move-Item -LiteralPath $buildDir/$file $binDir/plantuml.jar -Force
+      downloadRelease $Meta $file
+      Move-Item -LiteralPath $buildDir/$file $prefixDir/jar/plantuml.jar -Force
+      installBinary $prefixDir/jar/plantuml.jar
       break
     }
     pwsh {
@@ -844,19 +930,19 @@ StartupWMClass=localsend_app
       switch ($true) {
         $IsWindows {
           $file = 'PowerShell-{0}-win-{1}.msi' -f $id, $arch
-          downloadRelease $file
+          downloadRelease $Meta $file
           Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
           break
         }
         $IsMacOS {
           $file = 'powershell-{0}-osx-{1}.pkg' -f $id, $arch
-          downloadRelease $file
+          downloadRelease $Meta $file
           sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
           break
         }
         $IsLinux {
           $file = 'powershell-{0}-linux-{1}.tar.gz' -f $id, $arch
-          downloadRelease $file
+          downloadRelease $Meta $file
           $baseDir = '/opt/microsoft/powershell/7'
           sudo rm -rf $baseDir
           sudo mkdir -p $baseDir
@@ -875,7 +961,7 @@ StartupWMClass=localsend_app
         $target = $target -creplace '-gnu$', '-musl'
       }
       $base = 'ripgrep-{0}-{1}' -f $Meta.tag, $target
-      downloadRelease $base$ext, $base$ext`.sha256
+      downloadRelease $Meta $base$ext, $base$ext`.sha256
       checkFileHash $buildDir/$base$ext (Get-Content -Raw -LiteralPath $buildDir/$base$ext`.sha256).Split(' ', 2)[0]
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/rg$exe $binDir -Force
@@ -889,7 +975,7 @@ StartupWMClass=localsend_app
         $target = $target -creplace '-gnu$', '-musl'
       }
       $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, $target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       [string[]]$files = 'rga', 'rga-fzf', 'rga-fzf-open', 'rga-preproc'
       $files = $files.ForEach{ "$buildDir/$base/$_$exe" }
@@ -909,12 +995,22 @@ StartupWMClass=localsend_app
     }
     taplo {
       $base = 'taplo-{0}-{1}' -f $go.os, $rust.arch
-      downloadRelease $base`.gz
+      downloadRelease $Meta $base`.gz
       gzip -df $buildDir/$base`.gz
       Move-Item -LiteralPath $buildDir/$base$exe $binDir/taplo$exe -Force
       if (!$IsWindows) {
         chmod +x $binDir/taplo
       }
+      break
+    }
+    tmux {
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      $os = $IsMacOS ? 'macos' : 'linux'
+      $base = 'tmux-{0}-{1}-{2}' -f $Meta.tag.Substring(1), $os, $rust.arch
+      downloadRelease $Meta $base$ext
+      tar -xf $buildDir/$base$ext -C $binDir
       break
     }
     tree-sitter {
@@ -925,12 +1021,25 @@ StartupWMClass=localsend_app
         default { throw [System.NotImplementedException]::new() }
       }
       $base = 'tree-sitter-{0}-{1}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-      downloadRelease $base`.gz
+      downloadRelease $Meta $base`.gz
       gzip -df $buildDir/$base`.gz
       Move-Item -LiteralPath $buildDir/$base $binDir/tree-sitter$exe -Force
       if (!$IsWindows) {
         chmod +x $binDir/tree-sitter
       }
+      break
+    }
+    vncviewer {
+      $file = if ($IsWindows) {
+        switch ([RuntimeInformation]::OSArchitecture) {
+          'X64' { 'vncviewer64-{0}.exe' -f $Meta.version; break }
+          'X86' { 'vncviewer-{0}.exe' -f $Meta.version; break }
+        }
+      }
+      $file ??= 'VncViewer-{0}.jar' -f $Meta.version
+      $target = $file.EndsWith('.jar') ? "$prefixDir/jar/vncviewer.jar" : "$binDir/vncviewer.exe"
+      downloadFile "https://sourceforge.net/projects/tigervnc/files/stable/$($Meta.version)/$file/download" $target
+      installBinary $target
       break
     }
     wabt {
@@ -941,14 +1050,14 @@ StartupWMClass=localsend_app
         default { throw [System.NotImplementedException]::new() }
       }
       $file = 'wabt-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-      downloadRelease $file
+      downloadRelease $Meta $file
       tar -xf $buildDir/$file -C $prefixDir --strip-components=1
       break
     }
     wasm-bindgen {
       $base = 'wasm-bindgen-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
       $file = "$base.tar.gz"
-      downloadRelease $file, $file`.sha256sum
+      downloadRelease $Meta $file, $file`.sha256sum
       checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
       tar -xf $buildDir/$file -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/wasm-*$exe $binDir -Force
@@ -956,7 +1065,7 @@ StartupWMClass=localsend_app
     }
     wasm-pack {
       $base = 'wasm-pack-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $base`.tar.gz
+      downloadRelease $Meta $base`.tar.gz
       tar -xf $buildDir/$base`.tar.gz -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/wasm-pack$exe $binDir -Force
       break
@@ -986,7 +1095,7 @@ StartupWMClass=localsend_app
     }
     yq {
       $base = 'yq_{0}_{1}' -f $go.os, $go.arch
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base$exe $binDir/yq$exe -Force
       Move-Item -LiteralPath $buildDir/yq.1 $dataDir/man/man1 -Force
@@ -1004,7 +1113,7 @@ StartupWMClass=localsend_app
         throw [System.NotImplementedException]::new()
       }
       $base = '{0}-{1}' -f $_, $rust.target
-      downloadRelease $base$ext
+      downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/$_$exe $binDir -Force
       if ($_ -ceq 'uv') {
@@ -1082,6 +1191,9 @@ function Update-Software {
       sudo apt update
       sudo apt install -f
       sudo apt upgrade -y --auto-remove
+      if ($IsUbuntu) {
+        sudo snap refresh
+      }
       if (!$Force) {
         continue
       }
@@ -1100,6 +1212,23 @@ function Update-Software {
       if ($pkgs) {
         sudo apt install -y $pkgs
       }
+      continue
+    }
+    brew {
+      if (!$IsMacOS) {
+        Write-Warning 'using homebrew on non-macos system is not recommanded'
+      }
+      if (!(Get-Command brew -CommandType Application -TotalCount 1 -ea Ignore)) {
+        downloadFile 'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh'
+        sudo bash $buildDir/install.sh
+      }
+      brew update
+      brew upgrade -y
+      if ($Force) {
+        brew install -y $pkgs
+        brew install -y --cask $pkgMap['brew-cask']
+      }
+      brew cleanup
       continue
     }
     bun {
@@ -1225,8 +1354,9 @@ function Update-Software {
       }
     }
     psm1 {
-      Update-Module
-      Clear-Module
+      if (Update-Module -AcceptLicense -PassThru) {
+        Clear-Module
+      }
       if ($Force -and $pkgs) {
         Install-Module $pkgs
       }
@@ -1262,13 +1392,13 @@ function Update-Software {
         Write-Warning 'calling winget on non-Windows platform'
         continue
       }
-      sudo winget upgrade -r --accept-package-agreements
+      sudo winget upgrade -r --accept-source-agreements --accept-package-agreements
       if ($Force -and $pkgs) {
-        sudo winget install --accept-package-agreements $pkgs
+        sudo winget install --accept-source-agreements --accept-package-agreements $pkgs
       }
       continue
     }
-    { $_ -ceq 'windows' -or $_ -ceq 'fedora' -or $_ -ceq 'ubuntu' -or $_ -ceq 'wsl' -or $_ -ceq 'raspi' } {
+    { $_ -ceq 'windows' -or $_ -ceq 'macos' -or $_ -ceq 'fedora' -or $_ -ceq 'ubuntu' -or $_ -ceq 'wsl' -or $_ -ceq 'raspi' } {
       if ($pkgs) {
         Update-Release $pkgs
       }
@@ -1278,21 +1408,48 @@ function Update-Software {
   }
 }
 
+function Update-System {
+  if ($IsWindows) {
+    Update-Software winget, windows
+  }
+  elseif ($IsMacOS) {
+    Update-Software brew, macos
+  }
+  elseif ($IsLinux) {
+    if ($PSVersionTable.OS.StartsWith('Ubuntu')) {
+      Update-Software apt, ubuntu
+    }
+    elseif ($PSVersionTable.OS.StartsWith('Fedora')) {
+      Update-Software dnf, fedora
+    }
+    elseif ($PSVersionTable.OS.StartsWith('Debian') -and
+      [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64) {
+      Update-Software apt, raspi
+    }
+  }
+  else {
+    throw [System.NotImplementedException]::new()
+  }
+  Update-Software bun, rustup, cargo, go, psm1, uv -Global -Force
+  if (!$IsRaspi) {
+    Update-Software flutter -Global -Force
+  }
+}
+
 $go = goenv
 $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
 if ($IsLinux) {
-  $IsUbuntu = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=ubuntu')
-  $IsFedora = (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=fedora')
-  $IsRaspi = [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64 -and
-  (Get-Content -Raw -LiteralPath /etc/os-release).Contains('ID=debian')
+  $IsUbuntu = $PSVersionTable.OS.StartsWith('Ubuntu')
+  $IsFedora = $PSVersionTable.OS.StartsWith('Fedora')
+  $IsRaspi = $PSVersionTable.OS.StartsWith('Debian') -and [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64
   $IsWSL = Test-Path -LiteralPath Env:/WSL_DISTRO_NAME
 }
 
-$dataDir = $IsWindows ? "$env:LOCALAPPDATA\Programs" : "$HOME/.local/share"
 $prefixDir = $IsWindows ? "$env:LOCALAPPDATA\prefix" : "$HOME/.local"
+$dataDir = [System.IO.Path]::Join($prefixDir, 'share')
 $binDir = [System.IO.Path]::Join($prefixDir, 'bin')
 
-$sudoDataDir = $IsWindows ? $env:ProgramData : '/usr/local/share'
 $sudoPrefixDir = $IsWindows ? "$env:ProgramData\prefix" : '/usr/local'
+$sudoDataDir = [System.IO.Path]::Join($sudoPrefixDir, 'share')
 $sudoBinDir = [System.IO.Path]::Join($sudoPrefixDir, 'bin')

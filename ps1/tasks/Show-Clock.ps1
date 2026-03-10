@@ -39,7 +39,11 @@ elseif ($IsLinux) {
   {
     $clock = ${%clock%}
     $dinner = ${%dinner%}
-    notify-send --urgency=critical --app-name=clock $clock "It's time for $dinner"
+    notify-send --app-name=clock $clock "It's time for $dinner"
+    $audioVolume = (wpctl get-volume '@DEFAULT_AUDIO_SINK@').Split(' ', 2)[1]
+    wpctl set-volume '@DEFAULT_AUDIO_SINK@' 0.60
+    1..3 | ForEach-Object { Start-Sleep -Milliseconds 300; pw-play /usr/share/sounds/freedesktop/stereo/complete.oga }
+    wpctl set-volume '@DEFAULT_AUDIO_SINK@' $audioVolume
   }
 }
 else {

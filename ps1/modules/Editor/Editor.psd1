@@ -33,7 +33,7 @@
     Description          = 'Enhance clis by these extra commands.'
 
     # Minimum version of the PowerShell engine required by this module
-    PowerShellVersion    = '7.5.2'
+    PowerShellVersion    = '7.6.0'
 
     # Name of the PowerShell host required by this module
     # PowerShellHostName = ''

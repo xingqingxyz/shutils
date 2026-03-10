@@ -1,67 +1,3 @@
-function androidEnv {
-  if (!$env:ANDROID_HOME) {
-    throw 'ANDROID_HOME environment variable is not set'
-  }
-  $env:PATH += '', "$env:ANDROID_HOME\cmdline-tools\latest\bin", "$env:ANDROID_HOME\emulator", "$env:ANDROID_HOME\platform-tools" -join [System.IO.Path]::PathSeparator
-}
-
-function vsdev {
-  Import-Module 'C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
-  Enter-VsDevShell 1da1aa76 -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
-}
-
-function delay {
-  [CmdletBinding(DefaultParameterSetName = 'Base')]
-  param (
-    [Parameter(Mandatory, Position = 0, ParameterSetName = 'Base')]
-    [string]
-    $Command,
-    [Parameter(Mandatory, Position = 0, ParameterSetName = 'ScriptBlock')]
-    [scriptblock]
-    $ScriptBlock,
-    [Parameter(Position = 1, ValueFromRemainingArguments)]
-    [System.Object[]]
-    $ArgumentList,
-    [Parameter()]
-    [timespan]
-    $Delay = '0:12'
-  )
-  $PSNativeCommandUseErrorActionPreference = $true
-  Write-Debug "Sleeping $Delay"
-  Start-Sleep $Delay
-  $description = if ($Command) {
-    $ScriptBlock = { &$Command @args }
-    "$Command $ArgumentList"
-  }
-  else {
-    "{$ScriptBlock}"
-  }
-  & $ScriptBlock @ArgumentList
-  $status = $?
-  $statusText = $status ? 'completed' : 'failed'
-  $message = "PowerShell job $statusText`: $description"
-
-  if ($IsWindows) {
-    Add-Type -AssemblyName System.Windows.Forms
-    $notify = [System.Windows.Forms.NotifyIcon]::new()
-    $notify.BalloonTipIcon = $status ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]::Warning
-    $notify.BalloonTipTitle = $statusText
-    $notify.BalloonTipText = $message
-    $notify.Icon = [System.Drawing.SystemIcons]::Application
-    $notify.Text = 'delayCheck'
-    $notify.Visible = $true
-    $notify.ShowBalloonTip(1000)
-    $null = Register-ObjectEvent $notify -EventName BalloonTipClosed -MaxTriggerCount 1 -Action { $args[0].Dispose() }
-    Start-Sleep 1 # prevent pwsh free BalloonTipIcon
-  }
-  elseif ($IsLinux) {
-    notify-send $statusText $message
-  }
-  else {
-    throw [System.NotImplementedException]::new()
-  }
-}
-
 function Clear-Module {
   <#
   .SYNOPSIS
@@ -70,135 +6,6 @@ function Clear-Module {
   Get-InstalledModule | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
     $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
   } | ForEach-Object { Uninstall-Module $_.Name -MaximumVersion $_.Version }
-}
-
-function Get-MemoryInfo {
-  if ($IsWindows) {
-    $os = Get-CimInstance Win32_OperatingSystem
-    # Win32_OperatingSystem 中的内存单位为 KB
-    $total = $os.TotalVisibleMemorySize / 1MB
-    $free = $os.FreePhysicalMemory / 1MB
-  }
-  elseif ($IsMacOS) {
-    # 总内存字节数
-    [long]$totalBytes = sysctl -n hw.memsize
-    # vm_stat 输出各类页数
-    $vmStats = @{}
-    vm_stat | ForEach-Object {
-      if ($_ -cmatch '^(?<name>.+):\s+(?<count>\d+)') {
-        $vmStats[$Matches.name.Trim()] = [int]$Matches.count
-      }
-    }
-    [long]$pageSize = sysctl -n hw.pagesize
-    $freeBytes = ($vmStats['Pages free'] + $vmStats['Pages inactive']) * $pageSize
-    # 统一以 GB 为单位 (1MB*1024 == 1GB)
-    $total = $totalBytes / 1GB
-    $free = $freeBytes / 1GB
-  }
-  elseif ($IsLinux) {
-    # /proc/meminfo 中的内存单位为 KB
-    $info = @{}
-    Get-Content -LiteralPath /proc/meminfo | ForEach-Object {
-      if ($_ -cmatch '^(?<k>\w+):\s+(?<v>\d+)') {
-        $info[$Matches.k] = [long]$Matches.v
-      }
-    }
-    $freeKb = if ($info.ContainsKey('MemAvailable')) {
-      $info.MemAvailable
-    }
-    else {
-      $info.MemFree + $info.Buffers + $info.Cached
-    }
-    $total = $info.MemTotal / 1MB
-    $free = $freeKb / 1MB
-  }
-  else {
-    throw [System.NotImplementedException]::new('unsupported platform')
-  }
-
-  $used = $total - $free
-  $percent = ($used / $total) * 100
-  [pscustomobject]@{
-    'Total(GB)' = $total
-    'Used(GB)'  = $used
-    'Free(GB)'  = $free
-    'Used%'     = $percent
-  }
-}
-
-function Search-Web {
-  [CmdletBinding()]
-  [Alias('sw')]
-  param (
-    [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('baidu', 'bing', 'bing-en', 'cargo', 'docker', 'dotnetapi', 'flutter', 'go', 'google', 'jsdelivr', 'jsr', 'maven', 'npm', 'nuget', 'psgallery', 'pypi', 'vcpkg')]
-    [string]
-    $Category,
-    [Parameter(Mandatory, Position = 1)]
-    [string]
-    $Name
-  )
-  switch ($Category) {
-    baidu { Start-Process "https://www.baidu.com/s?wd=$Name"; break }
-    bing { Start-Process "https://www.bing.com/search?q=$Name"; break }
-    bing-en { Start-Process "https://www.bing.com/search?ensearch=1&q=$Name"; break }
-    cargo { Start-Process "https://crates.io/search?q=$Name"; break }
-    docker { Start-Process "https://hub.docker.com/search?q=$Name"; break }
-    dotnetapi { Start-Process "https://learn.microsoft.com/zh-cn/dotnet/api/?term=$Name"; break }
-    flutter { Start-Process "https://pub-web.flutter-io.cn/packages?q=$Name"; break }
-    go { Start-Process "https://pkg.go.dev/search?q=$Name"; break }
-    google { Start-Process "https://www.google.com/search?q=$Name"; break }
-    jsdelivr { Start-Process "https://www.jsdelivr.com/?query=$Name"; break }
-    jsr { Start-Process "https://jsr.io/packages?search=$Name"; break }
-    maven { Start-Process "https://central.sonatype.com/search?q=$Name"; break }
-    npm { Start-Process "https://www.npmjs.com/search?q=$Name"; break }
-    nuget { Start-Process "https://www.nuget.org/packages?q=$Name"; break }
-    psgallery { Start-Process "https://www.powershellgallery.com/packages?q=$Name"; break }
-    pypi { Start-Process "https://pypi.org/search/?q=$Name"; break }
-    vcpkg { Start-Process "https://vcpkg.io/en/packages?query=$Name"; break }
-  }
-}
-
-function Get-TypeMember {
-  [CmdletBinding()]
-  [Alias('gtm')]
-  [OutputType([System.Reflection.MemberInfo[]])]
-  param (
-    [ArgumentCompleter({
-        param (
-          [string]$CommandName,
-          [string]$ParameterName,
-          [string]$WordToComplete
-        )
-        [System.Management.Automation.CompletionCompleters]::CompleteType($WordToComplete)
-      })]
-    [Parameter(Mandatory, ValueFromPipeline)]
-    [type]
-    $InputObject,
-    [ArgumentCompleter({
-        param (
-          [string]$CommandName,
-          [string]$ParameterName,
-          [string]$WordToComplete,
-          [System.Management.Automation.Language.CommandAst]$CommandAst,
-          [System.Collections.IDictionary]$FakeBoundParameters
-        )
-        (([type]$FakeBoundParameters.InputObject).GetMembers() | Where-Object Name -Like $WordToComplete*).Name
-      })]
-    [Parameter(Position = 0)]
-    [string[]]
-    $Name = '*',
-    [Alias('Type')]
-    [Parameter()]
-    [System.Reflection.MemberTypes]
-    $MemberType = 'All'
-  )
-  process {
-    $InputObject.GetMembers().Where{
-      $MemberType.HasFlag($_.MemberType) -and $_.Name -like $Name -and
-      ($_.MemberType -cne 'Method' -or !$_.IsSpecialName)
-    }
-  }
 }
 
 function Get-Region {
@@ -323,257 +130,6 @@ function Set-Region {
   }
 }
 
-function Test-Administrator {
-  $IsWindows ? [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) : ((id -u) -ceq '0')
-}
-
-function Get-EnvironmentVariable {
-  [CmdletBinding()]
-  [Alias('gev')]
-  [OutputType([string[]])]
-  param (
-    [ArgumentCompleter({
-        param (
-          [string]$CommandName,
-          [string]$ParameterName,
-          [string]$WordToComplete
-        )
-        Convert-Path env:$WordToComplete*
-      })]
-    [Parameter(Position = 0, ValueFromRemainingArguments)]
-    [string[]]
-    $ExtraArgs,
-    [Parameter()]
-    [System.EnvironmentVariableTarget]
-    $Scope = 'Process',
-    [Parameter(ValueFromPipeline)]
-    [string]
-    $InputObject
-  )
-  if ($MyInvocation.ExpectingInput) {
-    $ExtraArgs += $input
-  }
-  Convert-Path $ExtraArgs.ForEach{ "env:$_" } | ForEach-Object {
-    [System.Environment]::GetEnvironmentVariable($_, $Scope)
-  }
-}
-
-function Set-EnvironmentVariable {
-  [CmdletBinding()]
-  [Alias('sev')]
-  param (
-    [ArgumentCompleter({
-        param (
-          [string]$CommandName,
-          [string]$ParameterName,
-          [string]$WordToComplete
-        )
-        (Get-Item env:$wordToComplete* -ea Ignore).Name.ForEach{ "$_=" }
-      })]
-    [Parameter(Position = 0, ValueFromRemainingArguments)]
-    [string[]]
-    $ExtraArgs,
-    [Parameter()]
-    [System.EnvironmentVariableTarget]
-    $Scope = 'Process',
-    [Parameter()]
-    [string]
-    $RegionName = "${Scope}Env",
-    [Parameter(ValueFromPipeline)]
-    [string]
-    $InputObject
-  )
-  if ($MyInvocation.ExpectingInput) {
-    $PSBoundParameters.ExtraArgs = $ExtraArgs += $input
-  }
-  $environment = @{}
-  foreach ($arg in $ExtraArgs) {
-    if ($arg -cnotmatch '^(\w+)(?:(=|\+=)(.+)?)?$') {
-      return Write-Error "unknown format $arg"
-    }
-    $key = $Matches[1]
-    $value = switch ($Matches[2]) {
-      '=' { $Matches[3]; break }
-      '+=' { [System.Environment]::GetEnvironmentVariable($key, $Scope) + $Matches[3]; break }
-      default { [System.Environment]::GetEnvironmentVariable($key) ?? '1'; break }
-    }
-    $environment[$key] = $value
-    if ($IsWindows) {
-      if ($Scope -ceq 'User') {
-        $value = [System.Environment]::GetEnvironmentVariable($key, 'Machine') + $value
-      }
-      elseif ($Scope -ceq 'Machine') {
-        $value += [System.Environment]::GetEnvironmentVariable($key, 'User')
-      }
-    }
-    Set-Item -LiteralPath env:$key $value
-  }
-  Write-Debug "setting env $($environment.GetEnumerator())"
-  if ($Scope -ceq 'Process') {
-    return
-  }
-  elseif ($Scope -ceq 'Machine' -and !(Test-Administrator)) {
-    return Invoke-Sudo Set-EnvironmentVariable @PSBoundParameters
-  }
-  if ($IsWindows) {
-    # reg faster than [Environment]
-    $regPath = $Scope -ceq 'Machine' ? 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' : 'HKCU:\Environment\'
-    $environment.GetEnumerator().ForEach{
-      if ($_.Value) {
-        Set-ItemProperty -LiteralPath $regPath $_.Key $_.Value
-      }
-      else {
-        Write-Debug "remove $($_.Key) on $regPath"
-        Remove-ItemProperty -LiteralPath $regPath $_.Key -ea Ignore
-      }
-    }
-  }
-  elseif ($IsLinux) {
-    $lines = $environment.GetEnumerator().ForEach{
-      if ($_.Value) {
-        "export $($_.Key)='$($_.Value.Replace("'", "'\''"))'"
-      }
-    }
-    switch ($Scope) {
-      'User' {
-        Set-Region $RegionName $lines ~/.bashrc -Inplace
-        break
-      }
-      'Machine' {
-        Set-Region $RegionName $lines /etc/profile.d/sh.local -Inplace
-        break
-      }
-    }
-  }
-  elseif ($IsMacOS) {
-    $environment.GetEnumerator().ForEach{
-      if ($_.Value) {
-        [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value, $Scope)
-      }
-      else {
-        throw [System.NotImplementedException]::new()
-      }
-    }
-  }
-  else {
-    throw [System.NotImplementedException]::new()
-  }
-}
-
-function Set-EnvironmentVariablePath {
-  <#
-  .SYNOPSIS
-  Creates a new environment seperator seperated path based on the actual env value, then set it back.
-   #>
-  [CmdletBinding()]
-  [OutputType([string])]
-  [Alias('sevp')]
-  param (
-    [Parameter(Mandatory, Position = 0)]
-    [string]
-    $Name,
-    [Parameter()]
-    [System.EnvironmentVariableTarget]
-    $Scope = 'Process',
-    [Parameter()]
-    [string[]]
-    $Prepend,
-    [Parameter()]
-    [string[]]
-    $Append,
-    [Parameter()]
-    [string[]]
-    $Delete = @(),
-    [Parameter()]
-    [switch]
-    $PassThru
-  )
-  [string]$value = [System.Environment]::GetEnvironmentVariable($Name, $Scope)
-  [string]$sep = [System.IO.Path]::PathSeparator
-  $value = $Prepend + $value.Split($sep).Where{ $_ -and !$Delete.Contains($_) } + $Append | Select-Object -Unique | Join-String -Separator $sep -OutputSuffix $sep
-  [System.Environment]::SetEnvironmentVariable($Name, $value, $Scope)
-  if ($PassThru) {
-    $value
-  }
-}
-
-Set-Alias uev Use-EnvironmentVariable
-function Use-EnvironmentVariable {
-  $environment = @{}
-  [regex]$reEnv = [regex]::new('^\w+\+?=')
-  # flat iterator args for native passing
-  # note: replace token -- with `-- to escape function passing
-  [string[]]$ags = foreach ($arg in [string[]]$args.ForEach{
-      if ($null -ne $_) {
-        $_
-      }
-    }) {
-    if (!$reEnv.IsMatch($arg)) {
-      $arg
-      $foreach
-      break
-    }
-    [string]$key, [string]$value = $arg.Split('=', 2)
-    if ($key.EndsWith('+')) {
-      $key = $key.TrimEnd('+')
-      $value = [System.Environment]::GetEnvironmentVariable($key) + $value
-    }
-    $environment[$key] = $value
-  }
-  $ags[0] = (Get-Command $ags[0] -Type Application -TotalCount 1 -ea Stop).Source
-  $saveEnvironment = @{}
-  $environment.GetEnumerator().ForEach{
-    $saveEnvironment[$_.Key] = [System.Environment]::GetEnvironmentVariable($_.Key)
-    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
-  }
-  try {
-    [string]$cmd, $ags = $ags
-    Write-CommandDebug -Environment $environment.GetEnumerator() $cmd $ags
-    if ($MyInvocation.ExpectingInput) {
-      $input | & $cmd $ags
-    }
-    else {
-      & $cmd $ags
-    }
-  }
-  finally {
-    $saveEnvironment.GetEnumerator().ForEach{
-      Set-Item -LiteralPath env:$($_.Key) $_.Value
-    }
-  }
-}
-
-function Update-SessionEnvironment {
-  <#
-  .SYNOPSIS
-  Updates environment variables from registry to current powershell session.
-  #>
-  if (!$IsWindows) {
-    throw [System.SystemException]::new('only supports windows')
-  }
-  $envMap = @{}
-  [Microsoft.Win32.RegistryKey]$reg = Get-Item -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\'
-  $reg.GetValueNames().ForEach{
-    $envMap[$_] = $reg.GetValue($_)
-  }
-  $machinePath = $envMap['Path']
-  $reg = Get-Item -LiteralPath 'HKCU:\Environment\'
-  $reg.GetValueNames().ForEach{
-    $envMap[$_] = $reg.GetValue($_)
-  }
-  # try to find the prepended or appended paths e.g. $PSHOME or venv paths
-  [string]$path = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-  [int]$idx = $env:Path.LastIndexOf($path)
-  $path = $idx -lt 0 ? '' : $env:Path.Substring($idx + $path.Length)
-  $path = $env:Path.Substring(0, [System.Math]::Max(0, $env:Path.IndexOf([System.Environment]::GetEnvironmentVariable('Path', 'Machine')))) + $machinePath + ';' + $envMap['Path'] + $path
-  $envMap['Path'] = $path.Split(';').Where{ $_ } | Join-String -Separator ';' -OutputSuffix ';'
-  # keep common process vars (non-null only)
-  $envMap['PSModulePath'] = $env:PSModulePath
-  $envMap.GetEnumerator().ForEach{
-    [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
-  }
-}
-
 function Repair-GitSymlinks {
   git ls-files -s | ForEach-Object {
     [int]$mode, $item = $_ -split '\s+', 4
@@ -601,15 +157,20 @@ function Repair-GitSymlinks {
 }
 
 function New-RelativeSymlink {
+  <#
+  .SYNOPSIS
+  Create relative symbolic links from path to target.
+  #>
   [CmdletBinding()]
   [OutputType([System.IO.FileInfo[]])]
   param (
     [Parameter(Mandatory, Position = 0)]
-    [string[]]
-    $Path,
-    [Parameter(Mandatory, Position = 1)]
     [string]
-    $Target
+    $Target,
+    [Parameter(Mandatory, Position = 1)]
+    [SupportsWildcards()]
+    [string[]]
+    $Path
   )
   Get-Item $Path -Force -ea Ignore | ForEach-Object {
     New-Item -Type SymbolicLink -Force -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $Target)) $_.FullName
@@ -618,19 +179,524 @@ function New-RelativeSymlink {
 
 function ConvertTo-RelativeSymlink {
   <#
-.SYNOPSIS
-Make absolute links to relative symbolic links, returns created link info.
- #>
+  .SYNOPSIS
+  Convert absolute links to relative symbolic links, returns created link info.
+  #>
   [CmdletBinding()]
   [OutputType([System.IO.FileInfo[]])]
   param (
     [Parameter(Mandatory, Position = 0)]
+    [SupportsWildcards()]
     [string[]]
     $Path
   )
   Get-Item $Path -Force -ea Ignore | ForEach-Object {
     if ($_.Attributes.HasFlag([System.IO.FileAttributes]::ReparsePoint) -and [System.IO.Path]::IsPathRooted($_.Target)) {
       New-Item -Type SymbolicLink -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $_.Target)) $_.FullName -Force
+    }
+  }
+}
+
+function Register-PSScheduledTask {
+  <#
+  .SYNOPSIS
+  Register scheduled tasks running powershell code.
+   #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [Parameter(Mandatory, Position = 1)]
+    [string]
+    $ScriptText,
+    [Parameter(Mandatory)]
+    [ValidateSet('monthly', 'weekly', 'daily')]
+    [string[]]
+    $Kind,
+    [Parameter()]
+    [datetime]
+    $At = '0am'
+  )
+  $encodedCommand = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ScriptText))
+  if ($IsLinux) {
+    $Kind.ForEach{
+      $date = switch ($_) {
+        'monthly' { '*-*-01'; break }
+        'weekly' { 'Mon *-*-*'; break }
+        'daily' { '*-*-*'; break }
+      }
+      $service = @"
+[Unit]
+Description=PowerShell $_ $Name task
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env pwsh -noni -nop -e $encodedCommand
+"@
+      $timer = @"
+[Unit]
+Description=PowerShell $_ $Name task timer
+
+[Timer]
+OnCalendar=$date $($At.ToString('HH:mm:ss'))
+Persistent=$($_ -ceq 'daily' ? 'false' : 'true')
+
+[Install]
+WantedBy=timers.target
+"@
+      $service > ~/.config/systemd/user/pwsh-$_-$Name`.service
+      $timer > ~/.config/systemd/user/pwsh-$_-$Name`.timer
+    }
+    systemctl daemon-reload --user
+    $Kind.ForEach{
+      systemctl enable --user --now pwsh-$_-$Name`.timer
+    }
+  }
+  elseif ($IsWindows) {
+    $Kind.ForEach{
+      $trigger = switch ($_) {
+        'daily' { New-ScheduledTaskTrigger -At $At -Daily; break }
+        'weekly' { New-ScheduledTaskTrigger -At $At -Weekly -DaysOfWeek Monday; break }
+        'monthly' { New-ScheduledTaskTrigger -At $At -Daily -DaysInterval 30; break }
+      }
+      # use conhost to run pwsh to avoid windows terminal popping up
+      $action = New-ScheduledTaskAction -Execute conhost -Argument "pwsh -noni -nop -w Hidden -e $encodedCommand"
+      Register-ScheduledTask pwsh-$_-$Name -Force -Description "PowerShell $_ $Name task" -Trigger $trigger -Action $action
+    }
+  }
+  else {
+    throw [System.NotImplementedException]::new()
+  }
+}
+
+function Unregister-PSScheduledTask {
+  <#
+  .SYNOPSIS
+  Unregister scheduled tasks running powershell code.
+   #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Name,
+    [Parameter(Mandatory)]
+    [ValidateSet('monthly', 'weekly', 'daily')]
+    [string[]]
+    $Kind
+  )
+  if ($IsLinux) {
+    $Kind.ForEach{
+      systemctl disable --user pwsh-$_-$Name`.timer
+      Remove-Item -LiteralPath ~/.config/systemd/user/pwsh-$_-$Name`.service, ~/.config/systemd/user/pwsh-$_-$Name`.timer -Force
+    }
+    systemctl daemon-reload --user
+  }
+  elseif ($IsWindows) {
+    # it's a $ConfirmPreference = 'High' operation
+    $pref = $ConfirmPreference
+    $ConfirmPreference = 'None'
+    Unregister-ScheduledTask $Kind.ForEach{ "pwsh-$_-$Name" }
+    $ConfirmPreference = $pref
+  }
+  else {
+    throw [System.NotImplementedException]::new()
+  }
+}
+
+function Invoke-CodeFormatter {
+  [CmdletBinding(DefaultParameterSetName = 'Path')]
+  [Alias('icf')]
+  param (
+    [Parameter(Mandatory, Position = 0, ParameterSetName = 'Path')]
+    [ValidateNotNullOrEmpty()]
+    [SupportsWildcards()]
+    [string[]]
+    $Path,
+    [Parameter(Mandatory, ParameterSetName = 'LiteralPath')]
+    [Alias('PSPath')]
+    [ValidateNotNullOrEmpty()]
+    [string[]]
+    $LiteralPath
+  )
+  $Path + $LiteralPath | ForEach-Object { & (getParser $_ -Inplace) $_ }
+}
+
+function batf {
+  if ($MyInvocation.ExpectingInput) {
+    $name = $args[0]
+    if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
+      return $input | & (getParser $name -Stdin) $name
+    }
+    return $input | & (getParser $name -Stdin) $name | bat -p --file-name=$name
+  }
+  if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
+    return Convert-Path $args -Force | ForEach-Object { & (getParser $_) $_ }
+  }
+  Convert-Path $args -Force | ForEach-Object {
+    & (getParser $_) $_ | bat -p --color=always --file-name=$_
+  } | & $env:PAGER
+}
+
+function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
+  switch -CaseSensitive -Regex ([System.IO.Path]::GetExtension($Path).Substring(1)) {
+    '^(?:c|m|mm|cpp|cc|cp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|inl|ipp|java|proto|protodevel)$' {
+      if ($Inplace) {
+        { clang-format -i --style=LLVM `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | clang-format --style=LLVM --assume-filename=$args[0] }
+      }
+      else {
+        { clang-format --style=LLVM `-- $args[0] }
+      }
+      break
+    }
+    '^(?:dart)$' {
+      if ($Inplace) {
+        { dart format `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | dart format }
+      }
+      else {
+        { dart format -o show --show none --summary none `-- $args[0] }
+      }
+      break
+    }
+    '^(?:cs|csx|fs|fsi|fsx|vb)$' {
+      if ($Inplace) {
+        { dotnet format --no-restore --include `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        {
+          process {
+            $file = [System.IO.Path]::GetRandomFileName() + [System.IO.Path]::GetExtension($args[0])
+            $input > $file
+            dotnet format --no-restore --include `-- $file
+            Get-Content -AsByteStream -LiteralPath $file
+          }
+          clean {
+            Remove-Item -LiteralPath $file -Force
+          }
+        }
+      }
+      else {
+        {
+          process {
+            $file = [System.IO.Path]::GetTempFileName()
+            Copy-Item -LiteralPath $args[0] $file -Force
+            dotnet format --no-restore --include `-- $args[0]
+            Get-Content -AsByteStream -LiteralPath $args[0]
+          }
+          clean {
+            Copy-Item -LiteralPath $file $args[0] -Force
+            Remove-Item -LiteralPath $file -Force
+          }
+        }
+      }
+      break
+    }
+    '^(?:go)$' {
+      if ($Inplace) {
+        { goimports -w `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | goimports }
+      }
+      else {
+        { goimports `-- $args[0] }
+      }
+      break
+    }
+    '^(?:js|cjs|mjs|jsx|tsx|ts|cts|mts|json|jsonc|json5|yml|yaml|htm|html|xhtml|shtml|vue|gql|graphql|css|scss|sass|less|hbs|md|markdown)$' {
+      if ($Inplace) {
+        { prettier -w --ignore-path= `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | prettier --ignore-path= --stdin-filepath=$args[0] }
+      }
+      else {
+        { prettier --ignore-path= `-- $args[0] }
+      }
+      break
+    }
+    '^(?:ps1|psm1|psd1)$' {
+      if ($Inplace) {
+        { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings $env:SHUTILS_ROOT/CodeFormatting.psd1 | Out-File -NoNewline $args[0] }
+      }
+      elseif ($Stdin) {
+        { PSScriptAnalyzer\Invoke-Formatter $input -Settings $env:SHUTILS_ROOT/CodeFormatting.psd1 }
+      }
+      else {
+        { PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $args[0]) -Settings $env:SHUTILS_ROOT/CodeFormatting.psd1 }
+      }
+      break
+    }
+    '^(?:py|pyi|pyw|pyx|pxd|gyp|gypi)$' {
+      if ($Inplace) {
+        { ruff format -n `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | ruff format -n --stdin-filename $args[0] }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
+      }
+      break
+    }
+    '^(?:rs)$' {
+      if ($Inplace) {
+        { rustfmt `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | rustfmt --emit stdout }
+      }
+      else {
+        { rustfmt --emit stdout `-- $args[0] }
+      }
+      break
+    }
+    '^(?:sh|bash|zsh|ash)$' {
+      if ($Inplace) {
+        { shfmt -i 2 -bn -ci -sr `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | shfmt -i 2 -bn -ci -sr --filename $args[0] }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
+      }
+      break
+    }
+    '^(?:toml)$' {
+      if ($Inplace) {
+        { taplo format `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | taplo format - --stdin-filepath=$args[0] }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | taplo format - --stdin-filepath=$args[0] }
+      }
+      break
+    }
+    '^(?:lua)$' {
+      if ($Inplace) {
+        { stylua `-- $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | stylua }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | stylua }
+      }
+      break
+    }
+    '^(?:zig)$' {
+      if ($Inplace) {
+        { zig fmt $args[0] }
+      }
+      elseif ($Stdin) {
+        { $input | zig fmt --stdin }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] | zig fmt --stdin }
+      }
+      break
+    }
+    default {
+      if ($Stdin) {
+        { $input }
+      }
+      else {
+        { Get-Content -AsByteStream -LiteralPath $args[0] }
+      }
+      break
+    }
+  }
+}
+
+function ghQuery {
+  [CmdletBinding()]
+  param (
+    [Parameter(Position = 0)]
+    [ValidateSet('releases', 'limits', 'stars')]
+    [string]
+    $Category = 'releases',
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $Queries
+  )
+  [string]$query = "query=@$PSScriptRoot/github/$Category.gql"
+  [string[]]$fields = @()
+  [string]$jq = '.'
+  switch ($Category) {
+    releases {
+      $jq = '.repository.latestRelease[].name'
+      $owner, $name = $Queries.Split('/', 2)
+      $fields += "owner=$owner", "name=$name"
+      break
+    }
+    stars {
+      $jq = '.user.starredRepositories[].nameWithOwner'
+      $login = git config get --global user.name
+      if (!$login) {
+        throw 'recommands: git config set --global user.name foo'
+      }
+      $fields += "login=$login"
+      break
+    }
+  }
+  gh api graphql -F $query $fields.ForEach{ "-f=$_" } -q $jq
+}
+
+function jq.f {
+  $file = fzf '--walker=file,hidden' -q '.json$ '
+  if (!$file) {
+    return
+  }
+  $query = jq -r 'paths | map(
+    if type == "string" then
+      "." + (
+        if test("^[a-zA-Z_]\\w*$") then
+          .
+        else
+          "\"\(.)\""
+        end)
+    else
+      "[\(.)]"
+    end) | join("")' `-- $file | fzf
+  $query = "jq '{0}' '{1}'" -f @(
+    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($query)
+    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent((Convert-Path -LiteralPath $file)))
+  $query
+  [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($query)
+}
+
+[psobject[]]$vimDigraph = $null
+function de {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Digraph
+  )
+  if (!$vimDigraph) {
+    $Script:vimDigraph = Import-Csv -LiteralPath $PSScriptRoot/vimDigraph.tsv -Delimiter "`t" -ea Stop
+  }
+  foreach ($item in $vimDigraph) {
+    if ($item.digraph -ceq $Digraph) {
+      return $item.char
+    }
+  }
+  return Write-Error 'no matches'
+}
+
+function de.f {
+  [string]$line = Get-Content -LiteralPath $PSScriptRoot/vimDigraph.tsv | Select-Object -Skip 1 | fzf
+  $line.Split("`t", 2)[0]
+}
+
+function figlet.f ([string]$Value) {
+  if ([string]::IsNullOrEmpty($Value)) {
+    $Value = if ($MyInvocation.ExpectingInput) {
+      $input
+    }
+    else {
+      'hello world'
+    }
+  }
+  $Value = $Value.Replace("'", "\'")
+  $envVar = $IsWindows ? '%FZF_PREVIEW_COLUMNS%' : '$FZF_PREVIEW_COLUMNS'
+  Split-Path -Resolve -LeafBase /usr/share/figlet/*.flf | fzf --reverse --preview-window=70% "--preview=figlet -f {} -w $envVar '$Value'" "--bind=enter:become:figlet -f {} -w $([System.Console]::WindowWidth) '$Value'"
+}
+
+function rg.f {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Query,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]
+    $Options,
+    [Parameter(ValueFromPipeline)]
+    [System.Object]
+    $InputObject
+  )
+  if ($MyInvocation.ExpectingInput) {
+    return $input | rg $Query @Options | fzf
+  }
+  $reload = @"
+rg $Options --column --color=always {q} || exit 0
+"@
+  $open = @'
+code --open-url "vscode://file$(realpath -- {1}):{2}:{3}"
+'@
+  $envVar = $IsWindows ? '%FZF_PREVIEW_COLUMNS%' : '$FZF_PREVIEW_COLUMNS'
+  $preview = @"
+bat --number --color=always --terminal-width=$envVar --highlight-line={2} {1}
+"@
+  $ags = @(
+    "--query=$Query"
+    '--ansi'
+    '--delimiter=:'
+    '--preview-window=up,border-bottom,~3,+{2}+3/3'
+    "--preview=$preview"
+    "--bind=start,ctrl-r:reload:$reload"
+    "--bind=enter:become:$open"
+    "--bind=ctrl-o:execute:$open"
+  )
+  fzf @ags
+}
+
+function theme.f {
+  [CmdletBinding()]
+  param (
+    [Parameter(Position = 0)]
+    [ValidateSet('alacritty', 'bat')]
+    [string]
+    $AppName
+  )
+  if (!$AppName) {
+    if ($env:ALACRITTY_LOG) {
+      $AppName = 'alacritty'
+    }
+  }
+  switch ($AppName) {
+    alacritty {
+      [string]$preview = {
+        $configFile = "$env:SHUTILS_ROOT/_/.config/alacritty/alacritty.toml"
+        $importFile = "$($env:SHUTILS_ROOT.Replace($HOME, '~').Replace('\', '/'))/alacritty-theme/themes/$("$input".Trim(' "')).toml"
+        Set-Region -Inplace import "import = [`"$importFile`"]" $configFile
+        @"
+|039| `e[39mDefault `e[m  |049| `e[49mDefault `e[m  |037| `e[37mLight gray `e[m     |047| `e[47mLight gray `e[m
+|030| `e[30mBlack `e[m    |040| `e[40mBlack `e[m    |090| `e[90mDark gray `e[m      |100| `e[100mDark gray `e[m
+|031| `e[31mRed `e[m      |041| `e[41mRed `e[m      |091| `e[91mLight red `e[m      |101| `e[101mLight red `e[m
+|032| `e[32mGreen `e[m    |042| `e[42mGreen `e[m    |092| `e[92mLight green `e[m    |102| `e[102mLight green `e[m
+|033| `e[33mYellow `e[m   |043| `e[43mYellow `e[m   |093| `e[93mLight yellow `e[m   |103| `e[103mLight yellow `e[m
+|034| `e[34mBlue `e[m     |044| `e[44mBlue `e[m     |094| `e[94mLight blue `e[m     |104| `e[104mLight blue `e[m
+|035| `e[35mMagenta `e[m  |045| `e[45mMagenta `e[m  |095| `e[95mLight magenta `e[m  |105| `e[105mLight magenta `e[m
+|036| `e[36mCyan `e[m     |046| `e[46mCyan `e[m     |096| `e[96mLight cyan `e[m     |106| `e[106mLight cyan `e[m
+"@
+      }
+      $preview = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($preview))
+      $configFile = "$env:SHUTILS_ROOT/_/.config/alacritty/alacritty.toml"
+      $region = Get-Region import $configFile
+      $theme = [regex]::Match($region[0], '([^"/]+)\.toml"$').Groups[1].Value
+      Split-Path -Resolve -LeafBase $env:SHUTILS_ROOT/alacritty-theme/themes/* -ea Stop | fzf --preview="echo {} | pwsh -nop -o Text -e $preview" -q $theme
+      if (!$?) {
+        Set-Region -Inplace import $region $configFile
+      }
+      break
+    }
+    bat {
+      $theme = bat --list-themes | fzf --preview="bat --theme={} -plsh --color=always $HOME/.bashrc" -q "$env:BAT_THEME"
+      if ($theme) {
+        Set-EnvironmentVariable -Scope User BAT_THEME=$theme
+      }
+      break
     }
   }
 }

@@ -12,7 +12,12 @@
 }
 #endregion
 # make directory for user data
-New-Item -ItemType Directory -Force $env:ProgramData\prefix\bin
+[string[]]$dirs = @(
+  "$env:ProgramData\prefix\bin"
+  "$env:ProgramData\prefix\share\jar"
+  1..8 | ForEach-Object { "$env:ProgramData\prefix\share\man\man$_" }
+)
+New-Item -ItemType Directory $dirs -Force
 # ssh default shell
 New-ItemProperty -Path 'HKLM:\SOFTWARE\OpenSSH' -Name DefaultShell -Value ([System.Environment]::ProcessPath) -PropertyType String -Force
 # wsl

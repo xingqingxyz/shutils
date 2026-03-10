@@ -33,7 +33,7 @@
   Description          = 'Enhanced powershell commands.'
 
   # Minimum version of the PowerShell engine required by this module
-  PowerShellVersion    = '7.5.2'
+  PowerShellVersion    = '7.6.0'
 
   # Name of the PowerShell host required by this module
   # PowerShellHostName = ''
@@ -63,13 +63,13 @@
   # TypesToProcess = @()
 
   # Format files (.ps1xml) to be loaded when importing this module
-  FormatsToProcess     = @('./Extras.format.ps1xml')
+  # FormatsToProcess     = @()
 
   # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-  NestedModules        = @('./Tools.psm1')
+  # NestedModules        = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('androidEnv', 'vsdev', 'batf', 'delay', 'claude', 'codebuddy', 'codex', 'copilot', 'qwen', 'qodercli', 'ghQuery', 'icat', 'de', 'de.f', 'figlet.f', 'jq.f', 'rg.f', 'theme.f', 'Clear-Module', 'Get-MemoryInfo', 'Get-Region', 'Get-TypeMember', 'Search-Web', 'Set-SystemProxy', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Unregister-PSScheduledTask', 'Use-EnvironmentVariable', 'Update-SessionEnvironment', 'Register-PSScheduledTask', 'Repair-GitSymlinks', 'New-RelativeSymlink', 'ConvertTo-RelativeSymlink')
+  FunctionsToExport    = @('batf', 'ghQuery', 'de', 'de.f', 'figlet.f', 'jq.f', 'rg.f', 'theme.f', 'Clear-Module', 'Get-Region', 'Set-Region', 'Test-Administrator', 'Invoke-CodeFormatter', 'Unregister-PSScheduledTask', 'Register-PSScheduledTask', 'Repair-GitSymlinks', 'New-RelativeSymlink', 'ConvertTo-RelativeSymlink')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()
@@ -78,7 +78,7 @@
   VariablesToExport    = @()
 
   # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-  AliasesToExport      = @('gtm', 'icf', 'gev', 'sev', 'sevp', 'sw', 'uev')
+  AliasesToExport      = @('icf')
 
   # DSC resources to export from this module
   # DscResourcesToExport = @()
@@ -87,7 +87,7 @@
   # ModuleList = @()
 
   # List of all files packaged with this module
-  FileList             = @('./vimDigraph.tsv', './github/limit.gql', './github/releases.gql', './github/stars.gql')
+  FileList             = @('./vimDigraph.tsv', './github/limits.gql', './github/releases.gql', './github/stars.gql')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData          = @{

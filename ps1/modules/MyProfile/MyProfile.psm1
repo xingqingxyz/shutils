@@ -185,7 +185,7 @@ filter showSource ([string[]]$ExtraArgs) {
     }
     switch ($item.CommandType) {
       Application {
-        return $item.Source | showFile $ExtraArgs # for all other files
+        return Get-Item -LiteralPath $item.Source -Force -ea Stop | showFile $ExtraArgs
       }
       Cmdlet {
         return Get-Help $item.Name -Category Cmdlet -Full | bat -plman $ExtraArgs
@@ -340,8 +340,16 @@ filter showFile ([string[]]$ExtraArgs) {
       decompress $path | bat -p --file-name=$(Split-Path -LeafBase $path) $ExtraArgs
       break
     }
+    '\.deb$' {
+      dpkg-deb -c $path | less
+      break
+    }
     '\.rpm$' {
       rpm -qpivl --changelog --nomanifest $path | less
+      break
+    }
+    '\.7z$' {
+      7z l $path | less
       break
     }
     '\.cpio?$' {

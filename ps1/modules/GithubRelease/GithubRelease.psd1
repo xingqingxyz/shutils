@@ -33,7 +33,7 @@
     Description          = 'Enhance clis by these extra commands.'
 
     # Minimum version of the PowerShell engine required by this module
-    PowerShellVersion    = '7.5.2'
+    PowerShellVersion    = '7.6.0'
 
     # Name of the PowerShell host required by this module
     # PowerShellHostName = ''
@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport    = @('goenv', 'rustenv', 'Update-Release', 'Update-Software')
+    FunctionsToExport    = @('goenv', 'rustenv', 'Update-Release', 'Update-Software', 'Update-System')
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = @()

@@ -1,13 +1,8 @@
 # note: specially for zh_CN users
 $SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
-if (Get-Command java -CommandType Application -TotalCount 1 -ea Ignore) {
-  [string]$JAVA_HOME = switch ($true) {
-    $IsWindows { 'C:\Program Files\Java\jdk-' + (java --version)[0].Split(' ', 3)[1]; break }
-    $IsLinux { (Get-Item ~/.jdks/openjdk-25.* -Force -ea Ignore)?[0].FullName; break }
-    $IsMacOS { break }
-    default { break }
-  }
+if ($cmd = Get-Command java -CommandType Application -TotalCount 1 -ea Ignore) {
+  $JAVA_HOME = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetDirectoryName((Get-Item -LiteralPath $cmd.Source -Force).ResolvedTarget))
 }
 $DSC_RESOURCE_PATH = $IsWindows ? '' : "$HOME/.local/dsc"
 
@@ -103,13 +98,20 @@ $HOME/.local/share/powershell/Scripts
 /usr/local/share/powershell/Scripts
 $ANDROID_HOME/platform-tools
 /usr/local/bin
+/usr/local/sbin
 /usr/bin
+/usr/sbin
 "@.ReplaceLineEndings(':')
   if (Get-Command snap -CommandType Application -TotalCount 1 -ea Ignore) {
     $PATH += ':/snap/bin'
   }
   if ($env:WSL_DISTRO_NAME) {
     $PATH += ':/usr/lib/wsl/lib:' + ((bash --norc -c 'echo "$PATH"').Split(':').Where{ $_.StartsWith('/mnt/') } -join ':')
+  }
+  if (Get-Command fcitx5 -CommandType Application -TotalCount 1 -ea Ignore) {
+    $commonVar['GTK_IM_MODULE'] = 'fcitx5'
+    $commonVar['QT_IM_MODULE'] = 'fcitx5'
+    $commonVar['XMODIFIERS'] = '@im=fcitx5'
   }
   ($commonVar + @{
     LANG          = 'zh_CN.UTF-8'

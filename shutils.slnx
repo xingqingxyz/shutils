@@ -1,7 +1,6 @@
 <Solution>
   <Folder Name="/ps1/" />
   <Folder Name="/ps1/modules/">
-    <Project Path="ps1/modules/GithubRelease/GithubRelease.csproj" />
     <Project Path="ps1/modules/LSColors/LSColors.csproj" />
   </Folder>
 </Solution>

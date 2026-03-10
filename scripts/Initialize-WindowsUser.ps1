@@ -25,6 +25,9 @@ if (Get-Command dsc -CommandType Application -TotalCount 1 -ea Ignore) {
   Set-DscResourcePath
 }
 # make directory for user data
-New-Item -ItemType Directory -Force $env:LOCALAPPDATA\prefix\bin
-# pwsh module bootstrap
-Update-Software winget, bun, rustup, cargo, go, flutter, psm1, uv -Global -Force
+[string[]]$dirs = @(
+  "$env:LOCALAPPDATA\prefix\bin"
+  "$env:LOCALAPPDATA\prefix\share\jar"
+  1..8 | ForEach-Object { "$env:LOCALAPPDATA\prefix\share\man\man$_" }
+)
+New-Item -ItemType Directory $dirs -Force

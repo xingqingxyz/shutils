@@ -9,7 +9,7 @@ post_processing = true
 persist = false
 mouse.enabled = true
 binding = { key = "O", mods = "Control|Shift" }
-regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|go‐pher://|https://|http://|news:|file:|git://|ssh:|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^⟨⟩`\\\\]+|(/[^\\s/]+)+"
+regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|go-pher://|https://|http://|news:|file:|git://|ssh:|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^⟨⟩`\\\\]+|(/[^\\s/]+)+"
 
 [[keyboard.bindings]]
 key = "N"
@@ -50,7 +50,7 @@ shell = "pwsh"
 osc52 = "CopyPaste"
 
 [font]
-normal.family = "Cascadia Mono"
+normal.family = "Jetbrains Mono"
 size = 12
 
 [window]
@@ -68,6 +68,6 @@ duration = 216
 
 [general]
 #region import
-import = ["C:/Users/cmema/p/shutils/alacritty-theme/themes/tokyo_night_enhanced.toml"]
+import = ["~/p/shutils/alacritty-theme/themes/tokyo_night_enhanced.toml"]
 #endregion
 live_config_reload = true

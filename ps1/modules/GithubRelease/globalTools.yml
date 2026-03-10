@@ -1,21 +1,38 @@
 apt:
-  - alacritty
+  - 7zip
+  - apt-file
   - aria2
   - build-essential
+  - clang-22
+  - clangd-22
+  - clangd
   - cmake
   - curl
   - docker.io
+  - fcitx5
+  - fcitx5-chinese-addons
+  - fonts-jetbrains-mono
   - gcc
   - gnome-browser-connector
+  - graphviz
+  - imagemagick
+  - libgtk-3-dev
   - libncurses-dev
   - libpcre2-dev
   - libssl-dev
+  - lld-22
+  - lldb-22
+  - mesa-utils
   - nginx
   - ninja-build
+  - openjdk-25-jdk
   - pandoc
+  - plocate
+  - poppler-utils
   - shellcheck
   - shfmt
   - vlc
+  - wget
   - xclip
   - xsel
 apt-raspi:
@@ -33,6 +50,7 @@ apt-raspi:
   - shellcheck
   - shfmt
   - vlc
+  - wget
   - xclip
   - xsel
 apt-wsl:
@@ -43,17 +61,28 @@ apt-wsl:
   - gcc
   - libssl-dev
   - ninja-build
+brew:
+  - clang
+  - curl
+  - git
+  - graphviz
+  - openjdk@25
+  - wget
+brew-cask:
+  - google-chrome
+  - microsoft-edge
+  - vs-code
+  - xcode
 bun:
-  - "@qoder-ai/qodercli"
-  - "@qwen-code/qwen-code"
-  - "@tencent-ai/codebuddy-code"
-  - "@vscode/vsce"
+  - '@qoder-ai/qodercli'
+  - '@qwen-code/qwen-code'
+  - '@tencent-ai/codebuddy-code'
+  - '@vscode/vsce'
   - generator-code
   - pnpm
   - prettier
   - yo
 cargo:
-  - cargo-generate
   - cargo-update
 code: []
 deno: []
@@ -76,8 +105,10 @@ dnf:
   - gh
   - git-subtree
   - gnome-browser-connector
+  - graphviz
   - hyperfine
   - ImageMagick
+  - jetbrains-mono-fonts
   - lldb
   - msedit
   - nginx
@@ -122,6 +153,7 @@ dnf-wsl:
   - valgrind
 fedora:
   - bun
+  - cargo-generate
   - code
   - copilot
   - deno
@@ -155,6 +187,36 @@ gh: []
 go:
   - golang.org/x/tools/cmd/goimports
   - golang.org/x/tools/cmd/stringer
+macos:
+  - bun
+  - cargo-generate
+  - copilot
+  - deno
+  - diskus
+  - dotnet
+  - flutter
+  - fzf
+  - glow
+  - go
+  - golangci-lint
+  - hexyl
+  - java
+  - jq
+  - mkcert
+  - mdbook
+  - node
+  - numbat
+  - pastel
+  - plantuml
+  - pwsh
+  - rga
+  - ruff
+  - rustup
+  - taplo
+  - ty
+  - uv
+  - wasm-pack
+  - yq
 npm: []
 pnpm: []
 ps1: []
@@ -167,6 +229,7 @@ raspi:
   - bash
   - bat
   - bun
+  - cargo-generate
   - copilot
   - deno
   - diskus
@@ -202,6 +265,7 @@ ubuntu:
   - bash
   - bat
   - bun
+  - cargo-generate
   - code
   - copilot
   - deno
@@ -220,6 +284,7 @@ ubuntu:
   - java
   - jq
   - less
+  - magick
   - mkcert
   - mdbook
   - node
@@ -232,6 +297,7 @@ ubuntu:
   - ruff
   - rustup
   - taplo
+  - tmux
   - ty
   - uv
   - wasm-pack
@@ -243,6 +309,7 @@ uv:
 uv-python:
   - python3.14t
 windows:
+  - cargo-generate
   - copilot
   - diskus
   - flutter

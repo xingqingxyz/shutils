@@ -5,20 +5,28 @@ gsettings set org.gnome.shell favorite-apps "['microsoft-edge.desktop', 'Alacrit
 # gnome-shell-extensions
 # dash-to-dock
 gsettings set org.gnome.shell.extensions.dash-to-dock always-center-icons true
-gsettings set org.gnome.shell.extensions.dash-to-dock animation-time 0.0
+gsettings set org.gnome.shell.extensions.dash-to-dock animation-time 0.05
 gsettings set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 32
 gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed false
 gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'BOTTOM'
 gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
 gsettings set org.gnome.shell.extensions.dash-to-dock hide-delay 0.050000000000000003
 gsettings set org.gnome.shell.extensions.dash-to-dock pressure-threshold 0.0
-gsettings set org.gnome.shell.extensions.dash-to-dock shortcut-timeout 0.29999999999999999
 gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top true
-gsettings set org.gnome.shell.extensions.dash-to-dock show-delay 0.050000000000000003
 gsettings set org.gnome.shell.extensions.dash-to-dock show-mounts true
 gsettings set org.gnome.shell.extensions.dash-to-dock show-mounts-network true
 gsettings set org.gnome.shell.extensions.dash-to-dock show-mounts-only-mounted true
 gsettings set org.gnome.shell.extensions.dash-to-dock show-trash true
+gsettings set org.gnome.shell.extensions.dash-to-dock.background-opacity 0.80000000000000004
+gsettings set org.gnome.shell.extensions.dash-to-dock.click-action 'focus-minimize-or-previews'
+gsettings set org.gnome.shell.extensions.dash-to-dock.height-fraction 0.90000000000000002
+gsettings set org.gnome.shell.extensions.dash-to-dock.hide-delay 0.15000000000000002
+gsettings set org.gnome.shell.extensions.dash-to-dock.intellihide false
+gsettings set org.gnome.shell.extensions.dash-to-dock.intellihide-mode 'ALL_WINDOWS'
+gsettings set org.gnome.shell.extensions.dash-to-dock.require-pressure-to-show false
+gsettings set org.gnome.shell.extensions.dash-to-dock.shortcut-timeout 0.29999999999999999
+gsettings set org.gnome.shell.extensions.dash-to-dock.show-delay 0.15000000000000002
+gsettings set org.gnome.shell.extensions.dash-to-dock.show-dock-urgent-notify false
 # ding
 gsettings set org.gnome.shell.extensions.ding arrangeorder 'NAME'
 gsettings set org.gnome.shell.extensions.ding keep-arranged true
@@ -57,7 +65,7 @@ gsettings set org.gnome.desktop.wm.keybindings cycle-group-backward []
 gsettings set org.gnome.desktop.wm.keybindings cycle-panels []
 gsettings set org.gnome.desktop.wm.keybindings cycle-panels-backward []
 gsettings set org.gnome.desktop.wm.keybindings minimize []
-gsettings set org.gnome.desktop.wm.keybindings show-desktop []
+gsettings set org.gnome.desktop.wm.keybindings show-desktop ['<Super>d']
 gsettings set org.gnome.desktop.wm.keybindings switch-applications []
 gsettings set org.gnome.desktop.wm.keybindings switch-applications-backward []
 gsettings set org.gnome.desktop.wm.keybindings switch-panels []
@@ -67,7 +75,7 @@ gsettings set org.gnome.desktop.wm.keybindings toggle-maximized []
 # wm preferences
 gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,close'
 # gnome-software
-if ($env:XDG_SESSION_DESKTOP -ceq 'ubuntu') {
+if ($env:XDG_CURRENT_DESKTOP -ceq 'ubuntu:GNOME') {
   gsettings set com.ubuntu.update-manager first-run false
   gsettings set com.ubuntu.update-manager show-details true
   gsettings set com.ubuntu.update-notifier no-show-notifications true
@@ -83,3 +91,7 @@ gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folder
 # keyboard
 gsettings set org.gnome.desktop.peripherals.keyboard numlock-state true
 gsettings set org.gnome.desktop.peripherals.touchpad send-events 'disabled'
+# autostart
+New-Item -ItemType Directory ~/.config/autostart -Force
+New-Item -ItemType SymbolicLink -Force -Target $HOME/.local/share/applications/Alacritty.desktop ~/.config/autostart/Alacritty.desktop
+New-Item -ItemType SymbolicLink -Force -Target /usr/share/applications/org.fcitx.Fcitx5.desktop ~/.config/autostart/org.fcitx.Fcitx5.desktop

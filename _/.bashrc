@@ -42,5 +42,20 @@ if [[ $TERM_PROGRAM != vscode* ]]; then
   fi
 fi
 
+# command-not-found
+command_not_found_handle() {
+  # check because c-n-f could've been removed in the meantime
+  if [ -x /usr/lib/command-not-found ]; then
+    /usr/lib/command-not-found --ignore-installed --no-failure-msg -- "$1"
+  elif [ -x /usr/libexec/command-not-found ]; then
+    /usr/libexec/command-not-found -- "$1"
+  elif [ -x /usr/share/command-not-found/command-not-found ]; then
+    /usr/share/command-not-found/command-not-found -- "$1"
+  else
+    echo "$1: command not found" >&2
+    return 127
+  fi
+}
+
 #region UserEnv
 #endregion

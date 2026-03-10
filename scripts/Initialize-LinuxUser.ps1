@@ -20,8 +20,6 @@ if ($PSCulture -cne 'en-US' -and (Get-Content -Raw -LiteralPath ~/.config/user-d
   }
   Set-Location -
 }
-
-
 #region gpg
 # gnu
 Invoke-RestMethod 'https://mirrors.ustc.edu.cn/gnu/gnu-keyring.gpg' -OutFile /tmp/gnu-keyring.gpg
@@ -33,19 +31,7 @@ gpg --import /tmp/gnu-keyring.gpg
   "$HOME/.local/share/applications"
   "$HOME/.local/share/bash-completion/completions"
   "$HOME/.local/share/fonts/truetype"
+  "$HOME/.local/share/jar"
   1..8 | ForEach-Object { "$HOME/.local/share/man/man$_" }
 )
 New-Item -ItemType Directory $dirs -Force
-# pwsh module bootstrap
-$osRelease = Get-Content -Raw -LiteralPath /etc/os-release
-if ($osRelease.Contains('ID=ubuntu')) {
-  Update-Software apt, ubuntu, flutter -Global -Force
-}
-elseif ($osRelease.Contains('ID=fedora')) {
-  Update-Software dnf, fedora, flutter -Global -Force
-}
-elseif ($osRelease.Contains('ID=debian') -and
-  [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64) {
-  Update-Software apt, raspi -Global -Force
-}
-Update-Software bun, rustup, cargo, go, psm1, uv -Global -Force
