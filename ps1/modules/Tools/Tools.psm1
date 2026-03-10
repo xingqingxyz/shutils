@@ -1,28 +1,3 @@
-Set-Item Function:claude, Function:codebuddy, Function:codex, Function:copilot, Function:qwen, Function:qodercli {
-  # prevent . invoke variable add
-  if ($MyInvocation.InvocationName -ceq '.') {
-    return & $MyInvocation.MyCommand $args
-  }
-  $cmd = (Get-Command $MyInvocation.MyCommand.Name -Type Application -TotalCount 1 -ea Stop).Source
-  [string[]]$ags = $args.ForEach{ if ($null -ne $_) { $_ } }
-  if ($ags.Contains('-p')) {
-    $ags += $MyInvocation.InvocationName -ceq 'codebuddy' ? '-y' : '--yolo'
-    if ($MyInvocation.ExpectingInput) {
-      $input | & $cmd $ags | glow
-    }
-    else {
-      & $cmd $ags | glow
-    }
-    return
-  }
-  if ($MyInvocation.ExpectingInput) {
-    $input | & $cmd $ags
-  }
-  else {
-    & $cmd $ags
-  }
-}
-
 function androidEnv {
   if (!$env:ANDROID_HOME) {
     throw 'ANDROID_HOME environment variable is not set'

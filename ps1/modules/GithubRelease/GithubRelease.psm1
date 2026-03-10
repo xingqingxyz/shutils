@@ -178,6 +178,7 @@ function getLocalVersion ([string]$Name) {
       ghostty { (ghostty --version)[0].Split(' ', 2)[1]; break }
       glow { (glow -v).Split(' ', 4)[2]; break }
       go { (go version).Split(' ', 4)[2].Substring(2); break }
+      golangci-lint { (golangci-lint --version).Split(' ', 5)[3]; break }
       goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
       pastel { (pastel -V).Split(' ', 3)[1]; break }
       less { (less --version 2>$null)[0].Split(' ', 3)[1] + '.0'; break }
@@ -185,7 +186,7 @@ function getLocalVersion ([string]$Name) {
       mold { (mold -v).Split(' ', 3)[1]; break }
       java { (java --version)[0].Split(' ', 3)[1]; break }
       jq { (jq -V).Split('-', 2)[1]; break }
-      plantuml { (java -jar $binDir/plantuml.jar --version)[0].Split(' ', 4)[2]; break }
+      plantuml { (plantuml --version)[0].Split(' ', 4)[2]; break }
       pwsh { (pwsh -v).Split(' ', 2)[1].Split('-', 2)[0]; break }
       rg { (rg -V).Split(' ', 3)[1]; break }
       rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
@@ -193,11 +194,11 @@ function getLocalVersion ([string]$Name) {
       ty { (ty -V).Split(' ', 3)[1]; break }
       uv { (uv -V).Split(' ', 3)[1]; break }
       vncviewer {
-        if ($cmd = Get-Command vncviewer -CommandType Application -TotalCount 1 -ea Ignore) {
-          (& $cmd --version 2>&1)[1].ToString().Split(' ', 4)[2].Substring(1)
+        if (Test-Path -LiteralPath $dataDir/jar/vncviewer.jar) {
+          (java -jar $dataDir/jar/vncviewer.jar --version 2>&1)[1].ToString().Split(' ', 5)[3].Substring(1)
         }
         else {
-          (java -jar $binDir/vncviewer.jar --version 2>&1)[1].ToString().Split(' ', 5)[3].Substring(1)
+          (vncviewer --version 2>&1)[1].ToString().Split(' ', 2)[1].Substring(1)
         }
         break
       }
@@ -454,7 +455,7 @@ function Install-Release {
       $file = 'bun-{0}-{1}.zip' -f $go.os, $arch
       downloadRelease $Meta $file, SHASUMS256.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
-      Expand-Archive -LiteralPath $buildDir/$file $buildDir
+      Expand-Archive -LiteralPath $buildDir/$file $buildDir -Force
       Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file)/bun $binDir -Force
       $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
       break
@@ -509,7 +510,7 @@ function Install-Release {
       downloadRelease $Meta $file, checksums.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/checksums.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       switch ($true) {
-        $IsWindows { Expand-Archive $buildDir/$file $binDir; break }
+        $IsWindows { Expand-Archive -LiteralPath $buildDir/$file $binDir -Force; break }
         $IsMacOS { tar -xf $buildDir/$file -C $binDir; chmod +x $binDir/crush; break }
         $IsFedora { sudo dnf install -y $buildDir/$file; break }
         ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$file; break }
@@ -523,7 +524,7 @@ function Install-Release {
       $file = 'deno-{0}.zip' -f $rust.target
       downloadRelease $Meta $file, $file`.sha256sum
       checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
-      Expand-Archive $buildDir/$file $binDir
+      Expand-Archive -LiteralPath $buildDir/$file $binDir -Force
       break
     }
     diskus {
@@ -576,7 +577,7 @@ function Install-Release {
         $IsWindows {
           $base = 'edit-{0}-{1}-windows' -f $Meta.version, $rust.arch
           downloadRelease $Meta $base`.zip
-          Expand-Archive -LiteralPath $buildDir/$base`.zip -DestinationPath $buildDir
+          Expand-Archive -LiteralPath $buildDir/$base`.zip $buildDir -Force
           break
         }
         $IsLinux {
@@ -860,7 +861,7 @@ StartupWMClass=localsend_app
     }
     nerd-fonts {
       downloadRelease $Meta 0xProto.zip
-      Expand-Archive -LiteralPath $buildDir/0xProto.zip -Force $buildDir
+      Expand-Archive -LiteralPath $buildDir/0xProto.zip $buildDir -Force
       switch ($true) {
         $IsWindows {
           $shellApp = New-Object -ComObject shell.application
@@ -920,8 +921,8 @@ StartupWMClass=localsend_app
     plantuml {
       $file = 'plantuml-gplv2-{0}.jar' -f $Meta.version
       downloadRelease $Meta $file
-      Move-Item -LiteralPath $buildDir/$file $prefixDir/jar/plantuml.jar -Force
-      installBinary $prefixDir/jar/plantuml.jar
+      Move-Item -LiteralPath $buildDir/$file $dataDir/jar/plantuml.jar -Force
+      installBinary $dataDir/jar/plantuml.jar
       break
     }
     pwsh {
@@ -1037,7 +1038,7 @@ StartupWMClass=localsend_app
         }
       }
       $file ??= 'VncViewer-{0}.jar' -f $Meta.version
-      $target = $file.EndsWith('.jar') ? "$prefixDir/jar/vncviewer.jar" : "$binDir/vncviewer.exe"
+      $target = $file.EndsWith('.jar') ? "$dataDir/jar/vncviewer.jar" : "$binDir/vncviewer.exe"
       downloadFile "https://sourceforge.net/projects/tigervnc/files/stable/$($Meta.version)/$file/download" $target
       installBinary $target
       break
@@ -1239,7 +1240,7 @@ function Update-Software {
         bun update -g --latest
         $PSNativeCommandUseErrorActionPreference = $true
         if ($Force -and $pkgs) {
-          bun add -g --trust $pkgs
+          bun add -g --trust --omit=optional $pkgs
         }
         continue
       }
@@ -1248,11 +1249,12 @@ function Update-Software {
     }
     cargo {
       if ($Global) {
-        if (Get-Command cargo-install-update -CommandType Application -TotalCount 1 -ea Ignore) {
-          cargo install-update --all
+        if (!(Get-Command cargo-install-update -CommandType Application -TotalCount 1 -ea Ignore)) {
+          cargo install cargo-update
         }
+        cargo install-update --all
         if ($Force -and $pkgs) {
-          cargo install $pkgs
+          cargo install-update $pkgs
         }
         continue
       }
@@ -1410,21 +1412,21 @@ function Update-Software {
 
 function Update-System {
   if ($IsWindows) {
-    Update-Software winget, windows
+    Update-Software winget, windows -Force
   }
   elseif ($IsMacOS) {
-    Update-Software brew, macos
+    Update-Software brew, macos -Force
   }
   elseif ($IsLinux) {
     if ($PSVersionTable.OS.StartsWith('Ubuntu')) {
-      Update-Software apt, ubuntu
+      Update-Software apt, ubuntu -Force
     }
     elseif ($PSVersionTable.OS.StartsWith('Fedora')) {
-      Update-Software dnf, fedora
+      Update-Software dnf, fedora -Force
     }
     elseif ($PSVersionTable.OS.StartsWith('Debian') -and
       [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64) {
-      Update-Software apt, raspi
+      Update-Software apt, raspi -Force
     }
   }
   else {
@@ -1432,7 +1434,7 @@ function Update-System {
   }
   Update-Software bun, rustup, cargo, go, psm1, uv -Global -Force
   if (!$IsRaspi) {
-    Update-Software flutter -Global -Force
+    Update-Software code, flutter -Global -Force
   }
 }
 

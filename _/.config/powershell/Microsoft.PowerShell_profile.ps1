@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+#Requires -Version 7.6
 function Import-EnvironmentVariable {
   [CmdletBinding()]
   [Alias('ipev')]
@@ -27,10 +27,3 @@ Convert-Path -Force $env:SHUTILS_ROOT/ps1/*.ps1 | ForEach-Object { . $_ }
 Set-Alias npm Invoke-Npm
 Set-Alias npx Invoke-Npx
 Set-Alias sudo Invoke-Sudo
-Set-Alias cbc Extras\codebuddy
-Set-Alias claude Extras\claude
-Set-Alias codebuddy Extras\codebuddy
-Set-Alias codex Extras\codex
-Set-Alias copilot Extras\copilot
-Set-Alias qodercli Extras\qodercli
-Set-Alias qwen Extras\qwen

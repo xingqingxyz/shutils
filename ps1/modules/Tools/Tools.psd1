@@ -69,7 +69,7 @@
   # NestedModules        = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('androidEnv', 'vsdev', 'delay', 'claude', 'codebuddy', 'codex', 'copilot', 'qwen', 'qodercli', 'icat', 'Get-MemoryInfo', 'Get-TypeMember', 'Search-Web', 'Set-SystemProxy', 'Test-Administrator', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Use-EnvironmentVariable', 'Update-SessionEnvironment')
+  FunctionsToExport    = @('androidEnv', 'vsdev', 'delay', 'icat', 'Get-MemoryInfo', 'Get-TypeMember', 'Search-Web', 'Set-SystemProxy', 'Test-Administrator', 'Get-EnvironmentVariable', 'Set-EnvironmentVariable', 'Set-EnvironmentVariablePath', 'Use-EnvironmentVariable', 'Update-SessionEnvironment')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()

@@ -74,6 +74,7 @@ brew-cask:
   - vs-code
   - xcode
 bun:
+  - '@github/copilot'
   - '@qoder-ai/qodercli'
   - '@qwen-code/qwen-code'
   - '@tencent-ai/codebuddy-code'
@@ -89,7 +90,7 @@ deno: []
 dnf:
   - alacritty
   - aria2
-  - chrome-driver
+  - chromedriver
   - clang
   - clang-tools-extra
   - cmake
@@ -121,6 +122,7 @@ dnf:
   - shellcheck
   - shfmt
   - strace
+  - tmux
   - valgrind
   - vlc
   - xclip
@@ -155,7 +157,6 @@ fedora:
   - bun
   - cargo-generate
   - code
-  - copilot
   - deno
   - diskus
   - dotnet
@@ -165,7 +166,6 @@ fedora:
   - go
   - golangci-lint
   - hexyl
-  - java
   - jq
   - mkcert
   - mdbook
@@ -190,7 +190,6 @@ go:
 macos:
   - bun
   - cargo-generate
-  - copilot
   - deno
   - diskus
   - dotnet
@@ -222,6 +221,7 @@ pnpm: []
 ps1: []
 psm1:
   - AudioDeviceCmdlets
+  - Pester
   - PSScriptAnalyzer
   - PSToml
   - Yayaml
@@ -230,7 +230,6 @@ raspi:
   - bat
   - bun
   - cargo-generate
-  - copilot
   - deno
   - diskus
   - dotnet
@@ -267,7 +266,6 @@ ubuntu:
   - bun
   - cargo-generate
   - code
-  - copilot
   - deno
   - diskus
   - dotnet
@@ -310,7 +308,6 @@ uv-python:
   - python3.14t
 windows:
   - cargo-generate
-  - copilot
   - diskus
   - flutter
   - golangci-lint

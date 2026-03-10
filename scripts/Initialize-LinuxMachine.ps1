@@ -24,9 +24,6 @@ Suites: llvm-toolchain-$label-22
 Components: main
 Signed-By: /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 "@ -Force
-  Convert-Path /usr/bin/*-22 | ForEach-Object {
-    New-Item -ItemType SymbolicLink -Force -Target (realpath $_) $_.Substring(0, $_.Length - 3)
-  }
   # microsoft
   New-Item /etc/apt/sources.list.d/microsoft.sources -Value @'
 Types: deb
