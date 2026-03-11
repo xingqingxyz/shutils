@@ -93,6 +93,12 @@ Set-PSReadLineKeyHandler -Chord Alt+C -Description 'Fzf select parent directorie
   Set-Location -LiteralPath $dir
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
+Set-PSReadLineKeyHandler -Chord Alt+d -Description 'Add delay & to command line and accept it' -ScriptBlock {
+  $text = ''
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "delay $text &")
+  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+}
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
   $dir = (Invoke-Z -List).Key | fzf --scheme=path
   if (!$dir) {

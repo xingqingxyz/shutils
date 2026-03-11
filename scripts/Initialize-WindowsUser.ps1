@@ -10,8 +10,13 @@ function Set-DscResourcePath {
   [System.Environment]::SetEnvironmentVariable('DSC_RESOURCE_PATH', $env:DSC_RESOURCE_PATH, 'User')
 }
 
-# pwsh scripts
-Install-Script Refresh-EnvironmentVariables
+# data dirs for GithubRelease
+[string[]]$dirs = @(
+  "$env:LOCALAPPDATA\prefix\bin"
+  "$env:LOCALAPPDATA\prefix\share\jar"
+  1..8 | ForEach-Object { "$env:LOCALAPPDATA\prefix\share\man\man$_" }
+)
+New-Item -ItemType Directory $dirs -Force
 # alacritty startup
 if (Get-Command alacritty -Type Application -TotalCount 1 -ea Ignore) {
   New-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Alacritty' -Value 'C:\Program Files\Alacritty\alacritty.exe' -PropertyType String -Force
@@ -24,10 +29,3 @@ Set-DarkMode
 if (Get-Command dsc -CommandType Application -TotalCount 1 -ea Ignore) {
   Set-DscResourcePath
 }
-# make directory for user data
-[string[]]$dirs = @(
-  "$env:LOCALAPPDATA\prefix\bin"
-  "$env:LOCALAPPDATA\prefix\share\jar"
-  1..8 | ForEach-Object { "$env:LOCALAPPDATA\prefix\share\man\man$_" }
-)
-New-Item -ItemType Directory $dirs -Force

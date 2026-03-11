@@ -1,6 +1,6 @@
 @echo off
 REM get the script name without path
-for %%I in ("%~nx0") do set "name=%%~I"
+for %%I in ("%~n0") do set "name=%%~I"
 setlocal enabledelayedexpansion
 
 REM copy all args into args list (simulated via %*)

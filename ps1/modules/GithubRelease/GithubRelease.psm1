@@ -311,7 +311,7 @@ function updateLatestVersion ($Meta, [switch]$Force) {
         bun { $tag.Substring(5); break }
         dsc { $tag.Split('-', 2)[0]; break }
         ghostty { $tag.Split('-~'.ToCharArray(), 2)[0]; break }
-        gswin64c { $tag.Substring(0, 2) + '.' + $tag.Substring(2, 2) + '.' + $tag.Substring(4); break }
+        gswin64c { $tag.Substring(2, 2) + '.' + $tag.Substring(4, 2) + '.' + $tag.Substring(6); break }
         jq { $tag.Split('-', 2)[1]; break }
         less { $tag.Substring(6) + '.0'; break }
         magick { $tag.Replace('-', '.'); break }
@@ -715,7 +715,11 @@ function Install-Release {
       switch ($true) {
         $IsFedora { sudo dnf install -y $buildDir/$base$ext; break }
         ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$base$ext; break }
-        default { tar -xf $buildDir/$base$ext -C $binDir; break }
+        default {
+          tar -xf $buildDir/$base$ext -C $buildDir
+          Move-Item -LiteralPath $buildDir/$base/golangci-lint$exe $binDir -Force
+          break
+        }
       }
       break
     }
@@ -730,7 +734,7 @@ function Install-Release {
       break
     }
     gswin64c {
-      if (!$IsWindows) {
+      if (!$IsWindows -or [RuntimeInformation]::OSArchitecture -cne 'X64') {
         throw [System.NotImplementedException]::new()
       }
       $file = '{0}w64.exe' -f $Meta.tag
@@ -971,11 +975,11 @@ StartupWMClass=localsend_app
       break
     }
     rga {
-      $target = $rust.target
-      if ($rust.arch -ceq 'x86_64') {
-        $target = $target -creplace '-gnu$', '-musl'
+      if ($IsWindows) {
+        cargo install ripgrep_all
+        break
       }
-      $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, $target
+      $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, ($rust.arch -ceq 'x86_64' ? $rust.target -creplace '-gnu$', '-musl' : $rust.target)
       downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir
       [string[]]$files = 'rga', 'rga-fzf', 'rga-fzf-open', 'rga-preproc'
@@ -1234,7 +1238,6 @@ function Update-Software {
     }
     bun {
       if ($Global) {
-        bun upgrade
         $PSNativeCommandUseErrorActionPreference = $false
         # this fails with code 1 when there is nothing to update
         bun update -g --latest
@@ -1254,7 +1257,7 @@ function Update-Software {
         }
         cargo install-update --all
         if ($Force -and $pkgs) {
-          cargo install-update $pkgs
+          cargo install-update -i $pkgs
         }
         continue
       }
@@ -1394,9 +1397,9 @@ function Update-Software {
         Write-Warning 'calling winget on non-Windows platform'
         continue
       }
-      sudo winget upgrade -r --accept-source-agreements --accept-package-agreements
+      sudo winget upgrade -r --accept-package-agreements
       if ($Force -and $pkgs) {
-        sudo winget install --accept-source-agreements --accept-package-agreements $pkgs
+        sudo winget install --accept-package-agreements $pkgs
       }
       continue
     }

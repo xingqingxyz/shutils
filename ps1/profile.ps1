@@ -1,3 +1,17 @@
+#region common
+function .. {
+  Set-Location -LiteralPath ..
+}
+
+function ... {
+  Set-Location -LiteralPath ../..
+}
+
+function .... {
+  Set-Location -LiteralPath ../../..
+}
+#endregion
+
 #region windows
 if ($IsWindows) {
   Set-Variable -Option ReadOnly -Force _executableAliasMap @{

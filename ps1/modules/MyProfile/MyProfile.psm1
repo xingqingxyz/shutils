@@ -428,11 +428,7 @@ function Invoke-Npx {
 
 [string]$pwshExe, [string]$sudoExe = (Get-Command pwsh, sudo -Type Application -TotalCount 1 -ea Ignore).Source
 function Invoke-Sudo {
-  [string[]]$ags = $args.ForEach{
-    if ($null -ne $_) {
-      $_
-    }
-  }
+  [string[]]$ags = $args.ForEach{ if ($null -ne $_) { $_ } }
   if ($args[0] -is [scriptblock]) {
     $ags = $pwshExe, '-nop', '-cwa' + $ags
   }
@@ -441,24 +437,27 @@ function Invoke-Sudo {
     if ($info.CommandType -ceq 'Alias') {
       $info = $info.ResolvedCommand
     }
-    if (!$info) {
-      # fallback to handle sudo options
-    }
-    elseif ($info.CommandType -ceq 'Application') {
-      $ags[0] = $info.Source
-    }
-    else {
-      if ($_ -ceq 'ExternalScript') {
+    while ($true) {
+      if (!$info) {
+        throw [System.Management.Automation.CommandNotFoundException]::new($ags[0])
+      }
+      elseif ($info.CommandType -ceq 'Application') {
         $ags[0] = $info.Source
+        break
+      }
+      elseif ($info.CommandType -ceq 'ExternalScript') {
+        $ags[0] = $info.Source
+        $ags = $pwshExe, '-nop' + $ags
+        break
       }
       elseif ($info.Module) {
-        $ags[0] = $info.Name
+        $ags[0] = $info.ModuleName + '\' + $info.Name
+        $ags = $pwshExe, '-nop', '-c' + $ags
+        break
       }
       else {
-        Write-Warning "running a no module $($info.CommandType) $info"
+        $info = Get-Command $ags[0] -CommandType Application, ExternalScript -TotalCount 1 -ea Ignore
       }
-      $ags[0] = "`$env:PSModulePath = '{0}'; {1} & '{2}' @args" -f $env:PSModulePath.Replace("'", "''"), ($MyInvocation.ExpectingInput ? '$input | ' : ''), $ags[0].Replace("'", "''")
-      $ags = $pwshExe, '-nop', '-cwa' + $ags
     }
   }
   if ($sudoExe) {
@@ -472,7 +471,7 @@ function Invoke-Sudo {
     return
   }
   if ($MyInvocation.ExpectingInput) {
-    Write-Warning 'ignored stdin'
+    Write-Warning 'sudo executing in windows gui mode'
   }
   [string]$cmd, $ags = $ags
   Write-CommandDebug $cmd $ags
@@ -531,16 +530,4 @@ function x {
   else {
     & $CommandName @ags
   }
-}
-
-function .. {
-  Set-Location -LiteralPath ..
-}
-
-function ... {
-  Set-Location -LiteralPath ../..
-}
-
-function .... {
-  Set-Location -LiteralPath ../../..
 }

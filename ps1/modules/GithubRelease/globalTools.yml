@@ -324,6 +324,7 @@ winget:
   - astral-sh.uv
   - BurntSushi.ripgrep.MSVC
   - charmbracelet.glow
+  - DenoLand.Deno
   - FiloSottile.mkcert
   - Git.Git
   - GitHub.cli
@@ -337,11 +338,14 @@ winget:
   - junegunn.fzf
   - Kingsoft.WPSOffice.CN
   - koalaman.shellcheck
+  - LocalSend.LocalSend
   - Meta.Zstandard
   - Microsoft.Edge
   - Microsoft.PowerShell.Preview
+  - Microsoft.VisualStudio.Community
   - Microsoft.VisualStudioCode
-  - Microsoft.WindowsTerminal
+  - Microsoft.WindowsTerminal.Preview
+  - Microsoft.WSL
   - MikeFarah.yq
   - Mozilla.Firefox.zh-CN
   - mvdan.shfmt
@@ -355,7 +359,7 @@ winget:
   - sharkdp.hexyl
   - sharkdp.hyperfine
   - sharkdp.pastel
-  - Tencent.WeChat
+  - Tencent.WeChat.Universal
   - VideoLAN.VLC
 wsl:
   - dotnet

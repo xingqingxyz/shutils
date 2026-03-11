@@ -1,9 +1,25 @@
 {
   "$schema": "https://aka.ms/winget-settings.schema.json",
+  "experimentalFeatures": {
+    "directMSI": true,
+    "fonts": true,
+    "sourcePriority": true
+  },
   "installPrefReq": {
-    "architectures": ["x64", "x86"]
+    "architectures": ["x64", "x86"],
+    "scope": "machine"
   },
   "source": {
     "autoUpdateIntervalInMinutes": 30
+  },
+  "telemetry": {
+    "disable": true
+  },
+  "uninstallBehavior": {
+    "purgePortablePackage": true
+  },
+  "visual": {
+    "enableSixels": true,
+    "progressBar": "retro"
   }
 }

@@ -20,12 +20,7 @@ if ($PSCulture -cne 'en-US' -and (Get-Content -Raw -LiteralPath ~/.config/user-d
   }
   Set-Location -
 }
-#region gpg
-# gnu
-Invoke-RestMethod 'https://mirrors.ustc.edu.cn/gnu/gnu-keyring.gpg' -OutFile /tmp/gnu-keyring.gpg
-gpg --import /tmp/gnu-keyring.gpg
-#endregion
-# data dirs
+# data dirs for GithubRelease
 [string[]]$dirs = @(
   "$HOME/.local/bin"
   "$HOME/.local/share/applications"
@@ -35,3 +30,8 @@ gpg --import /tmp/gnu-keyring.gpg
   1..8 | ForEach-Object { "$HOME/.local/share/man/man$_" }
 )
 New-Item -ItemType Directory $dirs -Force
+#region gpg
+# gnu
+Invoke-RestMethod 'https://mirrors.ustc.edu.cn/gnu/gnu-keyring.gpg' -OutFile /tmp/gnu-keyring.gpg
+gpg --import /tmp/gnu-keyring.gpg
+#endregion
