@@ -108,11 +108,6 @@ $ANDROID_HOME/platform-tools
   if ($env:WSL_DISTRO_NAME) {
     $PATH += ':/usr/lib/wsl/lib:' + ((bash --norc -c 'echo "$PATH"').Split(':').Where{ $_.StartsWith('/mnt/') } -join ':')
   }
-  if (Get-Command fcitx5 -CommandType Application -TotalCount 1 -ea Ignore) {
-    $commonVar['GTK_IM_MODULE'] = 'fcitx5'
-    $commonVar['QT_IM_MODULE'] = 'fcitx5'
-    $commonVar['XMODIFIERS'] = '@im=fcitx5'
-  }
   ($commonVar + @{
     LANG          = 'zh_CN.UTF-8'
     MANPAGER      = "sh -c `"sed 's/\x1b\[[0-9;]*m\|.\x08//g' 2>/dev/null | bat -plman`""

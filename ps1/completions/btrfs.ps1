@@ -24,88 +24,98 @@ Register-ArgumentCompleter -Native -CommandName btrfs -ScriptBlock {
 
   @(
     if ($wordToComplete.StartsWith('-')) {
-      '--format=text', '--format=json', '-v', '--verbose', '-q', '--quiet', '--log=default', '--log=info', '--log=verbose', '--log=debug', '--log=quiet', '--dry-run'
+      '--version', '--help', '--format=text', '--format=json', '-v', '--verbose', '-q', '--quiet', '--log=default', '--log=info', '--log=verbose', '--log=debug', '--log=quiet', '--dry-run'
     }
     switch ($command) {
       '' {
         if ($wordToComplete.StartsWith('-')) {
-          '--help', '--version'
+          break
         }
-        else {
-          'subvolume', 'filesystem', 'balance', 'device', 'scrub', 'check', 'rescue', 'restore', 'inspect-internal', 'property', 'send', 'receive', 'quota', 'qgroup', 'replace', 'help', 'version'
-        }
+        'subvolume', 'filesystem', 'balance', 'device', 'scrub', 'check', 'rescue', 'restore', 'inspect-internal', 'property', 'send', 'receive', 'quota', 'qgroup', 'replace', 'help', 'version'
         break
       }
       'help' {
         if ($wordToComplete.StartsWith('-')) {
           '--full'
+          break
         }
         break
       }
       'subvolume' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'create', 'delete', 'list', 'snapshot', 'find-new', 'get-default', 'set-default', 'show', 'sync'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'create', 'delete', 'list', 'snapshot', 'find-new', 'get-default', 'set-default', 'show', 'sync'
         break
       }
       'filesystem' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'defragment', 'sync', 'resize', 'show', 'df', 'du', 'label', 'usage', 'mkswapfile'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'defragment', 'sync', 'resize', 'show', 'df', 'du', 'label', 'usage', 'mkswapfile'
         break
       }
       'balance' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'start', 'pause', 'cancel', 'resume', 'status'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'start', 'pause', 'cancel', 'resume', 'status'
         break
       }
       'device' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'scan', 'add', 'delete', 'remove', 'ready', 'stats', 'usage'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'scan', 'add', 'delete', 'remove', 'ready', 'stats', 'usage'
         break
       }
       'scrub' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'start', 'cancel', 'resume', 'status'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'start', 'cancel', 'resume', 'status'
         break
       }
       'rescue' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'chunk-recover', 'super-recover', 'zero-log', 'fix-device-size', 'create-control-device', 'clear-uuid-tree', 'clear-ino-cache', 'clear-space-cache'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'chunk-recover', 'super-recover', 'zero-log', 'fix-device-size', 'create-control-device', 'clear-uuid-tree', 'clear-ino-cache', 'clear-space-cache'
         break
       }
       'inspect-internal' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'inode-resolve', 'logical-resolve', 'subvolid-resolve', 'rootid', 'min-dev-size', 'dump-tree', 'dump-super', 'tree-stats', 'map-swapfile'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'inode-resolve', 'logical-resolve', 'subvolid-resolve', 'rootid', 'min-dev-size', 'dump-tree', 'dump-super', 'tree-stats', 'map-swapfile'
         break
       }
       'property' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'get', 'set', 'list'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'get', 'set', 'list'
         break
       }
       'quota' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'enable', 'disable', 'rescan'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'enable', 'disable', 'rescan'
         break
       }
       'qgroup' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'assign', 'remove', 'create', 'destroy', 'show', 'limit', 'clear-stale'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'assign', 'remove', 'create', 'destroy', 'show', 'limit', 'clear-stale'
         break
       }
       'replace' {
-        if (!$wordToComplete.StartsWith('-')) {
-          'start', 'status', 'cancel'
+        if ($wordToComplete.StartsWith('-')) {
+          break
         }
+        'start', 'status', 'cancel'
         break
       }
     }).Where{ $_ -like "$wordToComplete*" }

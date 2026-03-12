@@ -310,7 +310,6 @@ function updateLatestVersion ($Meta, [switch]$Force) {
         binaryen { $tag.Split('_', 2)[1] + '.0'; break }
         bun { $tag.Substring(5); break }
         dsc { $tag.Split('-', 2)[0]; break }
-        ghostty { $tag.Split('-~'.ToCharArray(), 2)[0]; break }
         gswin64c { $tag.Substring(2, 2) + '.' + $tag.Substring(4, 2) + '.' + $tag.Substring(6); break }
         jq { $tag.Split('-', 2)[1]; break }
         less { $tag.Substring(6) + '.0'; break }
@@ -379,7 +378,8 @@ function Install-Release {
       }
       cargo install alacritty@$($Meta.version)
       downloadRelease $Meta 'Alacritty.svg', 'alacritty.1.gz', 'alacritty-msg.1.gz', 'alacritty.5.gz', 'alacritty-bindings.5.gz', 'alacritty.bash', 'Alacritty.desktop'
-      Move-Item -LiteralPath $buildDir/alacritty.1.gz, $buildDir/alacritty-msg.1.gz, $buildDir/alacritty.5.gz, $buildDir/alacritty-bindings.5.gz $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/alacritty.1.gz, $buildDir/alacritty-msg.1.gz $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/alacritty.5.gz, $buildDir/alacritty-bindings.5.gz $dataDir/man/man5 -Force
       Move-Item -LiteralPath $buildDir/alacritty.bash $dataDir/bash-completion/completions -Force
       Move-Item -LiteralPath $buildDir/Alacritty.desktop $dataDir/applications -Force
       update-desktop-database $dataDir/applications
@@ -651,9 +651,11 @@ function Install-Release {
           sudo dnf install -y ghostty
           break
         }
-        ($IsUbuntu -or $IsRaspi) {
-          sudo add-apt-repository ppa:mkasberg/ghostty-ubuntu
-          sudo apt install -y ghostty
+        $IsLinux {
+          $file = 'Ghostty-{0}-{1}.AppImage' -f $Meta.version, $rust.arch
+          downloadRelease $file
+          Move-Item -LiteralPath $buildDir/$file $binDir/ghostty -Force
+          chmod +x $binDir/ghostty
           break
         }
         default { throw [System.NotImplementedException]::new() }

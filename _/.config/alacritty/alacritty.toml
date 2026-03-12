@@ -55,6 +55,7 @@ size = 12
 
 [window]
 resize_increments = true
+decorations = "None"
 decorations_theme_variant = "Dark"
 
 [window.dimensions]

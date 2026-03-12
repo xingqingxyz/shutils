@@ -519,7 +519,16 @@ function x {
         $CommandName = 'wt'
         break
       }
-      @('-f', '--', 'alacritty', '-e', $CommandName) + $ExtraArgs
+      $term = if ($env:GHOSTTY_BIN_DIR) {
+        'ghostty'
+      }
+      elseif ($env:ALACRITTY_LOG) {
+        'alacritty'
+      }
+      else {
+        'x-terminal-emulator'
+      }
+      @('-f', '--', $term, '-e', $CommandName) + $ExtraArgs
       $CommandName = 'setsid'
       break
     }
