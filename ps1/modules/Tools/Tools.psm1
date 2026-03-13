@@ -448,6 +448,21 @@ function Test-Administrator {
   $IsWindows ? [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) : ((id -u) -ceq '0')
 }
 
+function Import-EnvironmentVariable {
+  [CmdletBinding()]
+  [Alias('ipev')]
+  param (
+    [Parameter(Position = 0)]
+    [SupportsWildcards()]
+    [string[]]
+    $Path = '.env'
+  )
+  Get-Content -LiteralPath $Path | ForEach-Object {
+    $name, $value = $_.Split('=', 2)
+    [System.Environment]::SetEnvironmentVariable($name, $value)
+  }
+}
+
 Set-Alias uev Use-EnvironmentVariable
 function Use-EnvironmentVariable {
   $environment = @{}

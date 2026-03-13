@@ -1,5 +1,4 @@
 apt:
-  - 7zip
   - apt-file
   - aria2
   - build-essential
@@ -33,8 +32,6 @@ apt:
   - shfmt
   - vlc
   - wget
-  - xclip
-  - xsel
 apt-raspi:
   - aria2
   - build-essential
@@ -74,7 +71,6 @@ brew-cask:
   - vs-code
   - xcode
 bun:
-  - '@github/copilot'
   - '@qoder-ai/qodercli'
   - '@qwen-code/qwen-code'
   - '@tencent-ai/codebuddy-code'
@@ -119,14 +115,11 @@ dnf:
   - poppler-utils
   - python3-devel
   - ripgrep
-  - shellcheck
+  - ShellCheck
   - shfmt
   - strace
-  - tmux
   - valgrind
   - vlc
-  - xclip
-  - xsel
 dnf-wsl:
   - aria2
   - bat
@@ -274,6 +267,7 @@ ubuntu:
   - flutter
   - fzf
   - gh
+  - ghostty
   - glow
   - go
   - golangci-lint
@@ -295,7 +289,6 @@ ubuntu:
   - ruff
   - rustup
   - taplo
-  - tmux
   - ty
   - uv
   - wasm-pack

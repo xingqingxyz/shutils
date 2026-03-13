@@ -136,28 +136,24 @@ function installBinary ([string[]]$Path) {
     $fullName = [System.IO.Path]::GetFullPath($_)
     $cmd = '"' + $fullName.Replace('"', ($IsWindows ? '""' : '\"')) + '"'
     switch ([System.IO.Path]::GetExtension($_)) {
-      '.jar' {
+      '.jar' { $cmd = 'java -jar ' + $cmd; break }
+      '.js' { $cmd = 'node ' + $cmd; break }
+      '' {
         if ($IsWindows) {
-          "@java -jar $cmd %*" > $binDir/$name`.cmd
+          break
         }
-        else {
-          # exec -a requires bash
-          "#!/bin/bash`nexec -a $name java -jar $cmd `"$@`"" > $binDir/$name
-          chmod +x $binDir/$name
-        }
-        break
-      }
-      default {
-        if ($IsWindows) {
-          "@$cmd %*" > $binDir/$name`.cmd
-        }
-        else {
-          chmod +x $fullName
-          ln -sf $fullName $binDir/$name
-        }
-        break
+        chmod +x $fullName
+        ln -sf $fullName $binDir/$name
+        return
       }
     }
+    if ($IsWindows) {
+      "@$cmd %*" > $binDir/$name`.cmd
+      return
+    }
+    # exec -a requires bash
+    "#!/bin/bash`nexec -a $name $cmd `"$@`"" > $binDir/$name
+    chmod +x $binDir/$name
   }
 }
 
@@ -175,7 +171,7 @@ function getLocalVersion ([string]$Name) {
       flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
       dotnet { (dotnet --version).Split('-', 2)[0]; break }
       gh { (gh version)[0].Split(' ', 4)[2]; break }
-      ghostty { (ghostty --version)[0].Split(' ', 2)[1]; break }
+      ghostty { (ghostty --version)[0].Split(' ', 2)[1].Split('-', 2)[0]; break }
       glow { (glow -v).Split(' ', 4)[2]; break }
       go { (go version).Split(' ', 4)[2].Substring(2); break }
       golangci-lint { (golangci-lint --version).Split(' ', 5)[3]; break }
@@ -483,20 +479,11 @@ function Install-Release {
       break
     }
     copilot {
-      $arch = [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-      $file = if ($IsWindows) {
-        'copilot-{0}.exe' -f $arch
-      }
-      else {
-        'copilot-{0}-{1}.tar.gz' -f $rust.os, $arch
-      }
+      $file = 'github-copilot-{0}.tgz' -f $Meta.tag
       downloadRelease $Meta $file, SHA256SUMS.txt
       checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHA256SUMS.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
-      if ($IsWindows) {
-        Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
-        break
-      }
-      tar -xf $buildDir/$file -C $binDir
+      tar -xf $buildDir/$file -C (New-Item -Type Directory $prefixDir/copilot -Force) --strip-components=1
+      installBinary $prefixDir/copilot/index.js
       break
     }
     crush {
@@ -644,11 +631,6 @@ function Install-Release {
         $IsMacOS {
           downloadFile "https://release.files.ghostty.org/$($Meta.version)/Ghostty.dmg"
           sudo installer -pkg $buildDir/Ghostty.dmg -dumplog > Temp:/$file`.log
-          break
-        }
-        $IsFedora {
-          sudo dnf copr enable scottames/ghostty
-          sudo dnf install -y ghostty
           break
         }
         $IsLinux {
@@ -1423,13 +1405,13 @@ function Update-System {
     Update-Software brew, macos -Force
   }
   elseif ($IsLinux) {
-    if ($PSVersionTable.OS.StartsWith('Ubuntu')) {
+    if ($PSVersionTable.OS.StartsWith('Ubuntu ')) {
       Update-Software apt, ubuntu -Force
     }
-    elseif ($PSVersionTable.OS.StartsWith('Fedora')) {
+    elseif ($PSVersionTable.OS.StartsWith('Fedora ')) {
       Update-Software dnf, fedora -Force
     }
-    elseif ($PSVersionTable.OS.StartsWith('Debian') -and
+    elseif ($PSVersionTable.OS.StartsWith('Debian ') -and
       [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64) {
       Update-Software apt, raspi -Force
     }
@@ -1447,9 +1429,9 @@ $go = goenv
 $rust = rustenv
 $buildDir = [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetTempPath())
 if ($IsLinux) {
-  $IsUbuntu = $PSVersionTable.OS.StartsWith('Ubuntu')
-  $IsFedora = $PSVersionTable.OS.StartsWith('Fedora')
-  $IsRaspi = $PSVersionTable.OS.StartsWith('Debian') -and [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64
+  $IsUbuntu = $PSVersionTable.OS.StartsWith('Ubuntu ')
+  $IsFedora = $PSVersionTable.OS.StartsWith('Fedora ')
+  $IsRaspi = $PSVersionTable.OS.StartsWith('Debian ') -and [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64
   $IsWSL = Test-Path -LiteralPath Env:/WSL_DISTRO_NAME
 }
 

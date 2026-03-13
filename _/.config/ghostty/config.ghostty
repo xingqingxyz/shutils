@@ -10,10 +10,9 @@ keybind = ctrl+alt+,=reload_config
 keybind = ctrl+shift+,=open_config
 keybind = f11=toggle_fullscreen
 keybind = f12=inspector:toggle
+link-previews = true
 mouse-hide-while-typing = true
 notify-on-command-finish-action = bell,notify
 notify-on-command-finish = unfocused
 window-decoration = none
-window-height = 35
 window-show-tab-bar = never
-window-width = 120

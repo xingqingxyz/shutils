@@ -93,10 +93,8 @@ $HOME/.local/bin
 $HOME/.cargo/bin
 $HOME/go/bin
 $HOME/.bun/bin
-$SHUTILS_ROOT/scripts
 $HOME/.local/share/powershell/Scripts
 /usr/local/share/powershell/Scripts
-$ANDROID_HOME/platform-tools
 /usr/local/bin
 /usr/local/sbin
 /usr/bin

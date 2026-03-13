@@ -1,1 +1,1 @@
-copilot.cmd
+cbc.cmd

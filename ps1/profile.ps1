@@ -1,3 +1,5 @@
+#Requires -Version 7.6
+
 #region common
 function .. {
   Set-Location -LiteralPath ..
@@ -10,17 +12,34 @@ function ... {
 function .... {
   Set-Location -LiteralPath ../../..
 }
+
+# PSES
+if ($env:POWERSHELL_DISTRIBUTION_CHANNEL -ceq 'PSES') {
+  . $env:SHUTILS_ROOT/scripts/onEnterPSES.ps1
+}
+# load
+. $env:SHUTILS_ROOT/ps1/complete.ps1
+. $env:SHUTILS_ROOT/ps1/keybindings.ps1
+. $env:SHUTILS_ROOT/ps1/prompt.ps1
+. $env:SHUTILS_ROOT/ps1/z.ps1
+# preferences
+$InformationPreference = 'Continue'
+# aliases overrides exist commands must be explicitly set, due to module lazy
+Set-Alias npm Invoke-Npm
+Set-Alias npx Invoke-Npx
+Set-Alias sudo Invoke-Sudo
+# excutable alias
+Set-Variable -Option ReadOnly -Force _executableAliasMap @{
+  grep = 'grep', '--color=auto'
+  rg   = 'rg', '--hyperlink-format=vscode'
+}
+if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
+  $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
+}
 #endregion
 
 #region windows
 if ($IsWindows) {
-  Set-Variable -Option ReadOnly -Force _executableAliasMap @{
-    grep = 'grep', '--color=auto'
-    rg   = 'rg', '--hyperlink-format=vscode'
-  }
-  if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
-    $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
-  }
   Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
     # prevent . invoke variable add
     if ($MyInvocation.InvocationName -ceq '.') {
@@ -83,22 +102,8 @@ function md {
 
 Remove-Alias md -ea Ignore
 Set-Alias ls Get-ChildItem
-Set-Variable -Option ReadOnly -Force _executableAliasMap @{
-  egrep   = 'egrep', '--color=auto'
-  grep    = 'grep', '--color=auto'
-  xzegrep = 'xzegrep', '--color=auto'
-  xzfgrep = 'xzfgrep', '--color=auto'
-  xzgrep  = 'xzgrep', '--color=auto'
-  zegrep  = 'zegrep', '--color=auto'
-  zfgrep  = 'zfgrep', '--color=auto'
-  zgrep   = 'zgrep', '--color=auto'
-  rg      = 'rg', '--hyperlink-format=vscode'
-}
 if ($env:WSL_DISTRO_NAME) {
   $_executableAliasMap.rg = 'rg', "--hyperlink-format=vscode://file//wsl.localhost/$env:WSL_DISTRO_NAME{path}:{line}:{column}"
-}
-if ($env:TERM_PROGRAM -cnotlike 'vscode*') {
-  $_executableAliasMap.fd = 'fd', '--hyperlink=auto'
 }
 Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   # prevent . invoke variable add
@@ -120,13 +125,14 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   }
 }
 # command-not-found
-$ExecutionContext.InvokeCommand.CommandNotFoundAction = switch ((Get-Command apt, dnf -CommandType Application -TotalCount 1 -ea Ignore).Name) {
+$ExecutionContext.InvokeCommand.CommandNotFoundAction =
+switch ((Get-Command apt, dnf -CommandType Application -TotalCount 1 -ea Ignore).Name) {
   apt {
     {
       [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
       if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
         [string]$name = @(apt-file search -Fil /usr/bin/$($e.CommandName) 2>$null)[0]
-        if ($LASTEXITCODE) {
+        if (!$name) {
           return
         }
         # note: stdout and stderr are ignored unless sudo
@@ -149,8 +155,8 @@ $ExecutionContext.InvokeCommand.CommandNotFoundAction = switch ((Get-Command apt
     {
       [System.Management.Automation.CommandLookupEventArgs]$e = $args[1]
       if ($e.CommandOrigin -ceq 'Runspace' -and !$e.CommandName.StartsWith('get-')) {
-        [string]$name = @(dnf repoquery --file=/usr/bin/$($e.CommandName) 2>$null)[0]
-        if ($LASTEXITCODE) {
+        [string]$name = @(dnf repoquery --file=/usr/bin/$($e.CommandName) --arch=$(arch) 2>$null)[0]
+        if (!$name) {
           return
         }
         # note: stdout and stderr are ignored unless sudo

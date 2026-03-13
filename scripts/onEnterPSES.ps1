@@ -1,5 +1,10 @@
 #Requires -Modules PowerShellEditorServices.Commands
 
+# preferences
+$DebugPreference = 'Continue'
+$ErrorActionPreference = 'Stop'
+$VerbosePreference = 'Continue'
+# commands
 Register-EditorCommand -Name 'hello' -DisplayName 'Hello World' -ScriptBlock {
   [CmdletBinding()]
   param (

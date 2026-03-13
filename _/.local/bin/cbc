@@ -1,1 +1,17 @@
-copilot
+#!/bin/bash
+name=${0##*/}
+args=("$@")
+while [ $# -ne 0 ]; do
+  case "$1" in
+    -p | --prompt)
+      case "$name" in
+        cbc | codebuddy) args+=('-y') ;;
+        *) args+=('--yolo') ;;
+      esac
+      exec "$HOME/.bun/bin/$name" "${args[@]}" | glow
+      ;;
+    *) ;;
+  esac
+  shift
+done
+"$HOME/.bun/bin/$name" "${args[@]}"

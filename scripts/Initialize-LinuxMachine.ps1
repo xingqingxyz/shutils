@@ -5,7 +5,28 @@ if ((id -u) -cne '0') {
 }
 # data dirs for GithubRelease
 New-Item -ItemType Directory /usr/local/share/jar -Force
-if ($PSVersionTable.OS.StartsWith('Ubuntu')) {
+if ($PSVersionTable.OS.StartsWith('Fedora ')) {
+  # dnf copr
+  $coprs = @(
+    'avengemedia/dms'
+    'scottames/ghostty'
+  )
+  dnf copr enable -y $coprs
+  # remove some packages
+  $pkgs = @(
+    'evince'
+    'gnome-calculator'
+    'gnome-text-editor'
+    'ibus'
+    'nano'
+    'ptyxis'
+    'tree'
+    'vim-minimal'
+    'wcurl'
+  )
+  dnf remove -y $pkgs
+}
+elseif ($PSVersionTable.OS.StartsWith('Ubuntu ')) {
   $label = (Get-Content -LiteralPath /etc/os-release | Select-String -Raw -SimpleMatch UBUNTU_CODENAME=).Split('=', 2)[1]
   # ubuntu
   New-Item /etc/apt/sources.list.d/ubuntu.sources -Value @"
@@ -56,26 +77,7 @@ Signed-By: /usr/share/keyrings/microsoft.gpg
   snap remove --purge firmware-updater snap-store
   snap refresh
 }
-elseif ($PSVersionTable.OS.StartsWith('Fedora')) {
-  # auto update
-  dnf install -y dnf-automatic
-  systemctl enable --now dnf-automatic.timer
-  systemctl status dnf-automatic.timer
-  # remove some packages
-  $pkgs = @(
-    'evince'
-    'gnome-calculator'
-    'gnome-text-editor'
-    'ibus'
-    'nano'
-    'ptyxis'
-    'tree'
-    'vim-minimal'
-    'wcurl'
-  )
-  dnf remove -y $pkgs
-}
-elseif ($PSVersionTable.OS.StartsWith('Debian') -and
+elseif ($PSVersionTable.OS.StartsWith('Debian ') -and
   [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64) {
   $label = (Get-Content -LiteralPath /etc/os-release | Select-String -Raw -SimpleMatch DEBIAN_CODENAME=).Split('=', 2)[1]
   # llvm

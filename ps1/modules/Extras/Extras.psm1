@@ -170,10 +170,13 @@ function New-RelativeSymlink {
     [Parameter(Mandatory, Position = 1)]
     [SupportsWildcards()]
     [string[]]
-    $Path
+    $Path,
+    [Parameter()]
+    [switch]
+    $Force
   )
   Get-Item $Path -Force -ea Ignore | ForEach-Object {
-    New-Item -Type SymbolicLink -Force -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $Target)) $_.FullName
+    New-Item -Type SymbolicLink -Force:$Force -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $Target)) $_.FullName
   }
 }
 
