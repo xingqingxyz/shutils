@@ -1,0 +1,14 @@
+#!/bin/bash
+args=("$@")
+while [ $# -ne 0 ]; do
+  case "$1" in
+    -p | --prompt)
+      args+=('--yolo')
+      exec -a copilot node "$HOME/.local/copilot" "${args[@]}" | glow
+      exit
+      ;;
+    *) ;;
+  esac
+  shift
+done
+exec -a copilot node "$HOME/.local/copilot" "${args[@]}"

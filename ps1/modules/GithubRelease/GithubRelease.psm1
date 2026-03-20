@@ -161,34 +161,14 @@ function getLocalVersion ([string]$Name) {
   try {
     switch ($Name) {
       bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
-      bat { (bat -V).Split(' ', 3)[1]; break }
       binaryen { (wasm2js --version).Split(' ', 4)[2]; break }
-      code { (code --version)[0]; break }
-      copilot { (copilot -v)[0].Split(' ')[-1].TrimEnd('.'); break }
-      deno { (deno -v).Split(' ', 2)[1].Split('+', 2)[0]; break }
-      dsc { (dsc -V).Split([char[]]' -', 3)[1]; break }
-      fzf { (fzf --version).Split(' ', 2)[0].Split('-', 2)[0]; break }
-      flutter { (flutter --version)[0].Split(' ', 3)[1]; break }
-      dotnet { (dotnet --version).Split('-', 2)[0]; break }
-      gh { (gh version)[0].Split(' ', 4)[2]; break }
       ghostty { (ghostty --version)[0].Split(' ', 2)[1].Split('-', 2)[0]; break }
-      glow { (glow -v).Split(' ', 4)[2]; break }
       go { (go version).Split(' ', 4)[2].Substring(2); break }
-      golangci-lint { (golangci-lint --version).Split(' ', 5)[3]; break }
       goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
-      pastel { (pastel -V).Split(' ', 3)[1]; break }
       less { (less --version 2>$null)[0].Split(' ', 3)[1] + '.0'; break }
       magick { (magick -version)[0].Split(' ', 4)[2].Replace('-', '.'); break }
-      mold { (mold -v).Split(' ', 3)[1]; break }
-      java { (java --version)[0].Split(' ', 3)[1]; break }
       jq { (jq -V).Split('-', 2)[1]; break }
-      plantuml { (plantuml --version)[0].Split(' ', 4)[2]; break }
-      pwsh { (pwsh -v).Split(' ', 2)[1].Split('-', 2)[0]; break }
-      rg { (rg -V).Split(' ', 3)[1]; break }
-      rustup { (rustup -V 2>$null).Split(' ', 3)[1]; break }
       tmux { (tmux -V).Split(' ', 2)[1] -creplace '\D+$', ''; break }
-      ty { (ty -V).Split(' ', 3)[1]; break }
-      uv { (uv -V).Split(' ', 3)[1]; break }
       vncviewer {
         if (Test-Path -LiteralPath $dataDir/jar/vncviewer.jar) {
           (java -jar $dataDir/jar/vncviewer.jar --version 2>&1)[1].ToString().Split(' ', 5)[3].Substring(1)
@@ -206,14 +186,23 @@ function getLocalVersion ([string]$Name) {
         }
         break
       }
-      xh { (https -V).Split(' ', 2)[1]; break }
-      yq { (yq -V).Split(' ')[-1].Substring(1); break }
       { $_ -ceq 'localsend' -or
         $_ -ceq 'nerd-fonts' } {
         (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -CEQ $_).version
         break
       }
-      default { (& $_ --version).Split(' ')[-1] -replace '^v', ''; break }
+      default {
+        $index = switch -CaseSensitive -Regex ($Name) {
+          '^(fzf)$' { 0; break }
+          '^(bat|deno|dsc|flutter|java|mold|rg|rustup|ty|uv)$' { 1; break }
+          '^(gh|glow|gum|plantuml|vhs)$' { 2; break }
+          '^(golangci-lint)$' { 3; break }
+          default { -1; break }
+        }
+        @(& $_ --version 2>$null)[0].Split(' ', ($index -eq -1 ? 99 : $index + 2))[$index].Split('-', 2)[0].TrimStart('vV').TrimEnd('.')
+        break
+      }
+
     }
   }
   catch {
@@ -288,16 +277,12 @@ function updateLatestVersion ($Meta, [switch]$Force) {
     }
     default {
       [string[]]$extraArgs = if ($Meta.prerelease) {
-        switch ($Meta.name) {
-          default { '-L5', '--json', 'tagName,isPrerelease', '-q', 'first(.[] | select(.isPrerelease)) | .tagName'; break }
-        }
+        '-L5', '--json', 'tagName,isPrerelease', '-q', 'first(.[] | select(.isPrerelease)) | .tagName'
       }
       else {
         '--exclude-pre-releases'
         switch ($Meta.name) {
           node { '-L5', '--json', 'tagName,isLatest', '-q', 'first(.[] | select(.isLatest)) | .tagName'; break }
-          pwsh { '-L5', '--json', 'tagName,isPrerelease', '-q', 'first(.[] | select(.isPrerelease)) | .tagName'; break }
-          zed { '-L5', '--json', 'tagName', '-q', 'first(.[].tagName | select(startswith("v")))'; break }
           default { '-L1', '--json', 'tagName', '-q', '.[0].tagName'; break }
         }
       }
@@ -326,7 +311,7 @@ function updateLatestVersion ($Meta, [switch]$Force) {
     Write-Information "Upgrading $($Meta.name) from $version to $($Meta.version)"
   }
   else {
-    Write-Warning "pkg $($Meta.name)@$version is already newer than $($Meta.version)"
+    Write-Warning "$($Meta.name)@$version is already newer than $($Meta.version)"
   }
 }
 
@@ -342,13 +327,13 @@ function downloadFile ([string]$Url, [string]$Path) {
   }
   $null = New-Item -Type Directory -Force $dir
   Remove-Item -LiteralPath $Path -Force -ea Ignore
-  execute aria2c $Url -x2 -j32 "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" -d $dir -o $file >> $buildDir/aria2c.log
+  execute aria2c $Url -x2 -j32 --allow-overwrite "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" -d $dir -o $file >> $buildDir/aria2c.log
 }
 
 function downloadRelease ($Meta, [string[]]$Name) {
   $Name.ForEach{
     if (Test-Path -LiteralPath $buildDir/$_) {
-      execute aria2c "http://github.com/$($Meta.repo)/releases/download/$($Meta.tag)/$_" -c -x2 -j32 "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" -d $buildDir >> $buildDir/aria2c.log
+      execute aria2c "http://github.com/$($Meta.repo)/releases/download/$($Meta.tag)/$_" -c -x2 -j32 --allow-overwrite "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" -d $buildDir >> $buildDir/aria2c.log
       return
     }
     execute gh release download -R $Meta.repo -p $_ -D $buildDir $Meta.tag
@@ -479,29 +464,57 @@ function Install-Release {
       break
     }
     copilot {
-      $file = 'github-copilot-{0}.tgz' -f $Meta.tag
-      downloadRelease $Meta $file, SHA256SUMS.txt
-      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHA256SUMS.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
+      $file = 'github-copilot-{0}.tgz' -f $Meta.tag.Substring(1)
+      downloadRelease $Meta $file
       tar -xf $buildDir/$file -C (New-Item -Type Directory $prefixDir/copilot -Force) --strip-components=1
-      installBinary $prefixDir/copilot/index.js
+      # installBinary $prefixDir/copilot/index.js
       break
     }
-    crush {
+    cosign {
       $file = switch ($true) {
-        $IsWindows { 'crush_{0}_Windows_{1}.zip' -f $Meta.version, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(); break }
-        $IsMacOS { 'crush_{0}_Darwin_{1}.tar.gz' -f $Meta.version, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(); break }
-        $IsFedora { 'crush-{0}-{1}-1.rpm' -f $Meta.version, $rust.arch; break }
-        ($IsUbuntu -or $IsRaspi) { 'crush_{0}_{1}.deb' -f $Meta.version, $go.arch; break }
+        $IsWindows { 'cosign-windows-{0}.exe' -f $Meta.version, $go.os; break }
+        $IsMacOS { 'cosign-darwin-{0}' -f $go.os; break }
+        $IsFedora { 'cosign-{0}-1.{1}.rpm' -f $Meta.version, $rust.arch; break }
+        ($IsUbuntu -or $IsRaspi) { 'cosign_{0}_{1}.deb' -f $Meta.version, $go.arch; break }
         default { throw [System.NotImplementedException]::new() }
       }
-      downloadRelease $Meta $file, checksums.txt
-      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/checksums.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
+      downloadRelease $Meta $file, cosign_checksums.txt, $file`.sigstore.json, release-cosign.pub
+      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/cosign_checksums.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
       switch ($true) {
-        $IsWindows { Expand-Archive -LiteralPath $buildDir/$file $binDir -Force; break }
-        $IsMacOS { tar -xf $buildDir/$file -C $binDir; chmod +x $binDir/crush; break }
+        $IsWindows { Move-Item -LiteralPath $buildDir/$file $binDir/cosign.exe -Force; break }
+        $IsMacOS { Move-Item -LiteralPath $buildDir/$file $binDir/cosign -Force; chmod +x $binDir/cosign; break }
         $IsFedora { sudo dnf install -y $buildDir/$file; break }
         ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$file; break }
       }
+      cosign verify-blob $buildDir/$file --bundle $buildDir/$file`.sigstore.json --certificate-identity 'keyless@projectsigstore.iam.gserviceaccount.com' --certificate-oidc-issuer 'https://accounts.google.com'
+      break
+    }
+    { $_ -ceq 'crush' -or $_ -ceq 'glow' -or $_ -ceq 'gum' -or $_ -ceq 'vhs' } {
+      $os = switch ($true) {
+        $IsWindows { 'Windows'; break }
+        $IsLinux { 'Linux'; break }
+        $IsMacOS { 'Darwin'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $arch = switch ([RuntimeInformation]::OSArchitecture) {
+        'Arm64' { 'arm64'; break }
+        'X64' { 'x86_64'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $base = $_, $Meta.version, $os, $arch -join '_'
+      if ($_ -ceq 'gum') {
+        downloadRelease $Meta $base$ext, checksums.txt, checksums.txt.pem, checksums.txt.sig
+        cosign verify-blob $buildDir/checksums.txt --cert $buildDir/checksums.txt.pem --signature $buildDir/checksums.txt.sig --certificate-identity 'https://github.com/charmbracelet/meta/.github/workflows/goreleaser.yml@refs/heads/main' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
+      }
+      else {
+        downloadRelease $Meta $base$ext, checksums.txt, checksums.txt.sigstore.json
+        cosign verify-blob $buildDir/checksums.txt --bundle $buildDir/checksums.txt.sigstore.json --certificate-identity 'https://github.com/charmbracelet/meta/.github/workflows/goreleaser.yml@refs/heads/main' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
+      }
+      checkFileHash $buildDir/$base$ext (Get-Content -LiteralPath $buildDir/checksums.txt | Select-String -Raw -SimpleMatch $base$ext).Split(' ', 2)[0]
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/$_$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$base/completions/$_`.bash $dataDir/bash-completion/completions -Force
+      Move-Item -LiteralPath $buildDir/$base/manpages/$_`.1.gz $dataDir/man/man1 -Force
       break
     }
     deno {
@@ -643,26 +656,6 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
     }
-    glow {
-      $os = switch ($true) {
-        $IsWindows { 'Windows'; break }
-        $IsLinux { 'Linux'; break }
-        $IsMacOS { 'Darwin'; break }
-        default { throw [System.NotImplementedException]::new() }
-      }
-      $arch = switch ([RuntimeInformation]::OSArchitecture) {
-        'Arm64' { 'arm64'; break }
-        'X64' { 'x86_64'; break }
-        default { throw [System.NotImplementedException]::new() }
-      }
-      $base = 'glow_{0}_{1}_{2}' -f $Meta.version, $os, $arch
-      downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
-      Move-Item -LiteralPath $buildDir/glow$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/manpages/glow.1.gz $dataDir/man/man1 -Force
-      Move-Item -LiteralPath $buildDir/completions/glow.bash $dataDir/bash-completion/completions -Force
-      break
-    }
     go {
       $file = $Meta.file
       downloadFile "https://golang.google.cn/dl/$file"
@@ -688,23 +681,10 @@ function Install-Release {
     }
     golangci-lint {
       $base = 'golangci-lint-{0}-{1}-{2}' -f $Meta.version, $go.os, $go.arch
-      $ext = switch ($true) {
-        $IsWindows { '.zip'; break }
-        $IsFedora { '.rpm'; break }
-        ($IsUbuntu -or $IsRaspi) { '.deb'; break }
-        default { '.tar.gz'; break }
-      }
       downloadRelease $Meta $base$ext, "golangci-lint-$($Meta.version)-checksums.txt"
       checkFileHash $buildDir/$base$ext (Get-Content -LiteralPath $buildDir/"golangci-lint-$($Meta.version)-checksums.txt" | Select-String -Raw -SimpleMatch $base$ext).Split(' ', 2)[0]
-      switch ($true) {
-        $IsFedora { sudo dnf install -y $buildDir/$base$ext; break }
-        ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$base$ext; break }
-        default {
-          tar -xf $buildDir/$base$ext -C $buildDir
-          Move-Item -LiteralPath $buildDir/$base/golangci-lint$exe $binDir -Force
-          break
-        }
-      }
+      tar -xf $buildDir/$base$ext -C $buildDir
+      Move-Item -LiteralPath $buildDir/$base/golangci-lint$exe $binDir -Force
       break
     }
     goreleaser {
@@ -1397,31 +1377,31 @@ function Update-Software {
   }
 }
 
-function Update-System {
+function Update-System ([switch]$Force) {
   if ($IsWindows) {
-    Update-Software winget, windows -Force
+    Update-Software winget, windows -Force:$Force
   }
   elseif ($IsMacOS) {
-    Update-Software brew, macos -Force
+    Update-Software brew, macos -Force:$Force
   }
   elseif ($IsLinux) {
     if ($PSVersionTable.OS.StartsWith('Ubuntu ')) {
-      Update-Software apt, ubuntu -Force
+      Update-Software apt, ubuntu -Force:$Force
     }
     elseif ($PSVersionTable.OS.StartsWith('Fedora ')) {
-      Update-Software dnf, fedora -Force
+      Update-Software dnf, fedora -Force:$Force
     }
     elseif ($PSVersionTable.OS.StartsWith('Debian ') -and
       [RuntimeInformation]::OSArchitecture -eq [Architecture]::Arm64) {
-      Update-Software apt, raspi -Force
+      Update-Software apt, raspi -Force:$Force
     }
   }
   else {
     throw [System.NotImplementedException]::new()
   }
-  Update-Software bun, rustup, cargo, go, psm1, uv -Global -Force
+  Update-Software bun, rustup, cargo, go, psm1, uv -Global -Force:$Force
   if (!$IsRaspi) {
-    Update-Software code, flutter -Global -Force
+    Update-Software code, flutter -Global -Force:$Force
   }
 }
 

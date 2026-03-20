@@ -8,10 +8,11 @@ while [ $# -ne 0 ]; do
         cbc | codebuddy) args+=('-y') ;;
         *) args+=('--yolo') ;;
       esac
-      exec "$HOME/.bun/bin/$name" "${args[@]}" | glow
+      exec -a "$name" "$HOME/.bun/bin/$name" "${args[@]}" | glow
+      exit
       ;;
     *) ;;
   esac
   shift
 done
-"$HOME/.bun/bin/$name" "${args[@]}"
+exec -a "$name" "$HOME/.bun/bin/$name" "${args[@]}"

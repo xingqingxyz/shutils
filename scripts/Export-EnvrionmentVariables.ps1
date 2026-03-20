@@ -96,10 +96,11 @@ $HOME/.bun/bin
 $HOME/.local/share/powershell/Scripts
 /usr/local/share/powershell/Scripts
 /usr/local/bin
-/usr/local/sbin
 /usr/bin
-/usr/sbin
 "@.ReplaceLineEndings(':')
+  if ((Get-Item -LiteralPath /usr/sbin).ResolvedTarget -cne '/usr/bin') {
+    $PATH += ':/usr/local/sbin:/usr/sbin'
+  }
   if (Get-Command snap -CommandType Application -TotalCount 1 -ea Ignore) {
     $PATH += ':/snap/bin'
   }

@@ -2,7 +2,12 @@ function androidEnv {
   if (!$env:ANDROID_HOME) {
     throw 'ANDROID_HOME environment variable is not set'
   }
-  $env:PATH += '', "$env:ANDROID_HOME\cmdline-tools\latest\bin", "$env:ANDROID_HOME\emulator", "$env:ANDROID_HOME\platform-tools" -join [System.IO.Path]::PathSeparator
+  $env:PATH = @(
+    $env:PATH
+    [System.IO.Path]::Join($env:ANDROID_HOME, 'cmdline-tools/latest/bin')
+    [System.IO.Path]::Join($env:ANDROID_HOME, 'emulator')
+    [System.IO.Path]::Join($env:ANDROID_HOME, 'platform-tools')
+  ) -join [System.IO.Path]::PathSeparator
 }
 
 function vsdev {
@@ -30,35 +35,18 @@ function delay {
   Write-Debug "Sleeping $Delay"
   Start-Sleep $Delay
   $description = if ($Command) {
-    $ScriptBlock = { &$Command @args }
+    $ScriptBlock = $ArgumentList ? { & $Command @args } : { & $Command }
     "$Command $ArgumentList"
   }
   else {
     "{$ScriptBlock}"
   }
-  & $ScriptBlock @ArgumentList
-  $status = $?
-  $statusText = $status ? 'completed' : 'failed'
-  $message = "PowerShell job $statusText`: $description"
-
-  if ($IsWindows) {
-    Add-Type -AssemblyName System.Windows.Forms
-    $notify = [System.Windows.Forms.NotifyIcon]::new()
-    $notify.BalloonTipIcon = $status ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]::Warning
-    $notify.BalloonTipTitle = $statusText
-    $notify.BalloonTipText = $message
-    $notify.Icon = [System.Drawing.SystemIcons]::Application
-    $notify.Text = 'delayCheck'
-    $notify.Visible = $true
-    $notify.ShowBalloonTip(1000)
-    $null = Register-ObjectEvent $notify -EventName BalloonTipClosed -MaxTriggerCount 1 -Action { $args[0].Dispose() }
-    Start-Sleep 1 # prevent pwsh free BalloonTipIcon
+  try {
+    & $ScriptBlock @ArgumentList
+    $status = $?
   }
-  elseif ($IsLinux) {
-    notify-send $statusText $message
-  }
-  else {
-    throw [System.NotImplementedException]::new()
+  finally {
+    Send-Notify "$($status ? 'Completed' : "Failed($LASTEXITCODE)") PS> $description" -Title delay -Level ($status ? 'Information' : 'Error')
   }
 }
 

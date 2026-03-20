@@ -254,6 +254,7 @@ rustup-components: []
 rustup-targets:
   - wasm32-unknown-unknown
 ubuntu:
+  - alacritty
   - bash
   - bat
   - bun
@@ -267,7 +268,6 @@ ubuntu:
   - flutter
   - fzf
   - gh
-  - ghostty
   - glow
   - go
   - golangci-lint
@@ -334,7 +334,7 @@ winget:
   - LocalSend.LocalSend
   - Meta.Zstandard
   - Microsoft.Edge
-  - Microsoft.PowerShell.Preview
+  - Microsoft.PowerShell
   - Microsoft.VisualStudio.Community
   - Microsoft.VisualStudioCode
   - Microsoft.WindowsTerminal.Preview

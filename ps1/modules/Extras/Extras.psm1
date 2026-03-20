@@ -307,6 +307,49 @@ function Unregister-PSScheduledTask {
   }
 }
 
+function Send-Notify {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Text,
+    [Parameter()]
+    [string]
+    $Title = 'Send-Notify',
+    [Parameter()]
+    [ValidateSet('Information', 'Warning', 'Error')]
+    [string]
+    $Level = 'Information',
+    [Parameter()]
+    [int]
+    $Timeout = 3000
+  )
+  if ($IsWindows) {
+    Add-Type -AssemblyName System.Windows.Forms
+    $notify = [System.Windows.Forms.NotifyIcon]::new()
+    $notify.BalloonTipIcon = $Level -ceq 'Information' ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]$Level
+    $notify.BalloonTipTitle = $Title
+    $notify.BalloonTipText = $Text
+    $notify.Icon = [System.Drawing.SystemIcons]::Application
+    $notify.Visible = $true
+    $null = Register-ObjectEvent $notify -EventName BalloonTipClosed -MaxTriggerCount 1 -Action {
+      $args[0].Dispose()
+    }
+    $notify.ShowBalloonTip($Timeout)
+  }
+  elseif ($IsLinux) {
+    $urgency = switch -CaseSensitive ($Level) {
+      'Information' { 'low'; break }
+      'Warning' { 'normal'; break }
+      'Error' { 'critical'; break }
+    }
+    notify-send $Text --app-name=$Title --urgency=$urgency --expire-time=$Timeout --icon=/usr/share/icons/breeze/status/64/dialog-$($Level.ToLowerInvariant()).svg
+  }
+  else {
+    throw [System.NotImplementedException]::new()
+  }
+}
+
 function Invoke-CodeFormatter {
   [CmdletBinding(DefaultParameterSetName = 'Path')]
   [Alias('icf')]

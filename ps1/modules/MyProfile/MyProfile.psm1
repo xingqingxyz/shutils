@@ -1,3 +1,53 @@
+function Format-Duration {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [timespan]
+    $Duration,
+    [Parameter()]
+    [switch]
+    $NoColor
+  )
+  begin {
+    $text = $NoColor ? '{1}' : "`e[{0}m{1}`e[0m"
+  }
+  process {
+    # colors: green, cyan, blue, yellow, magenta, red
+    $text -f @(switch ($true) {
+        { $Duration.TotalMicroseconds -lt 1000 } {
+          32
+          [string]($Duration.Microseconds + $Duration.Nanoseconds / 1000) + 'μs'
+          break
+        }
+        { $Duration.TotalMilliseconds -lt 1000 } {
+          36
+          [string]($Duration.Milliseconds + $Duration.Microseconds / 1000) + 'ms'
+          break
+        }
+        { $Duration.TotalSeconds -lt 60 } {
+          34
+          [string]($Duration.Seconds + $Duration.Milliseconds / 1000) + 's'
+          break
+        }
+        { $Duration.TotalMinutes -lt 60 } {
+          33
+          '{0}m{1}s' -f $Duration.Minutes, $Duration.Seconds
+          break
+        }
+        { $Duration.TotalHours -lt 24 } {
+          35
+          '{0}h{1}m' -f $Duration.Hours, $Duration.Minutes
+          break
+        }
+        default {
+          31
+          '{0}d{1}h' -f $Duration.Days, $Duration.Hours
+          break
+        }
+      })
+  }
+}
+
 function Show-CommandInfo {
   <#
   .SYNOPSIS
@@ -510,7 +560,7 @@ function x {
     $ExtraArgs
   )
   $ags = switch (Split-Path -LeafBase $CommandName) {
-    'aria2c' { @('-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')") + $ExtraArgs; break }
+    'aria2c' { @('-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), '--allow-overwrite', "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')") + $ExtraArgs; break }
     'msiexec' { @($CommandName, '/qn', '/norestart', '/log', "Temp:/$($ExtraArgs[0]).log", '/i') + $ExtraArgs; $CommandName = 'sudo'; break }
     'installer' { @($CommandName, '-dumplog', '-pkg') + $ExtraArgs; $CommandName = 'sudo'; break }
     default {

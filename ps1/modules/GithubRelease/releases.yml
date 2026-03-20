@@ -5,7 +5,7 @@
 - name: balenaEtcher
   repo: balena-io/etcher
 - name: bash
-  version: "5.3"
+  version: '5.3'
 - name: bat
   repo: sharkdp/bat
   tag: v0.26.0
@@ -22,12 +22,14 @@
   repo: cargo-generate/cargo-generate
 - name: code
   repo: microsoft/vscode
-  version: 1.111.0
-  tag: 1.111.0
+  version: 1.112.0
+  tag: 1.112.0
 - name: copilot
   repo: github/copilot-cli
-  tag: v1.0.2
-  version: 1.0.2
+  tag: v1.0.9
+  version: 1.0.9
+- name: cosign
+  repo: sigstore/cosign
 - name: crush
   repo: charmbracelet/crush
   tag: v0.47.2
@@ -81,10 +83,14 @@
   file: go1.26.1.linux-amd64.tar.gz
 - name: golangci-lint
   repo: golangci/golangci-lint
+  tag: v2.11.3
+  version: 2.11.3
 - name: goreleaser
   repo: goreleaser/goreleaser
   tag: v2.12.5
   version: 2.12.5
+- name: gum
+  repo: charmbracelet/gum
 - name: gswin64c
   repo: ArtifexSoftware/ghostpdl-downloads
 - name: hexyl
@@ -104,7 +110,7 @@
 - name: less
   repo: jftuga/less-Windows
   tag: less-v692
-  version: "692.0"
+  version: '692.0'
 - name: localsend
   repo: localsend/localsend
   tag: v1.17.0
@@ -129,8 +135,8 @@
   version: 3.4.0
 - name: node
   repo: nodejs/node
-  tag: v25.8.0
-  version: 25.8.0
+  tag: v25.8.1
+  version: 25.8.1
 - name: numbat
   repo: sharkdp/numbat
   tag: v1.23.0
@@ -145,8 +151,7 @@
   version: 1.2026.2
 - name: pwsh
   repo: PowerShell/PowerShell
-  prerelease: true
-  tag: v7.6.0-rc.1
+  tag: v7.6.0
   version: 7.6.0
 - name: rg
   repo: BurntSushi/ripgrep
@@ -170,7 +175,7 @@
 - name: tmux
   repo: tmux/tmux-builds
   tag: v3.6a
-  version: "3.6"
+  version: '3.6'
 - name: tree-sitter
   repo: tree-sitter/tree-sitter
   tag: v0.26.6
@@ -181,8 +186,10 @@
   version: 0.0.21
 - name: uv
   repo: astral-sh/uv
-  version: 0.10.9
-  tag: 0.10.9
+  version: 0.10.10
+  tag: 0.10.10
+- name: vhs
+  repo: charmbracelet/vhs
 - name: vncviewer
   repo: TigerVNC/tigervnc
 - name: wabt

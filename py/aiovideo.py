@@ -1,6 +1,5 @@
 import asyncio
 import os
-from urllib.parse import urlparse
 
 import aiohttp
 import pyperclip
@@ -14,20 +13,20 @@ HEADERS = {
 }
 
 
-def parse_m3u8(text):
-    iv_hex = key_url = template_url = ""
+def parse_m3u8(text: str):
+    iv_hex = key_url = ""
+    files = []
     for line in text.split("\n"):
-        if line.startswith("#EXT-X-KEY:"):
+        if line.startswith("#"):
+            if not line.startswith("#EXT-X-KEY:"):
+                continue
             key_url = line.split("URI=", 1)[1].split(",")[0][1:-1]
             iv_hex = line.split("IV=", 1)[1].split(",")[0]
-        elif line.startswith("#"):
-            continue
-        elif line.startswith("https://"):
-            template_url = line
-            break
-    if not (iv_hex and template_url):
+        elif line.endswith(".mp4"):
+            files.append(line)
+    if not iv_hex:
         raise TypeError("invalid m3u8 text")
-    return {"iv_hex": iv_hex, "key_url": key_url, "template_url": template_url}
+    return iv_hex, key_url, files
 
 
 def compute_slices(time_str: str, time_slice: float):
@@ -53,59 +52,50 @@ def save_on_disk(contents, filename: str):
 
 
 async def download_videos(
-    base_url,
-    prefix,
+    base_url: str,
+    files: list[str],
     cipher,
-    slices_cnt,
-    url_padding,
     headers=HEADERS,
 ):
-    error_ids = {}
+    errors = {}
     error_cnt = 0
-    contents = [None] * slices_cnt
+    contents = [None] * len(files)
 
-    async def handle_slice(id: int):
+    async def download_file(i: int, file: str):
         nonlocal error_cnt
-        url = f"{prefix}{id:0{url_padding}}.ts"
         try:
-            content = await (await session.get(url)).content.read()
+            content = await (await session.get(file)).content.read()
             content = cipher.decrypt(content)
-            contents[id] = content
-            print(id, end="\r")
+            contents[i] = content
+            print(i, end="\r")
         except Exception as e:
-            error_ids[id] = e
-            print(f"\nerror: ({id}) {e}")
+            errors[i] = e
+            print(f"\nerror: ({i}) {e}")
             error_cnt += 1
 
     async with aiohttp.ClientSession(base_url, headers=headers) as session:
-        tasks = [asyncio.create_task(handle_slice(i)) for i in range(slices_cnt)]
+        tasks = [
+            asyncio.create_task(download_file(i, file)) for i, file in enumerate(files)
+        ]
         await asyncio.wait(tasks)
 
-    print(error_ids)
     print("error_cnt: ", error_cnt)
+    if errors:
+        print(errors)
     return filter(bool, contents)
 
 
 def get(
     *,
-    template_url: str,
-    time_str: str,
+    base_url: str,
+    files: list[str],
     iv_hex: str,
     key: str,
     outfile: str,
-    time_slice=3.066667,
-    url_padding=6,
 ):
-    url = urlparse(template_url)
-    base_url = f"{url.scheme}://{url.netloc}"
-    prefix = url.path[: -(url_padding + 3)]
-
-    slices_cnt = compute_slices(time_str, time_slice)
     cipher = AES.new(bytes(key, "utf8"), AES.MODE_CBC, IV=bytes.fromhex(iv_hex[2:]))
 
-    contents = asyncio.run(
-        download_videos(base_url, prefix, cipher, slices_cnt, url_padding)
-    )
+    contents = asyncio.run(download_videos(base_url, files, cipher, HEADERS))
 
     try:
         save_on_disk(contents, outfile)
@@ -115,19 +105,15 @@ def get(
 
 def main():
     m3u8 = parse_m3u8(pyperclip.paste())
-    key = input("key: ")
-    time_str = input("time_str: ")
+    base_url = input("base_url: ")
     outfile = input("outfile: ")
-    if not key:
-        key = requests.get(m3u8["key_url"], headers=HEADERS).text
-    if not outfile:
-        outfile = m3u8["template_url"].rsplit("/", 1)[1]
+    key = requests.get(str(base_url + m3u8[1]), headers=HEADERS).text
     get(
-        time_str=time_str,
-        outfile=outfile,
+        base_url="",
+        files=m3u8[2],
+        iv_hex=m3u8[0],
         key=key,
-        template_url=m3u8["template_url"],
-        iv_hex=m3u8["iv_hex"],
+        outfile=outfile,
     )
 
 
