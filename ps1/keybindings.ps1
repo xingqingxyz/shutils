@@ -58,13 +58,13 @@ Set-PSReadLineKeyHandler -Chord Ctrl+t -Description 'Fzf select relative files t
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history files to replace command line' -ScriptBlock {
   $history = switch ($true) {
-    $IsWindows { "$env:APPDATA/Microsoft/Windows/PowerShell/PSReadLine/$($Host.Name)_history.txt"; break }
+    $IsWindows { "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\$($Host.Name)_history.txt"; break }
     $IsLinux { "$HOME/.local/share/powershell/PSReadLine/$($Host.Name)_history.txt"; break }
     default { throw [System.NotImplementedException]::new() }
   }
   $text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
-  $history = Get-Content -AsByteStream -LiteralPath $history | fzf --tac --scheme=history -q `'$($text.Split(' ',2)[0])
+  $history = Get-Content -LiteralPath $history | fzf --tac --scheme=history -q `'$($text.Split(' ',2)[0])
   if (!$history) {
     return
   }
@@ -93,10 +93,10 @@ Set-PSReadLineKeyHandler -Chord Alt+C -Description 'Fzf select parent directorie
   Set-Location -LiteralPath $dir
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
-Set-PSReadLineKeyHandler -Chord Alt+d -Description 'Add delay & to command line and accept it' -ScriptBlock {
+Set-PSReadLineKeyHandler -Chord Alt+d -Description 'Execute current command as delayed background job' -ScriptBlock {
   $text = ''
   [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "delay $text &")
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "delay 0:12 $text &")
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {

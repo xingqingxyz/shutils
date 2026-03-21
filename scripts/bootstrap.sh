@@ -7,11 +7,18 @@ case "$OSTYPE" in
 esac
 if [ ! -v SHUTILS_ROOT ]; then
   echo 'setup repo' >&2
-  sudo apt install -y gh git curl aria2
+  if type -aP aptt &> /dev/null; then
+    sudo apt install -y git aria2
+  elif type -aP dnft &> /dev/null; then
+    sudo dnf install -y git aria2
+  else
+    echo 'unknown pkg manager' >&2
+    exit 2
+  fi
   mkdir ~/p
-  cp ~/p
-  gh repo clone xinqqingxyz/shutils
-  cp shutils
+  cd ~/p
+  git clone https://github.com/xingqingxyz/shutils
+  cd shutils
   export SHUTILS_ROOT=$HOME/p/shutils
 fi
 echo 'setup pwsh' >&2

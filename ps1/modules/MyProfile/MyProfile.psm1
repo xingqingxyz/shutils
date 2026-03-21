@@ -403,7 +403,7 @@ filter showFile ([string[]]$ExtraArgs) {
       break
     }
     '\.cpio?$' {
-      Get-Content -AsByteStream -LiteralPath $path | cpio -itv | less
+      Get-Content -LiteralPath $path | cpio -itv | less
       break
     }
     '\.gpg$' {

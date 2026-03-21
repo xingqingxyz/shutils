@@ -118,10 +118,12 @@ function execute {
   }
 }
 
-function checkFileHash ([string]$Path, [string]$Sha256) {
-  Write-Debug "checking file hash: $Path"
-  if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash -ne $Sha256) {
-    throw "file hash not match ($Path): $Sha256"
+function checkFileHash ([string]$Name, [string]$CheckSums) {
+  Write-Debug "checking file hash: $Name"
+  $actual = (Get-FileHash -LiteralPath $buildDir/$Name).Hash
+  $expected = (Get-Content -LiteralPath $buildDir/$CheckSums | Select-String -Raw -SimpleMatch $Name).Split(' ', 2)[0]
+  if ($CheckSums -ne $expected) {
+    throw "file hash not match: $Name ($actual) $expected"
   }
 }
 
@@ -420,7 +422,7 @@ function Install-Release {
       }
       $file = 'binaryen-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $rust.arch, $os
       downloadRelease $Meta $file, $file`.sha256
-      checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256).Split(' ', 2)[0]
+      checkFileHash $file $file`.sha256
       tar -xf $buildDir/$file -C $prefixDir --strip-components=1
       break
     }
@@ -435,7 +437,7 @@ function Install-Release {
       }
       $file = 'bun-{0}-{1}.zip' -f $go.os, $arch
       downloadRelease $Meta $file, SHASUMS256.txt
-      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/SHASUMS256.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
+      checkFileHash $file SHASUMS256.txt
       Expand-Archive -LiteralPath $buildDir/$file $buildDir -Force
       Move-Item -LiteralPath $buildDir/$(Split-Path -LeafBase $file)/bun $binDir -Force
       $null = New-Item -ItemType SymbolicLink -Force -Target bun $binDir/bunx
@@ -479,7 +481,7 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
       downloadRelease $Meta $file, cosign_checksums.txt, $file`.sigstore.json, release-cosign.pub
-      checkFileHash $buildDir/$file (Get-Content -LiteralPath $buildDir/cosign_checksums.txt | Select-String -Raw -SimpleMatch $file).Split(' ', 2)[0]
+      checkFileHash $file cosign_checksums.txt
       switch ($true) {
         $IsWindows { Move-Item -LiteralPath $buildDir/$file $binDir/cosign.exe -Force; break }
         $IsMacOS { Move-Item -LiteralPath $buildDir/$file $binDir/cosign -Force; chmod +x $binDir/cosign; break }
@@ -510,7 +512,7 @@ function Install-Release {
         downloadRelease $Meta $base$ext, checksums.txt, checksums.txt.sigstore.json
         cosign verify-blob $buildDir/checksums.txt --bundle $buildDir/checksums.txt.sigstore.json --certificate-identity 'https://github.com/charmbracelet/meta/.github/workflows/goreleaser.yml@refs/heads/main' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
       }
-      checkFileHash $buildDir/$base$ext (Get-Content -LiteralPath $buildDir/checksums.txt | Select-String -Raw -SimpleMatch $base$ext).Split(' ', 2)[0]
+      checkFileHash $base$ext checksums.txt
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/$_$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/completions/$_`.bash $dataDir/bash-completion/completions -Force
@@ -523,7 +525,7 @@ function Install-Release {
       }
       $file = 'deno-{0}.zip' -f $rust.target
       downloadRelease $Meta $file, $file`.sha256sum
-      checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
+      checkFileHash $file $file`.sha256sum
       Expand-Archive -LiteralPath $buildDir/$file $binDir -Force
       break
     }
@@ -608,7 +610,9 @@ function Install-Release {
       }
       downloadFile $Meta.file
       $file = [System.IO.Path]::GetFileName($Meta.file)
-      checkFileHash $buildDir/$file $Meta.sha256
+      if ((Get-FileHash -LiteralPath $buildDir/$file).Hash -ne $Meta.sha256) {
+        throw 'hash not match'
+      }
       Remove-Item -LiteralPath $prefixDir/flutter -Recurse -Force -ea Ignore
       tar -xf $buildDir/$file -C $prefixDir
       $baseDir = "$prefixDir/flutter/bin"
@@ -659,7 +663,9 @@ function Install-Release {
     go {
       $file = $Meta.file
       downloadFile "https://golang.google.cn/dl/$file"
-      checkFileHash $buildDir/$file $Meta.sha256
+      if ((Get-FileHash -LiteralPath $buildDir/$file).Hash -ne $Meta.sha256) {
+        throw 'hash not match'
+      }
       switch ($true) {
         $IsWindows {
           Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file
@@ -682,7 +688,7 @@ function Install-Release {
     golangci-lint {
       $base = 'golangci-lint-{0}-{1}-{2}' -f $Meta.version, $go.os, $go.arch
       downloadRelease $Meta $base$ext, "golangci-lint-$($Meta.version)-checksums.txt"
-      checkFileHash $buildDir/$base$ext (Get-Content -LiteralPath $buildDir/"golangci-lint-$($Meta.version)-checksums.txt" | Select-String -Raw -SimpleMatch $base$ext).Split(' ', 2)[0]
+      checkFileHash $base$ext "golangci-lint-$($Meta.version)-checksums.txt"
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/golangci-lint$exe $binDir -Force
       break
@@ -728,7 +734,9 @@ function Install-Release {
       }
       downloadFile $Meta.url
       $file = Split-Path -Leaf $Meta.url
-      checkFileHash $buildDir/$file $Meta.sha256
+      if ((Get-FileHash -LiteralPath $buildDir/$file).Hash -ne $Meta.sha256) {
+        throw 'hash not match'
+      }
       sudo tar -xf $buildDir/$file -C $sudoPrefixDir
       sudo ln -sf $sudoPrefixDir/jdk-$($Meta.version)/bin/java $binDir
       sudo ln -sf $sudoPrefixDir/jdk-$($Meta.version)/bin/javac $binDir
@@ -931,7 +939,7 @@ StartupWMClass=localsend_app
       }
       $base = 'ripgrep-{0}-{1}' -f $Meta.tag, $target
       downloadRelease $Meta $base$ext, $base$ext`.sha256
-      checkFileHash $buildDir/$base$ext (Get-Content -Raw -LiteralPath $buildDir/$base$ext`.sha256).Split(' ', 2)[0]
+      checkFileHash $base$ext $base$ext`.sha256
       tar -xf $buildDir/$base$ext -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/rg$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/$base/doc/rg.1 $dataDir/man/man1 -Force
@@ -1027,7 +1035,7 @@ StartupWMClass=localsend_app
       $base = 'wasm-bindgen-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
       $file = "$base.tar.gz"
       downloadRelease $Meta $file, $file`.sha256sum
-      checkFileHash $buildDir/$file (Get-Content -Raw -LiteralPath $buildDir/$file`.sha256sum).Split(' ', 2)[0]
+      checkFileHash $file $file`.sha256sum
       tar -xf $buildDir/$file -C $buildDir
       Move-Item -LiteralPath $buildDir/$base/wasm-*$exe $binDir -Force
       break

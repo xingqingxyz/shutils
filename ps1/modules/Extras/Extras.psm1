@@ -420,7 +420,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
             $file = [System.IO.Path]::GetRandomFileName() + [System.IO.Path]::GetExtension($args[0])
             $input > $file
             dotnet format --no-restore --include `-- $file
-            Get-Content -AsByteStream -LiteralPath $file
+            Get-Content -LiteralPath $file
           }
           clean {
             Remove-Item -LiteralPath $file -Force
@@ -433,7 +433,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
             $file = [System.IO.Path]::GetTempFileName()
             Copy-Item -LiteralPath $args[0] $file -Force
             dotnet format --no-restore --include `-- $args[0]
-            Get-Content -AsByteStream -LiteralPath $args[0]
+            Get-Content -LiteralPath $args[0]
           }
           clean {
             Copy-Item -LiteralPath $file $args[0] -Force
@@ -487,7 +487,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
         { $input | ruff format -n --stdin-filename $args[0] }
       }
       else {
-        { Get-Content -AsByteStream -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
+        { Get-Content -LiteralPath $args[0] | ruff format -n --stdin-filename $args[0] }
       }
       break
     }
@@ -511,7 +511,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
         { $input | shfmt -i 2 -bn -ci -sr --filename $args[0] }
       }
       else {
-        { Get-Content -AsByteStream -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
+        { Get-Content -LiteralPath $args[0] | shfmt -i 2 -bn -ci -sr --filename $args[0] }
       }
       break
     }
@@ -523,7 +523,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
         { $input | taplo format - --stdin-filepath=$args[0] }
       }
       else {
-        { Get-Content -AsByteStream -LiteralPath $args[0] | taplo format - --stdin-filepath=$args[0] }
+        { Get-Content -LiteralPath $args[0] | taplo format - --stdin-filepath=$args[0] }
       }
       break
     }
@@ -535,7 +535,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
         { $input | stylua }
       }
       else {
-        { Get-Content -AsByteStream -LiteralPath $args[0] | stylua }
+        { Get-Content -LiteralPath $args[0] | stylua }
       }
       break
     }
@@ -547,7 +547,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
         { $input | zig fmt --stdin }
       }
       else {
-        { Get-Content -AsByteStream -LiteralPath $args[0] | zig fmt --stdin }
+        { Get-Content -LiteralPath $args[0] | zig fmt --stdin }
       }
       break
     }
@@ -556,7 +556,7 @@ function getParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
         { $input }
       }
       else {
-        { Get-Content -AsByteStream -LiteralPath $args[0] }
+        { Get-Content -LiteralPath $args[0] }
       }
       break
     }

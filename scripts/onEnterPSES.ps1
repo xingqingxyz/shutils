@@ -4,6 +4,19 @@
 $DebugPreference = 'Continue'
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
+
+#region defs
+function e.i {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+    [string]
+    $Value
+  )
+  $psEditor.GetEditorContext().CurrentFile.InsertText($Value)
+}
+#endregion
+
 # commands
 Register-EditorCommand -Name 'hello' -DisplayName 'Hello World' -ScriptBlock {
   [CmdletBinding()]

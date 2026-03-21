@@ -16,37 +16,22 @@ function vsdev {
 }
 
 function delay {
-  [CmdletBinding(DefaultParameterSetName = 'Base')]
-  param (
-    [Parameter(Mandatory, Position = 0, ParameterSetName = 'Base')]
-    [string]
-    $Command,
-    [Parameter(Mandatory, Position = 0, ParameterSetName = 'ScriptBlock')]
-    [scriptblock]
-    $ScriptBlock,
-    [Parameter(Position = 1, ValueFromRemainingArguments)]
-    [System.Object[]]
-    $ArgumentList,
-    [Parameter()]
-    [timespan]
-    $Delay = '0:12'
-  )
   $PSNativeCommandUseErrorActionPreference = $true
-  Write-Debug "Sleeping $Delay"
-  Start-Sleep $Delay
-  $description = if ($Command) {
-    $ScriptBlock = $ArgumentList ? { & $Command @args } : { & $Command }
-    "$Command $ArgumentList"
-  }
-  else {
-    "{$ScriptBlock}"
-  }
+  [timespan]$delay, $cmd, $ags = $args
+  $ags ??= @()
+  Write-Debug "Sleeping $delay"
+  Start-Sleep $delay
   try {
-    & $ScriptBlock @ArgumentList
+    if ($MyInvocation.ExpectingInput) {
+      $input | & $cmd @ags
+    }
+    else {
+      & $cmd @ags
+    }
     $status = $?
   }
   finally {
-    Send-Notify "$($status ? 'Completed' : "Failed($LASTEXITCODE)") PS> $description" -Title delay -Level ($status ? 'Information' : 'Error')
+    Send-Notify "$($status ? 'Completed' : "Failed($LASTEXITCODE)") PS> $cmd $ags" -Title delay -Level ($status ? 'Information' : 'Error')
   }
 }
 
