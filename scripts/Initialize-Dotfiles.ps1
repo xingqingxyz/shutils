@@ -3,7 +3,11 @@ param (
   [Parameter()]
   [SupportsWildcards()]
   [string[]]
-  $Install
+  $Install,
+  [Parameter()]
+  [SupportsWildcards()]
+  [string[]]
+  $Uninstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,6 +18,13 @@ if ($Install) {
     $path = $_.Replace($HOME, $root)
     Copy-Item -LiteralPath $_ (New-Item $path -Force) -Force
     New-Item -ItemType SymbolicLink -Force -Target $path $_
+  }
+  return
+}
+elseif ($Uninstall) {
+  Convert-Path $Uninstall | ForEach-Object {
+    $path = $_.Replace($root, $HOME)
+    Remove-Item -LiteralPath $_, $path -Force -ea Ignore
   }
   return
 }

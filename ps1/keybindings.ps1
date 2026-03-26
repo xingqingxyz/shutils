@@ -16,12 +16,6 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+x,Ctrl+e' -Description 'Edit and execute c
   [Microsoft.PowerShell.PSConsoleReadLine]::ViEditVisually()
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
-Set-PSReadLineKeyHandler -Chord Ctrl+c -Description 'Add line to PSReadLine history, then cancel' -ScriptBlock {
-  $text = ''
-  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
-  [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($text)
-  [Microsoft.PowerShell.PSConsoleReadLine]::CancelLine()
-}
 Set-PSReadLineKeyHandler -Chord F1 -Description 'Show command help' -ScriptBlock {
   $cursor = 0
   [System.Management.Automation.Language.Token[]]$tokens = $null

@@ -11,6 +11,7 @@ dependencies = [
     "lxml>=5.4.0",
     "pandas>=2.2.3",
     "pycryptodome>=3.23.0",
+    "pynput>=1.8.1 ; sys_platform == 'win32'",
     "pyperclip>=1.11.0",
     "requests>=2.32.5",
     "uiautomation>=2.0.20 ; sys_platform == 'win32'",

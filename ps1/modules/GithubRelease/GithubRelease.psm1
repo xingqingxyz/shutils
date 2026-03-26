@@ -4,105 +4,56 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
 function goenv {
-  if (Get-Command go -Type Application -ea Ignore) {
-    $os, $arch = go env GOOS GOARCH
-    return [pscustomobject]@{
-      os   = $os
-      arch = $arch
-    }
-  }
-  $os = switch ($true) {
-    $IsWindows { 'windows'; break }
-    $IsMacOS { 'darwin'; break }
-    $IsLinux {
-      if ([RuntimeInformation]::IsOSPlatform([OSPlatform]::FreeBSD)) {
-        'freebsd'
-        break
-      }
-      switch (uname -o) {
-        'Android' { 'android'; break }
-        'GNU/Linux' { 'linux'; break }
-        default { $_; break }
-      }
-      break
-    }
-  }
-  $arch = switch ([string][RuntimeInformation]::OSArchitecture) {
+  $arch = switch ([RuntimeInformation]::OSArchitecture) {
     'X64' { 'amd64'; break }
     'Arm64' { 'arm64'; break }
     'Arm' { 'armv7'; break }
     'LoongArch64' { 'loong64'; break }
-    default { throw [System.NotImplementedException]::new("arch $_") }
-  }
-  [pscustomobject]@{
-    os   = $os
-    arch = $arch
-  }
-}
-
-function rustenv {
-  $arch = switch ([string][RuntimeInformation]::OSArchitecture) {
-    'X64' { 'x86_64'; break }
-    'Arm64' { 'aarch64'; break }
-    'Arm' { 'armv7'; break }
-    'LoongArch64' { 'loongarch64'; break }
-    default {
-      if ($IsWindows) {
-        & 'C:\Program Files\Git\usr\bin\uname.exe' -m
-      }
-      else {
-        uname -m
-      }
-      break
-    }
-  }
-  $platform = switch ($true) {
-    $IsWindows { 'pc'; break }
-    $IsLinux { 'unknown'; break }
-    $IsMacOS { break }
-    default { throw 'unknown platform' }
+    default { throw [System.NotImplementedException]::new() }
   }
   $os = switch ($true) {
     $IsWindows { 'windows'; break }
     $IsMacOS { 'darwin'; break }
-    $IsLinux {
-      if ([RuntimeInformation]::IsOSPlatform([OSPlatform]::FreeBSD)) {
-        'freebsd'
-        break
-      }
-      switch (uname -o) {
-        'Android' { $platform = 'linux'; 'android'; break }
-        'GNU/Linux' { 'linux'; break }
-        default { $_; break }
-      }
-      break
-    }
+    $IsLinux { 'linux'; break }
+    default { throw [System.NotImplementedException]::new() }
+  }
+  [pscustomobject]@{
+    arch = $arch
+    os   = $os
+  }
+}
+
+function rustenv {
+  $arch = switch ([RuntimeInformation]::OSArchitecture) {
+    'X64' { 'x86_64'; break }
+    'Arm64' { 'aarch64'; break }
+    'Arm' { 'armv7'; break }
+    'LoongArch64' { 'loongarch64'; break }
+    default { throw [System.NotImplementedException]::new() }
+  }
+  $platform = switch ($true) {
+    $IsWindows { 'pc'; break }
+    $IsMacOS { break }
+    $IsLinux { 'unknown'; break }
+    default { throw [System.NotImplementedException]::new() }
+  }
+  $os = switch ($true) {
+    $IsWindows { 'windows'; break }
+    $IsMacOS { 'darwin'; break }
+    $IsLinux { 'linux'; break }
   }
   $clib = switch ($true) {
     $IsWindows { 'msvc'; break }
-    $IsLinux { 'gnu'; break }
     $IsMacOS { break }
-    ([RuntimeInformation]::IsOSPlatform([OSPlatform]::FreeBSD)) { 'musl'; break }
-    default { 'unknown clib'; break }
+    $IsLinux { 'gnu'; break }
   }
-  $target = if (Get-Command rustc -Type Application -ea Ignore) {
-    (rustc -vV | Select-String -Raw -SimpleMatch host:).Split(' ', 2)[1]
-  }
-  else {
-    @(
-      $arch
-      $platform
-      $os
-      $clib
-    ) -join '-'
-  }
+  $target = @($arch, $platform, $os, $clib).Where{ $null -ne $_ } -join '-'
   [pscustomobject]@{
-    arch       = $arch
-    platform   = $platform
-    os         = $os
-    clib       = $clib
-    osWithClib = @($os; $clib) -join '-'
-    target     = $target
+    arch     = $arch
+    platform = $platform
+    os       = $os
+    clib     = $clib
+    target   = $target
   }
 }
 
@@ -161,16 +112,10 @@ function installBinary ([string[]]$Path) {
 
 function getLocalVersion ([string]$Name) {
   try {
-    switch ($Name) {
-      bash { (bash --version)[0].Split(' ', 3)[2].Split('(', 2)[0]; break }
-      binaryen { (wasm2js --version).Split(' ', 4)[2]; break }
-      ghostty { (ghostty --version)[0].Split(' ', 2)[1].Split('-', 2)[0]; break }
-      go { (go version).Split(' ', 4)[2].Substring(2); break }
-      goreleaser { (goreleaser -v | Select-String -Raw -SimpleMatch GitVersion).Split(':', 2)[1].TrimStart(); break }
+    $line = switch ($Name) {
+      binaryen { wasm2js --version; break }
       less { (less --version 2>$null)[0].Split(' ', 3)[1] + '.0'; break }
-      magick { (magick -version)[0].Split(' ', 4)[2].Replace('-', '.'); break }
-      jq { (jq -V).Split('-', 2)[1]; break }
-      tmux { (tmux -V).Split(' ', 2)[1] -creplace '\D+$', ''; break }
+      wabt { wat2wasm --version; break }
       vncviewer {
         if (Test-Path -LiteralPath $dataDir/jar/vncviewer.jar) {
           (java -jar $dataDir/jar/vncviewer.jar --version 2>&1)[1].ToString().Split(' ', 5)[3].Substring(1)
@@ -180,32 +125,20 @@ function getLocalVersion ([string]$Name) {
         }
         break
       }
-      wabt { wat2wasm --version; break }
       wechat {
         if ($IsFedora) {
-          (dnf list --installed wechat)[1].Split(' ')[1] -creplace '\.[^.]+$', ''
+          @(dnf list --installed wechat)[1]
           break
         }
-        break
+        throw [System.NotImplementedException]::new()
       }
-      { $_ -ceq 'localsend' -or
-        $_ -ceq 'nerd-fonts' } {
+      { $_ -ceq 'localsend' -or $_ -ceq 'nerd-fonts' } {
         (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -CEQ $_).version
         break
       }
-      default {
-        $index = switch -CaseSensitive -Regex ($Name) {
-          '^(fzf)$' { 0; break }
-          '^(bat|deno|dsc|flutter|java|mold|rg|rustup|ty|uv)$' { 1; break }
-          '^(gh|glow|gum|plantuml|vhs)$' { 2; break }
-          '^(golangci-lint)$' { 3; break }
-          default { -1; break }
-        }
-        @(& $_ --version 2>$null)[0].Split(' ', ($index -eq -1 ? 99 : $index + 2))[$index].Split('-', 2)[0].TrimStart('vV').TrimEnd('.')
-        break
-      }
-
+      default { @(& $_ --version 2>$null)[0]; break }
     }
+    [regex]::Match($line, '\d+\.\d+(?:\.\d+(?:-\d+)?|)').Value.Replace('-', '.')
   }
   catch {
     Write-Warning "cannot detect local version for $($Name)"
@@ -343,14 +276,11 @@ function downloadRelease ($Meta, [string[]]$Name) {
 }
 
 function Install-Release {
-  [CmdletBinding(SupportsShouldProcess)]
+  [CmdletBinding()]
   param (
     [Parameter(Mandatory, Position = 0)]
     $Meta
   )
-  if (!$PSCmdlet.ShouldProcess("$($Meta.name)@$($Meta.version)", 'install')) {
-    return
-  }
   Write-Debug "Installing $($Meta.name)@$($Meta.version) by tag $($Meta.tag)"
   $ext = $IsWindows ? '.zip' : '.tar.gz'
   $exe = $IsWindows ? '.exe' : ''
@@ -405,12 +335,12 @@ function Install-Release {
       }
       break
     }
-    bat {
-      $base = 'bat-{0}-{1}' -f $Meta.tag, $rust.target
+    { $_ -ceq 'bat' -or $_ -ceq 'diskus' -or $_ -ceq 'fd' -or $_ -ceq 'hexyl' -or $_ -ceq 'hyperfine' } {
+      $base = $_, $Meta.tag, $rust.target -join '-'
       downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
-      Move-Item -LiteralPath $buildDir/bat$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/bat.1 $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$_`.1 $dataDir/man/man1 -Force
       break
     }
     binaryen {
@@ -418,7 +348,7 @@ function Install-Release {
         $IsLinux { 'linux'; break }
         $IsWindows { 'windows'; break }
         $IsMacOS { 'macos'; break }
-        default { throw 'unknown os' }
+        default { throw [System.NotImplementedException]::new() }
       }
       $file = 'binaryen-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $rust.arch, $os
       downloadRelease $Meta $file, $file`.sha256
@@ -513,10 +443,10 @@ function Install-Release {
         cosign verify-blob $buildDir/checksums.txt --bundle $buildDir/checksums.txt.sigstore.json --certificate-identity 'https://github.com/charmbracelet/meta/.github/workflows/goreleaser.yml@refs/heads/main' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
       }
       checkFileHash $base$ext checksums.txt
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/$_$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/completions/$_`.bash $dataDir/bash-completion/completions -Force
-      Move-Item -LiteralPath $buildDir/$base/manpages/$_`.1.gz $dataDir/man/man1 -Force
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/completions/$_`.bash $dataDir/bash-completion/completions -Force
+      Move-Item -LiteralPath $buildDir/manpages/$_`.1.gz $dataDir/man/man1 -Force
       break
     }
     deno {
@@ -527,14 +457,6 @@ function Install-Release {
       downloadRelease $Meta $file, $file`.sha256sum
       checkFileHash $file $file`.sha256sum
       Expand-Archive -LiteralPath $buildDir/$file $binDir -Force
-      break
-    }
-    diskus {
-      $base = 'diskus-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
-      Move-Item -LiteralPath $buildDir/diskus$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/diskus.1 $dataDir/man/man1 -Force
       break
     }
     dotnet {
@@ -592,15 +514,6 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
       Move-Item -LiteralPath $buildDir/edit$exe $binDir -Force
-      break
-    }
-    fd {
-      $base = 'fd-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/fd$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/fd.1 $dataDir/man/man1 -Force
-      Move-Item -LiteralPath $buildDir/$base/autocomplete/fd.bash $dataDir/bash-completion/completions -Force
       break
     }
     flutter {
@@ -689,8 +602,8 @@ function Install-Release {
       $base = 'golangci-lint-{0}-{1}-{2}' -f $Meta.version, $go.os, $go.arch
       downloadRelease $Meta $base$ext, "golangci-lint-$($Meta.version)-checksums.txt"
       checkFileHash $base$ext "golangci-lint-$($Meta.version)-checksums.txt"
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/golangci-lint$exe $binDir -Force
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/golangci-lint$exe $binDir -Force
       break
     }
     goreleaser {
@@ -710,22 +623,6 @@ function Install-Release {
       $file = '{0}w64.exe' -f $Meta.tag
       downloadRelease $Meta $file
       sudo $buildDir/$file
-      break
-    }
-    hexyl {
-      $base = 'hexyl-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/hexyl$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/hexyl.1 $dataDir/man/man1 -Force
-      break
-    }
-    hyperfine {
-      $base = 'hyperfine-{0}-{1}' -f $Meta.tag, $rust.target
-      downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/hyperfine$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/hyperfine.1 $dataDir/man/man1 -Force
       break
     }
     java {
@@ -811,8 +708,8 @@ StartupWMClass=localsend_app
       chmod +x $binDir/magick
       break
     }
-    mdbook {
-      $base = 'mdbook-{0}-{1}' -f $Meta.tag, $rust.target
+    { $_ -ceq 'mdbook' -or $_ -ceq 'mdbook-mermaid' } {
+      $base = $_, $Meta.tag, $rust.target -join '-'
       downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $binDir
       break
@@ -888,10 +785,10 @@ StartupWMClass=localsend_app
     pastel {
       $base = 'pastel-{0}-{1}' -f $Meta.tag, $rust.target
       downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/pastel$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/autocomplete/pastel.bash $dataDir/bash-completion/completions -Force
-      Move-Item $buildDir/$base/man/* $dataDir/man/man1 -Force
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/pastel$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/autocomplete/pastel.bash $dataDir/bash-completion/completions -Force
+      Move-Item $buildDir/man/* $dataDir/man/man1 -Force
       break
     }
     plantuml {
@@ -940,10 +837,10 @@ StartupWMClass=localsend_app
       $base = 'ripgrep-{0}-{1}' -f $Meta.tag, $target
       downloadRelease $Meta $base$ext, $base$ext`.sha256
       checkFileHash $base$ext $base$ext`.sha256
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/rg$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$base/doc/rg.1 $dataDir/man/man1 -Force
-      Move-Item -LiteralPath $buildDir/$base/complete/rg.bash $dataDir/bash-completion/completions -Force
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/rg$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/doc/rg.1 $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/complete/rg.bash $dataDir/bash-completion/completions -Force
       break
     }
     rga {
@@ -953,9 +850,9 @@ StartupWMClass=localsend_app
       }
       $base = 'ripgrep_all-{0}-{1}' -f $Meta.tag, ($rust.arch -ceq 'x86_64' ? $rust.target -creplace '-gnu$', '-musl' : $rust.target)
       downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       [string[]]$files = 'rga', 'rga-fzf', 'rga-fzf-open', 'rga-preproc'
-      $files = $files.ForEach{ "$buildDir/$base/$_$exe" }
+      $files = $files.ForEach{ "$buildDir/$_$exe" }
       Move-Item -LiteralPath $files $binDir -Force
       break
     }
@@ -1016,7 +913,9 @@ StartupWMClass=localsend_app
       $file ??= 'VncViewer-{0}.jar' -f $Meta.version
       $target = $file.EndsWith('.jar') ? "$dataDir/jar/vncviewer.jar" : "$binDir/vncviewer.exe"
       downloadFile "https://sourceforge.net/projects/tigervnc/files/stable/$($Meta.version)/$file/download" $target
-      installBinary $target
+      if ($file.EndsWith('.jar')) {
+        installBinary $target
+      }
       break
     }
     wabt {
@@ -1028,23 +927,22 @@ StartupWMClass=localsend_app
       }
       $file = 'wabt-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
       downloadRelease $Meta $file
-      tar -xf $buildDir/$file -C $prefixDir --strip-components=1
+      tar -xf $buildDir/$file -C $binDir --strip-components=1
       break
     }
     wasm-bindgen {
-      $base = 'wasm-bindgen-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      $file = "$base.tar.gz"
+      $file = 'wasm-bindgen-{0}-{1}.tar.gz' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
       downloadRelease $Meta $file, $file`.sha256sum
       checkFileHash $file $file`.sha256sum
-      tar -xf $buildDir/$file -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/wasm-*$exe $binDir -Force
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item $buildDir/wasm-*$exe $binDir -Force
       break
     }
     wasm-pack {
-      $base = 'wasm-pack-{0}-{1}' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $Meta $base`.tar.gz
-      tar -xf $buildDir/$base`.tar.gz -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/wasm-pack$exe $binDir -Force
+      $file = 'wasm-pack-{0}-{1}.tar.gz' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
+      downloadRelease $Meta $file
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/wasm-pack$exe $binDir -Force
       break
     }
     wechat {
@@ -1091,12 +989,12 @@ StartupWMClass=localsend_app
       }
       $base = '{0}-{1}' -f $_, $rust.target
       downloadRelease $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $buildDir
-      Move-Item -LiteralPath $buildDir/$base/$_$exe $binDir -Force
+      tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
       if ($_ -ceq 'uv') {
-        Move-Item -LiteralPath $buildDir/$base/uvx$exe $binDir -Force
+        Move-Item -LiteralPath $buildDir/uvx$exe $binDir -Force
         if ($IsWindows) {
-          Move-Item -LiteralPath $buildDir/$base/uvw$exe $binDir -Force
+          Move-Item -LiteralPath $buildDir/uvw$exe $binDir -Force
         }
       }
       break
@@ -1110,7 +1008,7 @@ StartupWMClass=localsend_app
 }
 
 function Update-Release {
-  [CmdletBinding(SupportsShouldProcess)]
+  [CmdletBinding()]
   param (
     [ArgumentCompleter({
         param (
@@ -1211,7 +1109,7 @@ function Update-Software {
     bun {
       if ($Global) {
         $PSNativeCommandUseErrorActionPreference = $false
-        # this fails with code 1 when there is nothing to update
+        # this exits with code 1 while nothing to update
         bun update -g --latest
         $PSNativeCommandUseErrorActionPreference = $true
         if ($Force -and $pkgs) {
@@ -1236,13 +1134,30 @@ function Update-Software {
       cargo update
       continue
     }
-    code { code --update-extensions; continue }
+    code {
+      code --update-extensions
+      if ($Force) {
+        $configDir = switch ($true) {
+          $IsWindows { $env:APPDATA; break }
+          $IsMacOS { "$HOME/Library/Application Support"; break }
+          $IsLinux { "$HOME/.config"; break }
+          default { throw [System.NotImplementedException]::new() }
+        }
+        if (!(Test-Path -LiteralPath $configDir/Code/User/sync/profiles/lastSyncprofiles.json)) {
+          continue
+        }
+        ((Get-Content -Raw -LiteralPath $configDir/Code/User/sync/profiles/lastSyncprofiles.json |
+            ConvertFrom-Json).syncData.content | ConvertFrom-Json).name | ForEach-Object {
+            code --update-extensions --profile $_
+          }
+      }
+      continue
+    }
     deno {
       if ($Global) {
-        deno upgrade
         deno jupyter --install
         if ($Force -and $pkgs) {
-          deno install --global $pkgs
+          deno install -g $pkgs.ForEach{ "$_@latest" }
         }
         continue
       }

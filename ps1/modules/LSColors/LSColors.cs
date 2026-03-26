@@ -1,4 +1,3 @@
-using System.Management.Automation;
 namespace LSColors;
 
 // colors: green, cyan, blue, yellow, magenta, red

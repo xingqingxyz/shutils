@@ -263,9 +263,10 @@ WantedBy=timers.target
         'weekly' { New-ScheduledTaskTrigger -At $At -Weekly -DaysOfWeek Monday; break }
         'monthly' { New-ScheduledTaskTrigger -At $At -Daily -DaysInterval 30; break }
       }
-      # use conhost to run pwsh to avoid windows terminal popping up
-      $action = New-ScheduledTaskAction -Execute conhost -Argument "pwsh -noni -nop -w Hidden -e $encodedCommand"
-      Register-ScheduledTask pwsh-$_-$Name -Force -Description "PowerShell $_ $Name task" -Trigger $trigger -Action $action
+      # HACK: no show cmd window
+      $action = New-ScheduledTaskAction -Execute uvw -Argument "run -- pwsh -noni -nop -e $encodedCommand"
+      $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable:$Persistent
+      Register-ScheduledTask pwsh-$_-$Name -Force -Description "PowerShell $_ $Name task" -Trigger $trigger -Action $action -Settings $settings
     }
   }
   else {

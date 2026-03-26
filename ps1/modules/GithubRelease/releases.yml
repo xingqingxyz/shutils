@@ -20,6 +20,8 @@
   tag: bun-v1.3.10
 - name: cargo-generate
   repo: cargo-generate/cargo-generate
+  tag: v0.23.7
+  version: 0.23.7
 - name: code
   repo: microsoft/vscode
   version: 1.112.0
@@ -121,6 +123,10 @@
   repo: rust-lang/mdBook
   tag: v0.5.2
   version: 0.5.2
+- name: mdbook-mermaid
+  repo: badboy/mdbook-mermaid
+  tag: v0.17.0
+  version: 0.17.0
 - name: mkcert
   repo: FiloSottile/mkcert
   tag: v1.4.4

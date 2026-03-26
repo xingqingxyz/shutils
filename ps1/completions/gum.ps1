@@ -52,7 +52,7 @@ Register-ArgumentCompleter -Native -CommandName gum -ScriptBlock {
       }
       'format' {
         if ($wordToComplete.StartsWith('-')) {
-          '-h', '--help', '-v', '--version', '--theme=pink', '-l', '--language=', '--strip-ansi', '--no-strip-ansi', '-t', '--type=markdown'
+          '-h', '--help', '-v', '--version', '--theme=', '--theme=ascii', '--theme=auto', '--theme=dark', '--theme=dracula', '--theme=light', '--theme=notty', '--theme=pink', '--theme=tokyo-night', '-l', '--language=', '--strip-ansi', '--no-strip-ansi', '-t', '-tmarkdown', '-ttemplate', '-tcode', '-temoji', '--type=markdown', '--type=template', '--type=code', '--type=emoji'
           break
         }
         break

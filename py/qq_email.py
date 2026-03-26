@@ -14,7 +14,11 @@ parser.add_argument("-s", "--subject")
 parser.add_argument("-S", "--signature")
 args = parser.parse_args()
 
-sender = "cm.email@qq.com"
+user = os.environ.get("QQ_EMAIL_ACCOUNT")
+password = os.environ.get("QQ_EMAIL_AUTH_CODE")
+if not user or not password:
+    parser.error("QQ_EMAIL_ACCOUNT and QQ_EMAIL_AUTH_CODE must be set.")
+
 body = args.body
 if not body and args.file:
     if args.file == "-":
@@ -23,7 +27,7 @@ if not body and args.file:
         with open(args.file, encoding="utf8") as f:
             body = f.read()
 body = MIMEText(body, "plain", "utf-8")
-body["From"] = sender
+body["From"] = user
 body["To"] = args.receiver
 body["CC"] = args.CC
 body["BCC"] = args.BCC
@@ -32,7 +36,7 @@ body["Signature"] = args.signature
 print(body)
 
 smtp = smtplib.SMTP_SSL("smtp.qq.com")
-smtp.login(sender, os.environ["QQ_MAIL_PASSWORD"])
-smtp.sendmail(sender, args.receiver, str(body))
+smtp.login(user, password)
+smtp.sendmail(user, args.receiver, str(body))
 smtp.quit()
 print(f"Sended to {args.receiver}!")

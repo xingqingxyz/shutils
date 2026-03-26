@@ -1,4 +1,4 @@
-Register-ArgumentCompleter -Native -CommandName crush, dlv, dms, docker, gh, glow, golangci-lint, golangci-lint-v2, goreleaser, qodercli, tstoy, vhs, yq -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker, gh, glow, golangci-lint, golangci-lint-v2, goreleaser, qodercli, tstoy, vhs, yq -ScriptBlock {
   # powershell completion for cobra drived cli tools
   param (
     [string]$wordToComplete,

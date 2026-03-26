@@ -557,18 +557,17 @@ function x {
       })]
     [Parameter(Position = 1, ValueFromRemainingArguments)]
     [string[]]
-    $ExtraArgs
+    $ArgumentList,
+    [Alias('wd')]
+    [Parameter()]
+    [string]
+    $WorkingDirectory = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath
   )
-  $ags = switch (Split-Path -LeafBase $CommandName) {
-    'aria2c' { @('-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), '--allow-overwrite', "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')") + $ExtraArgs; break }
-    'msiexec' { @($CommandName, '/qn', '/norestart', '/log', "Temp:/$($ExtraArgs[0]).log", '/i') + $ExtraArgs; $CommandName = 'sudo'; break }
-    'installer' { @($CommandName, '-dumplog', '-pkg') + $ExtraArgs; $CommandName = 'sudo'; break }
-    default {
-      if ($IsWindows) {
-        @('nt', $CommandName) + $ExtraArgs
-        $CommandName = 'wt'
-        break
-      }
+  $CommandName, $ArgumentList = @(
+    if ($IsWindows) {
+      'wt', 'nt', '-d', $WorkingDirectory, '--'
+    }
+    else {
       $term = if ($env:GHOSTTY_BIN_DIR) {
         'ghostty'
       }
@@ -578,15 +577,21 @@ function x {
       else {
         'x-terminal-emulator'
       }
-      @('-f', '--', $term, '-e', $CommandName) + $ExtraArgs
-      $CommandName = 'setsid'
-      break
+      'setsid', '-f', '--', $term, '-e', '--'
     }
-  }
+    switch (Split-Path -LeafBase $CommandName) {
+      'aria2c' { $CommandName, '-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), '--allow-overwrite', "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" ; break }
+      'msiexec' { 'sudo', '--', $CommandName, '/qn', '/norestart', '/log', "Temp:/$($ArgumentList[0]).log", '/i' ; break }
+      'installer' { 'sudo', '--', $CommandName, '-dumplog', '-pkg' ; break }
+      'winget' { 'sudo', '--', $CommandName ; break }
+      default { $CommandName ; break }
+    }
+    $ArgumentList
+  )
   if ($MyInvocation.ExpectingInput) {
-    $input | & $CommandName @ags
+    $input | & $CommandName @ArgumentList
   }
   else {
-    & $CommandName @ags
+    & $CommandName @ArgumentList
   }
 }
