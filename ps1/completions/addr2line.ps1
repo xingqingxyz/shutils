@@ -64,5 +64,5 @@ Register-ArgumentCompleter -Native -CommandName addr2line, ar, as, c++filt, dwp,
           break
         }
       }
-    }).Where.Where{ $_ -like "$wordToComplete*" }
+    }).Where{ $_ -like "$wordToComplete*" }
 }

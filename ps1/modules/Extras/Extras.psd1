@@ -69,7 +69,7 @@
   # NestedModules        = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('Clear-Module', 'Get-Region', 'Set-Region', 'Repair-GitSymlinks', 'New-RelativeSymlink', 'ConvertTo-RelativeSymlink', 'Register-PSScheduledTask', 'Unregister-PSScheduledTask', 'Send-Notify', 'Invoke-CodeFormatter', 'batf', 'getParser', 'ghQuery', 'jq.f', 'de', 'de.f', 'figlet.f', 'rg.f', 'theme.f')
+  FunctionsToExport    = @('Clear-Module', 'Get-RepoBlob', 'Get-Region', 'Set-Region', 'Repair-GitSymlinks', 'New-RelativeSymlink', 'ConvertTo-RelativeSymlink', 'Register-PSScheduledTask', 'Unregister-PSScheduledTask', 'Send-Notify', 'Invoke-CodeFormatter', 'batf', 'getParser', 'ghQuery', 'jq.f', 'de', 'de.f', 'figlet.f', 'rg.f', 'theme.f')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()

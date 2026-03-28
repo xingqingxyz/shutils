@@ -1,3 +1,9 @@
+# .bashrc
+
+if [[ $- != *i* ]]; then
+  exit
+fi
+
 # shell options
 shopt -s globstar
 HISTCONTROL=ignoreboth
@@ -126,3 +132,19 @@ e() {
 k() {
   bat -plsh
 }
+
+case "$OSTYPE" in
+  msys | cygwin)
+    # env
+    if [[ :$PATH: != *:/usr/bin:* ]]; then
+      PATH=/usr/bin:$PATH
+    fi
+    if [[ :$PATH: != *:/mingw64/bin:* ]]; then
+      PATH=/mingw64/bin:$PATH
+    fi
+    alias ls='ls --color=auto'
+    ;;
+  *)
+    eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
+    ;;
+esac

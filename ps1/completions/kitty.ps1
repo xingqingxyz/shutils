@@ -1,0 +1,6 @@
+Register-ArgumentCompleter -Native -CommandName kitty -ScriptBlock {
+  param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
+  @(if ($wordToComplete.StartsWith('-')) {
+      '--class', '--app-id=', '--app-id=kitty', '--os-window-tag', '--name=', '-T', '--title=', '-c', '--config=', '-o', '--override=', '-d', '--working-directory', '--directory=', '--detach', '--detach=no', '--detached-log=', '--session=', '--hold', '--hold=no', '-1', '--single-instance', '--single-instance=no', '--instance-group=', '--wait-for-single-instance-window-close', '--wait-for-single-instance-window-close=no', '--listen-on=', '--listen-on=unix:/tmp/mykitty', '--listen-on=tcp:localhost:12345', '--start-as=normal', '--start-as=fullscreen', '--start-as=maximized', '--start-as=minimized', '--start-as=hidden', '--position=', '--position=10x20', '--grab-keyboard', '--grab-keyboard=no', '-v', '--version', '--version=no', '--dump-commands', '--dump-commands=no', '--replay-commands=', '--dump-bytes=', '--debug-rendering', '--debug-gl', '--debug-gl=no', '--debug-keyboard', '--debug-input', '--debug-input=no', '--debug-font-fallback', '--debug-font-fallback=no', '--watcher='
+    }).Where{ $_ -like "$wordToComplete*" }
+}

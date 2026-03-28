@@ -14,7 +14,7 @@ function .... {
 }
 
 # PSES
-if ($env:POWERSHELL_DISTRIBUTION_CHANNEL -ceq 'PSES') {
+if (Get-Module PowerShellEditorServices.Commands -ea Ignore) {
   . $env:SHUTILS_ROOT/scripts/onEnterPSES.ps1
 }
 # load

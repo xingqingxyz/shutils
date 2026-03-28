@@ -262,7 +262,7 @@ function downloadFile ([string]$Url, [string]$Path) {
   }
   $null = New-Item -Type Directory -Force $dir
   Remove-Item -LiteralPath $Path -Force -ea Ignore
-  execute aria2c $Url -x2 -j32 --allow-overwrite "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" -d $dir -o $file >> $buildDir/aria2c.log
+  execute aria2c $Url -x2 -j32 --allow-overwrite --file-allocation=$($IsWindows ? 'prealloc' : 'falloc') -d $dir -o $file >> $buildDir/aria2c.log
 }
 
 function downloadRelease ($Meta, [string[]]$Name) {
@@ -518,7 +518,7 @@ function Install-Release {
     }
     flutter {
       if (Get-Command flutter -CommandType Application -TotalCount 1 -ea Ignore) {
-        flutter upgrade --force
+        flutter upgrade
         break
       }
       downloadFile $Meta.file
@@ -528,6 +528,7 @@ function Install-Release {
       }
       Remove-Item -LiteralPath $prefixDir/flutter -Recurse -Force -ea Ignore
       tar -xf $buildDir/$file -C $prefixDir
+      git -C $prefixDir/flutter remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/flutter-sdk.git
       $baseDir = "$prefixDir/flutter/bin"
       $exe = $IsWindows ? '.bat' : ''
       installBinary $baseDir/flutter$exe, $baseDir/flutter-dev$exe, $baseDir/dart$exe
@@ -1181,7 +1182,7 @@ function Update-Software {
     }
     flutter {
       if ($Global) {
-        flutter upgrade --force
+        flutter upgrade
         if ($Force -and $pkgs) {
           flutter pub global activate $pkgs.ForEach{ "$_@latest" }
         }

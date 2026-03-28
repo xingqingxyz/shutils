@@ -1,6 +1,7 @@
 * text=auto eol=lf
 _/.config/fcitx5/** linguist-generated=true
 _/.config/niri/dms/** linguist-generated=true
+data/gnome-shell-extensions.dconf.ini linguist-generated=true
 data/schema.docs.graphql linguist-vendored=true
 data/The_Oxford_3000.txt linguist-vendored=true
 data/The_Oxford_5000.txt linguist-vendored=true

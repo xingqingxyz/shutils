@@ -2,8 +2,8 @@ binds {
     Ctrl+Shift+Escape repeat=false { spawn "dms" "ipc" "call" "processlist" "focusOrToggle"; }
     Super+A repeat=false hotkey-overlay-title="App Launcher: Toggle" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
     Super+Ctrl+V repeat=false hotkey-overlay-title="Clipboard: Toggle" { spawn "dms" "ipc" "call" "clipboard" "toggle"; }
-    Super+E repeat=false { spawn "dms" "ipc" "notepad" "toggle"; }
+    Super+E repeat=false hotkey-overlay-title="Notepad: Toggle" { spawn "dms" "ipc" "notepad" "toggle"; }
     Super+I repeat=false hotkey-overlay-title="Settings: Focus or Toggle" { spawn "dms" "ipc" "call" "settings" "focusOrToggle"; }
-    Super+Shift+C repeat=false { spawn "dms" "ipc" "color-picker" "toggleInstant"; }
-    Super+X repeat=false { spawn "dms" "ipc" "powermenu" "toggle"; }
+    Super+Shift+C repeat=false hotkey-overlay-title="Color Picker: Toggle" { spawn "dms" "ipc" "color-picker" "toggleInstant"; }
+    Super+P repeat=false hotkey-overlay-title="Power Menu: Toggle" { spawn "dms" "ipc" "powermenu" "toggle"; }
 }

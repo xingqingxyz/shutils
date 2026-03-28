@@ -24,8 +24,8 @@
   version: 0.23.7
 - name: code
   repo: microsoft/vscode
-  version: 1.112.0
-  tag: 1.112.0
+  version: 1.113.0
+  tag: 1.113.0
 - name: copilot
   repo: github/copilot-cli
   tag: v1.0.10
@@ -169,8 +169,8 @@
   version: 0.10.10
 - name: ruff
   repo: astral-sh/ruff
-  tag: 0.15.5
-  version: 0.15.5
+  tag: 0.15.8
+  version: 0.15.8
 - name: rustup
   repo: rust-lang/rustup
   version: 1.28.2
@@ -192,8 +192,8 @@
   version: 0.0.21
 - name: uv
   repo: astral-sh/uv
-  version: 0.10.10
-  tag: 0.10.10
+  version: 0.11.2
+  tag: 0.11.2
 - name: vhs
   repo: charmbracelet/vhs
 - name: vncviewer

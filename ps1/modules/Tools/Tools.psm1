@@ -16,23 +16,19 @@ function vsdev {
 }
 
 function delay {
-  $PSNativeCommandUseErrorActionPreference = $true
+  $ErrorActionPreference = 'Continue'
   [timespan]$delay, $cmd, $ags = $args
   $ags ??= @()
   Write-Debug "Sleeping $delay"
   Start-Sleep $delay
-  try {
-    if ($MyInvocation.ExpectingInput) {
-      $input | & $cmd @ags
-    }
-    else {
-      & $cmd @ags
-    }
-    $status = $?
+  if ($MyInvocation.ExpectingInput) {
+    $input | & $cmd @ags
   }
-  finally {
-    Send-Notify "$($status ? 'Completed' : "Failed($LASTEXITCODE)") PS> $cmd $ags" -Title delay -Level ($status ? 'Information' : 'Error')
+  else {
+    & $cmd @ags
   }
+  $status = $?
+  Send-Notify "$($status ? 'Completed' : "Failed($LASTEXITCODE)") PS> $cmd $ags" -Title delay -Level ($status ? 'Information' : 'Error')
 }
 
 function icat {
@@ -171,7 +167,7 @@ function Search-Web {
   [Alias('sw')]
   param (
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('baidu', 'bing', 'bing-en', 'cargo', 'docker', 'dotnetapi', 'flutter', 'go', 'google', 'jsdelivr', 'jsr', 'maven', 'npm', 'nuget', 'psgallery', 'pypi', 'vcpkg')]
+    [ValidateSet('archwiki', 'baidu', 'bing', 'bing-en', 'cargo', 'docker', 'dotnetapi', 'flutter', 'go', 'google', 'jsdelivr', 'jsr', 'maven', 'npm', 'nuget', 'psgallery', 'pypi', 'vcpkg')]
     [string]
     $Category,
     [Parameter(Mandatory, Position = 1)]
@@ -179,6 +175,7 @@ function Search-Web {
     $Name
   )
   switch ($Category) {
+    archwiki { Start-Process "https://wiki.archlinux.org/index.php?search=$Name"; break }
     baidu { Start-Process "https://www.baidu.com/s?wd=$Name"; break }
     bing { Start-Process "https://www.bing.com/search?q=$Name"; break }
     bing-en { Start-Process "https://www.bing.com/search?ensearch=1&q=$Name"; break }
@@ -351,12 +348,12 @@ function Set-EnvironmentVariable {
   elseif ($IsLinux) {
     $lines = $environment.GetEnumerator().ForEach{
       if ($_.Value) {
-        "export $($_.Key)='$($_.Value.Replace("'", "'\''"))'"
+        "export '$($_.Key)=$($_.Value.Replace("'", "'\''"))'"
       }
     }
     switch ($Scope) {
       'User' {
-        Set-Region $RegionName $lines ~/.bashrc -Inplace
+        Set-Region $RegionName $lines ~/.bash_profile -Inplace
         break
       }
       'Machine' {

@@ -1,3 +1,6 @@
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 function Clear-Module {
   <#
   .SYNOPSIS
@@ -168,15 +171,14 @@ function New-RelativeSymlink {
     [string]
     $Target,
     [Parameter(Mandatory, Position = 1)]
-    [SupportsWildcards()]
     [string[]]
     $Path,
     [Parameter()]
     [switch]
     $Force
   )
-  Get-Item $Path -Force -ea Ignore | ForEach-Object {
-    New-Item -Type SymbolicLink -Force:$Force -Target ([System.IO.Path]::GetRelativePath($_.DirectoryName, $Target)) $_.FullName
+  $Path.ForEach{
+    New-Item -Type SymbolicLink -Force:$Force -Target ([System.IO.Path]::GetRelativePath($_, $Target).Substring(3)) $_
   }
 }
 
@@ -215,59 +217,57 @@ function Register-PSScheduledTask {
     $ScriptText,
     [Parameter(Mandatory)]
     [ValidateSet('monthly', 'weekly', 'daily')]
-    [string[]]
+    [string]
     $Kind,
     [Parameter()]
     [datetime]
-    $At = '0am'
+    $At = '0am',
+    [Parameter()]
+    [switch]
+    $Persistent
   )
   $encodedCommand = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ScriptText))
-  if ($IsLinux) {
-    $Kind.ForEach{
-      $date = switch ($_) {
-        'monthly' { '*-*-01'; break }
-        'weekly' { 'Mon *-*-*'; break }
-        'daily' { '*-*-*'; break }
-      }
-      $service = @"
+  if ($IsWindows) {
+    $trigger = switch ($Kind) {
+      'daily' { New-ScheduledTaskTrigger -At $At -Daily; break }
+      'weekly' { New-ScheduledTaskTrigger -At $At -Weekly -DaysOfWeek Monday; break }
+      'monthly' { New-ScheduledTaskTrigger -At $At -Daily -DaysInterval 30; break }
+    }
+    # HACK: no show cmd window
+    $action = New-ScheduledTaskAction -Execute uvw -Argument "run -- pwsh -noni -nop -e $encodedCommand"
+    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable:$Persistent
+    Register-ScheduledTask pwsh-$Kind-$Name -Force -Description "PowerShell $Kind $Name task" -Trigger $trigger -Action $action -Settings $settings
+  }
+  elseif ($IsLinux) {
+    $date, $acc = switch ($Kind) {
+      'monthly' { '*-*-01', '30d'; break }
+      'weekly' { 'Mon *-*-*', '7d'; break }
+      'daily' { '*-*-*', '1d'; break }
+    }
+    $service = @"
 [Unit]
-Description=PowerShell $_ $Name task
+Description=PowerShell $Kind $Name task
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/env pwsh -noni -nop -e $encodedCommand
 "@
-      $timer = @"
+    $timer = @"
 [Unit]
-Description=PowerShell $_ $Name task timer
+Description=PowerShell $Kind $Name task timer
 
 [Timer]
 OnCalendar=$date $($At.ToString('HH:mm:ss'))
-Persistent=$($_ -ceq 'daily' ? 'false' : 'true')
+Persistent=$($Persistent.ToString().ToLowerInvariant())
+AccuracySec=$acc
 
 [Install]
 WantedBy=timers.target
 "@
-      $service > ~/.config/systemd/user/pwsh-$_-$Name`.service
-      $timer > ~/.config/systemd/user/pwsh-$_-$Name`.timer
-    }
+    $service > ~/.config/systemd/user/pwsh-$Kind-$Name`.service
+    $timer > ~/.config/systemd/user/pwsh-$Kind-$Name`.timer
     systemctl daemon-reload --user
-    $Kind.ForEach{
-      systemctl enable --user --now pwsh-$_-$Name`.timer
-    }
-  }
-  elseif ($IsWindows) {
-    $Kind.ForEach{
-      $trigger = switch ($_) {
-        'daily' { New-ScheduledTaskTrigger -At $At -Daily; break }
-        'weekly' { New-ScheduledTaskTrigger -At $At -Weekly -DaysOfWeek Monday; break }
-        'monthly' { New-ScheduledTaskTrigger -At $At -Daily -DaysInterval 30; break }
-      }
-      # HACK: no show cmd window
-      $action = New-ScheduledTaskAction -Execute uvw -Argument "run -- pwsh -noni -nop -e $encodedCommand"
-      $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable:$Persistent
-      Register-ScheduledTask pwsh-$_-$Name -Force -Description "PowerShell $_ $Name task" -Trigger $trigger -Action $action -Settings $settings
-    }
+    systemctl enable --user --now pwsh-$Kind-$Name`.timer
   }
   else {
     throw [System.NotImplementedException]::new()
@@ -568,20 +568,20 @@ function ghQuery {
   [CmdletBinding()]
   param (
     [Parameter(Position = 0)]
-    [ValidateSet('releases', 'limits', 'stars')]
+    [ValidateSet('releases', 'limits', 'stars', 'tree')]
     [string]
-    $Category = 'releases',
+    $Category,
     [Parameter(Position = 1, ValueFromRemainingArguments)]
     [string[]]
     $Queries
   )
   [string]$query = "query=@$PSScriptRoot/github/$Category.gql"
   [string[]]$fields = @()
-  [string]$jq = '.'
+  [string]$jq = ''
   switch ($Category) {
     releases {
       $jq = '.repository.latestRelease[].name'
-      $owner, $name = $Queries.Split('/', 2)
+      $owner, $name = $Queries[0].Split('/', 2)
       $fields += "owner=$owner", "name=$name"
       break
     }
@@ -594,8 +594,72 @@ function ghQuery {
       $fields += "login=$login"
       break
     }
+    tree {
+      $jq = '.repository.object.entries'
+      $owner, $name = $Queries[0].Split('/', 2)
+      $items = $Queries[1].Split(':', 2)
+      if ($items.Count -eq 1) {
+        $items = 'HEAD', $items
+      }
+      $items[1] = $items[1].Replace('\', '/') -creplace '^\.?/|/$', ''
+      $expression = $items -join ':'
+      $fields += "owner=$owner", "name=$name", "expression=$expression"
+      break
+    }
   }
-  gh api graphql -F $query $fields.ForEach{ "-f=$_" } -q $jq
+  gh api graphql -F $query $fields.ForEach{ "-f$_" } -q .data$jq | Tee-Object -LiteralPath Temp:/ghQuery.json
+}
+
+function Get-RepoBlob {
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [string]
+    $Repo,
+    [Parameter(Mandatory, Position = 1)]
+    [string[]]
+    $Path,
+    [Parameter()]
+    [string]
+    $Ref = 'HEAD',
+    [Parameter()]
+    [string]
+    $Directory = [System.IO.Path]::GetTempPath()
+  )
+  [string[]]$executables = @()
+  [string[]]$symbolicLinks = @()
+  [string[]]$files = for ($i = 0; $i -lt $Path.Count; $i++) {
+    if (![System.IO.Path]::EndsInDirectorySeparator($Path[$i])) {
+      $Path[$i].Replace('\', '/') -creplace '^\.?/', ''
+      continue
+    }
+    $dir = $Path[$i].Replace('\', '/') -creplace '^\.?/|/$', ''
+    $entries = ghQuery tree $Repo $Ref`:$dir | ConvertFrom-Json
+    foreach ($entry in $entries) {
+      $file = $dir + '/' + $entry.name
+      switch ([System.Convert]::ToString($entry.mode, 8)) {
+        '100644' { $file; break }
+        '100755' { $executables += $file; $file; break }
+        '120000' { $symbolicLinks += $file; $file; break }
+        '160000' { Write-Warning "ignore submodule $file"; break }
+        '40000' { $Path += $file + '/'; break }
+        default { Write-Warning "ignore $_ $file"; break }
+      }
+    }
+  }
+  try {
+    Push-Location -LiteralPath (New-Item -Type Directory -Force $Directory)
+    New-Item $files -Force
+    $files.ForEach{ "https://github.com/$Repo/raw/$Ref/$_"; " out=$_" } | aria2c -i- -x2 -j32 --allow-overwrite --file-allocation=$($IsWindows ? 'prealloc' : 'falloc') >> Temp:/aria2c.log
+    $ErrorActionPreference = 'Continue'
+    if (!$IsWindows -and $executables) {
+      chmod 0755 `-- $executables
+    }
+    $symbolicLinks.ForEach{ New-Item -ItemType SymbolicLink -Force -Target (Get-Content -Raw -LiteralPath $_) $_ }
+  }
+  finally {
+    Pop-Location
+  }
 }
 
 function jq.f {

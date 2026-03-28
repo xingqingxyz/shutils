@@ -32,7 +32,7 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
   if ($command -ceq 'x') {
     return (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -Like $wordToComplete* | Sort-Object -Unique).BaseName
   }
-  elseif ($command -clike 'x *') {
+  elseif ($command.StartsWith('x ')) {
     $astList = $commandAst.CommandElements | Select-Object -Skip 2
     $commandName = Split-Path -LeafBase $astList[0].Value
     $cursorPosition -= $astList[0].Extent.StartOffset
@@ -62,14 +62,16 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
       'add' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help', '-d', '--dev', '--optional', '-E', '--exact'
+          break
         }
         break
       }
       'create' {
         if ($wordToComplete.StartsWith('-')) {
-          # TODO: update this
-          'react', 'vue', 'vite', 'svelte', 'astro', 'next', 'nuxt', 'preact', 'uniapp'
+          break
         }
+        # TODO: update this
+        'react', 'vue', 'vite', 'svelte', 'astro', 'next', 'nuxt', 'preact', 'uniapp'
         break
       }
       'exec' {
@@ -93,10 +95,9 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
       'update' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help', '--latest'
+          break
         }
-        else {
-          (npm pkg get | ConvertFrom-Json -AsHashtable).GetEnumerator() | Where-Object Name -Like '*dependencies' | ForEach-Object { $_.Value.Keys }
-        }
+        (npm pkg get | ConvertFrom-Json -AsHashtable).GetEnumerator() | Where-Object Name -Like '*dependencies' | ForEach-Object { $_.Value.Keys }
         break
       }
       'outdated' {
@@ -108,96 +109,121 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
       'link' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help'
+          break
         }
         break
       }
       'unlink' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help'
+          break
         }
         break
       }
       'publish' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help', '--access', '--tag', '--otp', '--auth-type', '--gzip-level'
+          break
         }
         break
       }
       'patch' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help', '--commit', '--patches-dir'
+          break
         }
         break
       }
       'pm' {
+        if ($wordToComplete.StartsWith('-')) {
+          break
+        }
         'pack', 'bin', 'ls', 'whoami', 'hash', 'hash-string', 'hash-print', 'cache', 'migrate', 'untrusted', 'trust', 'default-trusted'
         break
       }
       'pm bin' {
-        '-g'
+        if ($wordToComplete.StartsWith('-')) {
+          '-g'
+          break
+        }
         break
       }
       'pm cache' {
+        if ($wordToComplete.StartsWith('-')) {
+          break
+        }
         'rm'
         break
       }
       'pm ls' {
-        '--all'
+        if ($wordToComplete.StartsWith('-')) {
+          '--all'
+          break
+        }
         break
       }
       'pm pack' {
-        '--dry-run', '--destination', '--help', '--ignore-scripts', '--gzip-level'
+        if ($wordToComplete.StartsWith('-')) {
+          '--dry-run', '--destination', '--help', '--ignore-scripts', '--gzip-level'
+          break
+        }
         break
       }
       'pm trust' {
         if ($wordToComplete.StartsWith('-')) {
           '--all'
+          break
         }
         break
       }
       'build' {
         if ($wordToComplete.StartsWith('-')) {
           '--compile', '--bytecode', '--watch', '--help', '--no-clear-screen', '--target', '--outdir', '--outfile', '--sourcemap', '--banner', '--footer', '--format', '--root', '--splitting', '--public-path', '-e', '--external', '--packages', '--entry-naming', '--chunk-naming', '--asset-naming', '--react-fast-refresh', '--no-bundle', '--emit-dce-annotations', '--minify', '--minify-syntax', '--minify-whitespace', '--minify-identifiers', '--experimental-css', '--experimental-css-chunking', '--conditions', '--app', '--server-components'
+          break
         }
         break
       }
       'upgrade' {
         if ($wordToComplete.StartsWith('-')) {
           '--canary'
+          break
         }
         break
       }
       'repl' {
         if ($wordToComplete.StartsWith('-')) {
           '-h', '--help', '-p', '--print', '-e', '--eval', '--sloppy'
+          break
         }
         break
       }
       'test' {
         if ($wordToComplete.StartsWith('-')) {
           '--timeout', '-u', '--update-snapshots', '--rerun-each', '--only', '--todo', '--coverage', '--coverage-reporter', '--coverage-dir', '--bail', '-t', '--test-name-pattern', '--reporter', '--reporter-outfile'
+          break
         }
         break
       }
       'init' {
         if ($wordToComplete.StartsWith('-')) {
           '--help', '-y', '--yes'
+          break
         }
         break
       }
       'install' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help', '-d', '--dev', '--optional', '-E', '--exact'
+          break
         }
         break
       }
       'remove' {
         if ($wordToComplete.StartsWith('-')) {
           '-c', '--config', '-y', '--yarn', '-p', '--production', '--no-save', '--save', '--ca', '--cafile', '--dry-run', '--frozen-lockfile', '-f', '--force', '--cache-dir', '--no-cache', '--silent', '--verbose', '--no-progress', '--no-summary', '--no-verify', '--ignore-scripts', '--trust', '-g', '--global', '--cwd', '--backend', '--registry', '--concurrent-scripts', '--network-concurrency', '-h', '--help'
+          break
         }
-        else {
-          (npm pkg get | ConvertFrom-Json -AsHashtable).GetEnumerator() | Where-Object Name -Like *dependencies | ForEach-Object { $_.Value.Keys }
-        }
+        (npm pkg get | ConvertFrom-Json -AsHashtable).GetEnumerator() | Where-Object Name -Like *dependencies | ForEach-Object { $_.Value.Keys }
         break
       }
     }).Where{ $_ -like "$wordToComplete*" }

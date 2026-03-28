@@ -20,3 +20,5 @@
 	recentrepo = /home/uv/p/mvext
 [rerere]
 	enabled = true
+[safe]
+	directory = *

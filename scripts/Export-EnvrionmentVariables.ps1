@@ -27,7 +27,6 @@ $LESS = @'
 
 # fzf default opts
 $FZF_DEFAULT_OPTS = @'
---cycle
 --bind=alt-/:last
 --bind=alt-\\:first
 --bind=alt-b:preview-page-up
@@ -39,11 +38,15 @@ $FZF_DEFAULT_OPTS = @'
 --bind=ctrl-/:preview-bottom
 --bind=ctrl-\\:preview-top
 --bind=ctrl-a:toggle-all
---bind=ctrl-b:page-up
---bind=ctrl-d:half-page-down
---bind=ctrl-f:page-down
---bind=ctrl-u:half-page-up
 --bind=ctrl-alt-m:change-multi
+--bind=ctrl-b:page-up
+--bind=ctrl-backspace:backward-kill-subword
+--bind=ctrl-d:half-page-down
+--bind=ctrl-delete:kill-word
+--bind=ctrl-f:page-down
+--bind=ctrl-left:backward-word
+--bind=ctrl-right:forward-word
+--bind=ctrl-u:half-page-up
 '@.ReplaceLineEndings(' ')
 
 # proxy

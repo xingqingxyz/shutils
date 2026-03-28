@@ -86,10 +86,10 @@ function Show-CommandInfo {
     $InputObject,
     [Parameter()]
     [switch]
-    $List = $MyInvocation.InvocationName -ceq 'l',
+    $List = $MyInvocation.InvocationName -eq 'l',
     [Parameter()]
     [switch]
-    $Man = $MyInvocation.InvocationName -ceq 'k',
+    $Man = $MyInvocation.InvocationName -eq 'k',
     [ArgumentCompleter({
         param (
           [string]$CommandName,
@@ -440,7 +440,7 @@ function Invoke-Npm {
     # use npm as a cli, pipe output
     ($MyInvocation.PipelineLength -ne 1) { 'npm'; break }
     (Test-Path pnpm-lock.yaml) { 'pnpm'; break }
-    (Test-Path bun.lock?) { 'bun' ; break }
+    (Test-Path bun.lock?) { 'bun'; break }
     (Test-Path yarn.lock) { 'yarn'; break }
     (Test-Path deno.json) { 'deno'; break }
     default { 'npm'; break }
@@ -557,34 +557,33 @@ function x {
       })]
     [Parameter(Position = 1, ValueFromRemainingArguments)]
     [string[]]
-    $ArgumentList,
+    $ArgumentList = @(),
     [Alias('wd')]
     [Parameter()]
     [string]
     $WorkingDirectory = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath
   )
   $CommandName, $ArgumentList = @(
-    if ($IsWindows) {
-      'wt', 'nt', '-d', $WorkingDirectory, '--'
-    }
-    else {
-      $term = if ($env:GHOSTTY_BIN_DIR) {
-        'ghostty'
+    switch ($env:TERM) {
+      'alacritty' { 'alacritty', 'msg', 'create-window', '--hold', '--working-directory', $WorkingDirectory, '-e'; break }
+      'xterm-ghostty' { 'ghostty', '+new-window', '--working-directory', $WorkingDirectory, '-e'; break }
+      'xterm-kitty' { 'kitty', '--detach', '--hold', '-d', $WorkingDirectory, '--'; break }
+      default {
+        if ($IsWindows) {
+          'wt', 'nt', '-d', $WorkingDirectory, '--'
+        }
+        else {
+          'alacritty', '--hold', '--working-directory', $WorkingDirectory, '-e'
+        }
+        break
       }
-      elseif ($env:ALACRITTY_LOG) {
-        'alacritty'
-      }
-      else {
-        'x-terminal-emulator'
-      }
-      'setsid', '-f', '--', $term, '-e', '--'
     }
     switch (Split-Path -LeafBase $CommandName) {
-      'aria2c' { $CommandName, '-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), '--allow-overwrite', "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')" ; break }
-      'msiexec' { 'sudo', '--', $CommandName, '/qn', '/norestart', '/log', "Temp:/$($ArgumentList[0]).log", '/i' ; break }
-      'installer' { 'sudo', '--', $CommandName, '-dumplog', '-pkg' ; break }
-      'winget' { 'sudo', '--', $CommandName ; break }
-      default { $CommandName ; break }
+      'aria2c' { $CommandName, '-x2', '-j32', '-d', [System.IO.Path]::GetTempPath(), '--allow-overwrite', "--file-allocation=$($IsWindows ? 'prealloc' : 'falloc')"; break }
+      'msiexec' { 'sudo', '--', $CommandName, '/qn', '/norestart', '/log', "Temp:/$($ArgumentList[0]).log", '/i'; break }
+      'installer' { 'sudo', '--', $CommandName, '-dumplog', '-pkg'; break }
+      'winget' { 'sudo', '--', $CommandName; break }
+      default { $CommandName; break }
     }
     $ArgumentList
   )

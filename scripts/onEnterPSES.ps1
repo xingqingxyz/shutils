@@ -26,10 +26,15 @@ Register-EditorCommand -Name 'hello' -DisplayName 'Hello World' -ScriptBlock {
     $Context
   )
   $text = @(if ($IsLinux) {
-      xclip -o -selection primary
+      if ($env:XDG_SESSION_TYPE -ceq 'wayland') {
+        wl-paste -p
+      }
+      else {
+        xclip -o -selection primary
+      }
     }
     else {
-      (Get-Clipboard -Raw) -csplit '\r?\n'
-    }).ForEach{ $_.Split(',').Trim() } | ConvertTo-Json -Compress
-  $Context.CurrentFile.InsertText($text.Substring(1, $text.Length - 2))
+      Get-Clipboard
+    }).Trim().Replace("'", "''") -join "', '"
+  $Context.CurrentFile.InsertText("'$text'")
 }

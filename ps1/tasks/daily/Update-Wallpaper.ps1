@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
 # ===================== 配置项 =====================
-$WALLPAPER_DIR = "$HOME\Pictures\bing_wallpapers"
+$WALLPAPER_DIR = Convert-Path ~/Pictures/bing_wallpapers
 $RESOLUTION = 'UHD'
 $REGION = 'zh-CN'
 # ===================== /配置项 =====================
@@ -70,9 +70,9 @@ try {
   elseif ($IsLinux) {
     if ($env:XDG_CURRENT_DESKTOP -clike '*GNOME') {
       Write-Information '检测到 GNOME 桌面，设置 gsettings...'
-      [uri]$uri = $wallpaperPath
-      gsettings set org.gnome.desktop.background picture-uri $uri
-      gsettings set org.gnome.desktop.screensaver picture-uri $uri
+      gsettings set org.gnome.desktop.background picture-uri "file://$wallpaperPath"
+      gsettings set org.gnome.desktop.background picture-uri-dark "file://$wallpaperPath"
+      gsettings set org.gnome.desktop.screensaver picture-uri "file://$wallpaperPath"
     }
     elseif ($env:XDG_CURRENT_DESKTOP -clike '*KDE') {
       Write-Information '检测到 KDE Plasma 桌面，设置 Plasma 壁纸...'
