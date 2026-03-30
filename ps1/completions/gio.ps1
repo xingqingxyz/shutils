@@ -31,8 +31,7 @@ Register-ArgumentCompleter -Native -CommandName gio -ScriptBlock {
   }
   $prev = $prev -is [StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
-  @(
-    if ($wordToComplete.StartsWith('-')) {
+  @(if ($wordToComplete.StartsWith('-')) {
       switch ($command) {
         copy {
           '-T', '--no-target-directory', '-p', '--progress', '-i', '--interactive', '--preserve', '-b', '--backup', '-P', '--no-dereference', '--default-permissions', '--default-modified-time'

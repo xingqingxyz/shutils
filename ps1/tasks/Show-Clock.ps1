@@ -25,5 +25,5 @@ else {
 }
 @('7:20-breakfast', '11:50-lunch', '17:20-dinner', '22:50-bed').ForEach{
   $clock, $dinner = $_.Split('-')
-  Register-PSScheduledTask "Show-Clock-$dinner" $scriptText.Replace('%clock%', $clock).Replace('%dinner%', $dinner) -Kind daily -At $clock
+  Register-PSScheduledTask "Show-Clock-$dinner" $scriptText.Replace('%clock%', $clock).Replace('%dinner%', $dinner) -Interval daily -At $clock -UsePowerShell
 }

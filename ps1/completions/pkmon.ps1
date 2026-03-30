@@ -14,8 +14,7 @@ Register-ArgumentCompleter -Native -CommandName pkmon -ScriptBlock {
       $i.Value
     }) -join ' '
 
-  @(
-    if ($wordToComplete.StartsWith('-')) {
+  @(if ($wordToComplete.StartsWith('-')) {
       '--version', '--help'
     }
     switch ($command) {

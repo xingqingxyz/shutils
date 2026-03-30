@@ -80,7 +80,7 @@ function Invoke-Z {
       # use (?i) ... (?-i) or (?i:...) to ignore case
       $items = $itemsMap.GetEnumerator() | Where-Object Key -CMatch $reQuery -ea Ignore
       if ($Cwd) {
-        $items = $items | Where-Object Key -CLike (Join-Path $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath *)
+        $items = $items | Where-Object Key -CLike ([System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath, '*'))
       }
       if (!$items) {
         if ($Queries -and $Queries[-1] -clike '*[\/]*') {

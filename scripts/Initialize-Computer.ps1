@@ -18,7 +18,7 @@ uv sync --upgrade
 if ($IsWindows) {
   sudo pwsh -nop $PSScriptRoot/Initialize-WindowsMachine.ps1
   . $PSScriptRoot/Initialize-WindowsUser.ps1
-  . $PSScriptRoot/Initialize-GitMsys.ps1
+  . $PSScriptRoot/Initialize-GitMsys.ps1 -All
 }
 elseif ($IsLinux) {
   sudo pwsh -nop $PSScriptRoot/Initialize-LinuxMachine.ps1
@@ -35,4 +35,4 @@ New-Item -ItemType HardLink -Force -Target $dir/ConsoleHost_history.txt "$dir/Vi
 # update help
 Update-Help -UICulture en-US -ea Ignore
 # system pkgs
-Update-System
+Update-System -Force

@@ -14,8 +14,7 @@ Register-ArgumentCompleter -Native -CommandName pkcon -ScriptBlock {
       $i.Value
     }) -join ' '
 
-  @(
-    if ($wordToComplete.StartsWith('-')) {
+  @(if ($wordToComplete.StartsWith('-')) {
       '--version', '-h', '--help', '--help-all', '--filter=', '-y', '--noninteractive', '--only-download', '-n', '--background', '-p', '--plain', '-v', '--verbose', '-c', '--cache-age=', '--allow-untrusted', '--allow-downgrade', '--allow-reinstall'
     }
     switch ($command) {

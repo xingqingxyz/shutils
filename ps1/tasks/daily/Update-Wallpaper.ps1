@@ -29,7 +29,7 @@ $wallpaperPath = [System.IO.Path]::Join($WALLPAPER_DIR, "$($resp.images[0].hsh).
 
 # 下载壁纸（重复则跳过）
 if (Test-Path -LiteralPath $wallpaperPath) {
-  Write-Information "今日壁纸已存在，无需重复下载: $wallpaperPath"
+  Write-Warning "今日壁纸已存在，无需重复下载: $wallpaperPath"
 }
 else {
   try {

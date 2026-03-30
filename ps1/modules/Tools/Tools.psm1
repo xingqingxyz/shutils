@@ -28,7 +28,7 @@ function delay {
     & $cmd @ags
   }
   $status = $?
-  Send-Notify "$($status ? 'Completed' : "Failed($LASTEXITCODE)") PS> $cmd $ags" -Title delay -Level ($status ? 'Information' : 'Error')
+  Send-Notify "$($status ? 'Completed' : "Failed($LASTEXITCODE)") PS> $cmd $ags" -Title delay -Severity ($status ? 'Information' : 'Error')
 }
 
 function icat {
@@ -43,9 +43,9 @@ function icat {
     [Parameter(Position = 0, ValueFromPipelineByPropertyName, ParameterSetName = 'Path')]
     [SupportsWildcards()]
     [string[]]
-    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation,
+    $Path = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath,
     [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [byte]
+    [System.Object]
     $InputObject,
     [Parameter(Mandatory, ParameterSetName = 'Stdin')]
     [string]
@@ -264,7 +264,7 @@ function Get-EnvironmentVariable {
     [System.EnvironmentVariableTarget]
     $Scope = 'Process',
     [Parameter(ValueFromPipeline)]
-    [string]
+    [System.Object]
     $InputObject
   )
   if ($MyInvocation.ExpectingInput) {
@@ -297,7 +297,7 @@ function Set-EnvironmentVariable {
     [string]
     $RegionName = "${Scope}Env",
     [Parameter(ValueFromPipeline)]
-    [string]
+    [System.Object]
     $InputObject
   )
   if ($MyInvocation.ExpectingInput) {
@@ -315,7 +315,7 @@ function Set-EnvironmentVariable {
       default { [System.Environment]::GetEnvironmentVariable($key) ?? '1'; break }
     }
     $environment[$key] = $value
-    if ($IsWindows) {
+    if ($IsWindows -and ($key -eq 'Path' -or $key -eq 'PSModulePath')) {
       if ($Scope -ceq 'User') {
         $value = [System.Environment]::GetEnvironmentVariable($key, 'Machine') + $value
       }

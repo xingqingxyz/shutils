@@ -14,8 +14,7 @@ Register-ArgumentCompleter -Native -CommandName apt-file -ScriptBlock {
       $i.Value
     }) -join ' '
 
-  @(
-    if ($wordToComplete.StartsWith('-')) {
+  @(if ($wordToComplete.StartsWith('-')) {
       '-a', '--architecture=amd64', '--architecture=arm64', '--architecture=loongarch64', '-c', '--config-file=', '-D', '--from-deb', '-f', '--from-file', '--filter-origins=', '--filter-suites=unstable', '--filter-suites=noble', '--filter-suites=', '-F', '--fixed-string', '--index-names=deb', '--index-names=dsc', '--index-names=udeb', '-I', '-i', '--ignore-case', '-l', '--package-only', '--stream-results', '-o', '--option=APT', '--substring-match', '-v', '--verbose', '-x', '--regexp', '-h', '--help'
     }
     switch ($command) {

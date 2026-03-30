@@ -34,7 +34,7 @@ Register-EditorCommand -Name 'hello' -DisplayName 'Hello World' -ScriptBlock {
       }
     }
     else {
-      Get-Clipboard
+      (Get-Clipboard -Raw).Split("`n")
     }).Trim().Replace("'", "''") -join "', '"
   $Context.CurrentFile.InsertText("'$text'")
 }

@@ -14,8 +14,7 @@ Register-ArgumentCompleter -Native -CommandName dart -ScriptBlock {
     $i.Value
   }
   $command = $commands -join ' '
-  @(
-    if ($commands.Count -gt 1 -and $commands[0] -ceq 'pub' -and !'bump unpack workspace'.Contains($commands[1])) {
+  @(if ($commands.Count -gt 1 -and $commands[0] -ceq 'pub' -and !'bump unpack workspace'.Contains($commands[1])) {
       [string[]]$words = $commandAst.CommandElements
       for ($i = 0; $i -lt $commandAst.CommandElements.Count; $i++) {
         $extent = $commandAst.CommandElements[$i].Extent

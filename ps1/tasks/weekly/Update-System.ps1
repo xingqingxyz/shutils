@@ -11,7 +11,7 @@ $job = Start-ThreadJob {
     }
   }
   clean {
-    Send-Notify "Update-System $($shared['status'] ? 'finished' : 'failed') in $(Format-Duration $shared['duration'] -NoColor)." -Level ($shared['status'] ? 'Information' : 'Error')
+    Send-Notify "Update-System $($shared['status'] ? 'finished' : 'failed') in $(Format-Duration $shared['duration'] -NoColor)." -Severity ($shared['status'] ? 'Information' : 'Error')
   }
 }
 $shared['now'] = Get-Date

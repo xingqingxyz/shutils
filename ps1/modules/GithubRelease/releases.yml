@@ -5,7 +5,7 @@
 - name: balenaEtcher
   repo: balena-io/etcher
 - name: bash
-  version: "5.3"
+  version: '5.3'
 - name: bat
   repo: sharkdp/bat
   tag: v0.26.0
@@ -105,6 +105,8 @@
   version: 1.20.0
 - name: java
   version: 25
+- name: jd
+  repo: josephburnett/jd
 - name: jq
   repo: jqlang/jq
   tag: jq-1.8.1
@@ -112,7 +114,7 @@
 - name: less
   repo: jftuga/less-Windows
   tag: less-v692
-  version: "692.0"
+  version: '692.0'
 - name: localsend
   repo: localsend/localsend
   tag: v1.17.0
@@ -181,7 +183,7 @@
 - name: tmux
   repo: tmux/tmux-builds
   tag: v3.6a
-  version: "3.6"
+  version: '3.6'
 - name: tree-sitter
   repo: tree-sitter/tree-sitter
   tag: v0.26.6

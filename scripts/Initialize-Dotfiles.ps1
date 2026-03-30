@@ -11,7 +11,11 @@ param (
 )
 
 $ErrorActionPreference = 'Stop'
-$root = $IsWindows ? "$env:SHUTILS_ROOT\_\windows" : "$env:SHUTILS_ROOT/_"
+$root = switch ($true) {
+  $IsWindows { "$env:SHUTILS_ROOT\_\windows"; break }
+  $IsMacOS { "$env:SHUTILS_ROOT/_/macos"; break }
+  default { "$env:SHUTILS_ROOT/_"; break }
+}
 
 if ($Install) {
   Convert-Path $Install | ForEach-Object {
@@ -34,8 +38,11 @@ elseif ($Uninstall) {
     Repair-GitSymlinks
     Get-ChildItem -LiteralPath $root -Recurse -File -ea Ignore
   }
+  elseif ($IsMacOS) {
+    Get-ChildItem -LiteralPath $root -Recurse -File -Force -ea Ignore
+  }
   else {
-    Get-ChildItem -LiteralPath $root -Exclude windows -Force -ea Ignore |
+    Get-ChildItem -LiteralPath $root -Exclude windows, macos -Force -ea Ignore |
       Get-ChildItem -Recurse -File -Force -ea Ignore
   }
 ).ForEach{

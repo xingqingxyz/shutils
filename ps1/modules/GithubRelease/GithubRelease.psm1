@@ -101,7 +101,7 @@ function installBinary ([string[]]$Path) {
       }
     }
     if ($IsWindows) {
-      "@$cmd %*" > $binDir/$name`.cmd
+      "@$cmd %*" > $binDir/$name.cmd
       return
     }
     # exec -a requires bash
@@ -322,7 +322,7 @@ function Install-Release {
       $file = "$base.tar.gz"
       downloadFile "https://mirrors.tuna.tsinghua.edu.cn/gnu/bash/$file"
       downloadFile "https://mirrors.tuna.tsinghua.edu.cn/gnu/bash/$file.sig"
-      gpg --verify $buildDir/$file`.sig $buildDir/$file
+      gpg --verify $buildDir/$file.sig $buildDir/$file
       tar -xf $buildDir/$file -C $buildDir
       Push-Location -LiteralPath $buildDir/$base
       try {
@@ -340,7 +340,7 @@ function Install-Release {
       downloadRelease $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/$_`.1 $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/$_.1 $dataDir/man/man1 -Force
       break
     }
     binaryen {
@@ -351,8 +351,8 @@ function Install-Release {
         default { throw [System.NotImplementedException]::new() }
       }
       $file = 'binaryen-{0}-{1}-{2}.tar.gz' -f $Meta.tag, $rust.arch, $os
-      downloadRelease $Meta $file, $file`.sha256
-      checkFileHash $file $file`.sha256
+      downloadRelease $Meta $file, $file.sha256
+      checkFileHash $file $file.sha256
       tar -xf $buildDir/$file -C $prefixDir --strip-components=1
       break
     }
@@ -410,7 +410,7 @@ function Install-Release {
         ($IsUbuntu -or $IsRaspi) { 'cosign_{0}_{1}.deb' -f $Meta.version, $go.arch; break }
         default { throw [System.NotImplementedException]::new() }
       }
-      downloadRelease $Meta $file, cosign_checksums.txt, $file`.sigstore.json, release-cosign.pub
+      downloadRelease $Meta $file, cosign_checksums.txt, $file.sigstore.json, release-cosign.pub
       checkFileHash $file cosign_checksums.txt
       switch ($true) {
         $IsWindows { Move-Item -LiteralPath $buildDir/$file $binDir/cosign.exe -Force; break }
@@ -418,7 +418,7 @@ function Install-Release {
         $IsFedora { sudo dnf install -y $buildDir/$file; break }
         ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$file; break }
       }
-      cosign verify-blob $buildDir/$file --bundle $buildDir/$file`.sigstore.json --certificate-identity 'keyless@projectsigstore.iam.gserviceaccount.com' --certificate-oidc-issuer 'https://accounts.google.com'
+      cosign verify-blob $buildDir/$file --bundle $buildDir/$file.sigstore.json --certificate-identity 'keyless@projectsigstore.iam.gserviceaccount.com' --certificate-oidc-issuer 'https://accounts.google.com'
       break
     }
     { $_ -ceq 'crush' -or $_ -ceq 'glow' -or $_ -ceq 'gum' -or $_ -ceq 'vhs' } {
@@ -445,8 +445,8 @@ function Install-Release {
       checkFileHash $base$ext checksums.txt
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
-      Move-Item -LiteralPath $buildDir/completions/$_`.bash $dataDir/bash-completion/completions -Force
-      Move-Item -LiteralPath $buildDir/manpages/$_`.1.gz $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/completions/$_.bash $dataDir/bash-completion/completions -Force
+      Move-Item -LiteralPath $buildDir/manpages/$_.1.gz $dataDir/man/man1 -Force
       break
     }
     deno {
@@ -454,8 +454,8 @@ function Install-Release {
         throw [System.NotImplementedException]::new()
       }
       $file = 'deno-{0}.zip' -f $rust.target
-      downloadRelease $Meta $file, $file`.sha256sum
-      checkFileHash $file $file`.sha256sum
+      downloadRelease $Meta $file, $file.sha256sum
+      checkFileHash $file $file.sha256sum
       Expand-Archive -LiteralPath $buildDir/$file $binDir -Force
       break
     }
@@ -471,7 +471,7 @@ function Install-Release {
       downloadFile "https://aka.ms/dotnet/$ChannelQuality/$file"
       switch ($true) {
         $IsWindows { sudo $buildDir/$file; break }
-        $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log; break }
+        $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file.log; break }
         $IsLinux {
           sudo rm -rf $sudoPrefixDir/dotnet
           sudo mkdir -p $sudoPrefixDir/dotnet
@@ -500,15 +500,15 @@ function Install-Release {
       switch ($true) {
         $IsWindows {
           $base = 'edit-{0}-{1}-windows' -f $Meta.version, $rust.arch
-          downloadRelease $Meta $base`.zip
-          Expand-Archive -LiteralPath $buildDir/$base`.zip $buildDir -Force
+          downloadRelease $Meta $base.zip
+          Expand-Archive -LiteralPath $buildDir/$base.zip $buildDir -Force
           break
         }
         $IsLinux {
           break # FIXME: after edit-1.2.1
           $base = 'edit-{0}-{1}-linux-gnu' -f $Meta.version, $rust.arch
-          downloadRelease $Meta $base`.tar.zst
-          tar -xf $buildDir/$base`.tar.zst --zstd -C $buildDir
+          downloadRelease $Meta $base.tar.zst
+          tar -xf $buildDir/$base.tar.zst --zstd -C $buildDir
           break
         }
         default { throw [System.NotImplementedException]::new() }
@@ -528,7 +528,6 @@ function Install-Release {
       }
       Remove-Item -LiteralPath $prefixDir/flutter -Recurse -Force -ea Ignore
       tar -xf $buildDir/$file -C $prefixDir
-      git -C $prefixDir/flutter remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/flutter-sdk.git
       $baseDir = "$prefixDir/flutter/bin"
       $exe = $IsWindows ? '.bat' : ''
       installBinary $baseDir/flutter$exe, $baseDir/flutter-dev$exe, $baseDir/dart$exe
@@ -561,7 +560,7 @@ function Install-Release {
       switch ($true) {
         $IsMacOS {
           downloadFile "https://release.files.ghostty.org/$($Meta.version)/Ghostty.dmg"
-          sudo installer -pkg $buildDir/Ghostty.dmg -dumplog > Temp:/$file`.log
+          sudo installer -pkg $buildDir/Ghostty.dmg -dumplog > Temp:/$file.log
           break
         }
         $IsLinux {
@@ -592,7 +591,7 @@ function Install-Release {
           break
         }
         $IsMacOS {
-          sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
+          sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file.log
           break
         }
         default { throw [System.NotImplementedException]::new() }
@@ -640,6 +639,15 @@ function Install-Release {
       sudo ln -sf $sudoPrefixDir/jdk-$($Meta.version)/bin/javac $binDir
       break
     }
+    jd {
+      $file = 'jd-{0}-{1}{2}' -f $go.arch, $go.os, $exe
+      downloadRelease $Meta $file
+      Move-Item -LiteralPath $buildDir/$file $binDir/jd$exe -Force
+      if (!$IsWindows) {
+        chmod +x $binDir/jd
+      }
+      break
+    }
     jq {
       $os = switch ($true) {
         $IsLinux { 'linux'; break }
@@ -663,8 +671,8 @@ function Install-Release {
       $base = 'less-{0}' -f $Meta.version.Split('.', 2)[0]
       downloadFile "http://www.greenwoodsoftware.com/less/$base.tar.gz"
       downloadFile "http://www.greenwoodsoftware.com/less/$base.sig"
-      gpg --verify $buildDir/$base`.sig $buildDir/$base`.tar.gz
-      tar -xf $buildDir/$base`.tar.gz -C $buildDir
+      gpg --verify $buildDir/$base.sig $buildDir/$base.tar.gz
+      tar -xf $buildDir/$base.tar.gz -C $buildDir
       Push-Location -LiteralPath $buildDir/$base
       try {
         ./configure --with-editor=edit --with-regex=pcre2
@@ -767,7 +775,7 @@ StartupWMClass=localsend_app
       downloadFile "https://nodejs.org/dist/$($Meta.tag)/$file"
       switch ($true) {
         $IsWindows { Invoke-Sudo Install-MSIProduct -LiteralPath $buildDir/$file; break }
-        $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log; break }
+        $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file.log; break }
         $IsLinux {
           $root = "$prefixDir/nodejs/$($Meta.tag)"
           tar -xf $buildDir/$file -C (New-EmptyDir $root) --strip-components=1
@@ -812,7 +820,7 @@ StartupWMClass=localsend_app
         $IsMacOS {
           $file = 'powershell-{0}-osx-{1}.pkg' -f $id, $arch
           downloadRelease $Meta $file
-          sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file`.log
+          sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file.log
           break
         }
         $IsLinux {
@@ -836,8 +844,8 @@ StartupWMClass=localsend_app
         $target = $target -creplace '-gnu$', '-musl'
       }
       $base = 'ripgrep-{0}-{1}' -f $Meta.tag, $target
-      downloadRelease $Meta $base$ext, $base$ext`.sha256
-      checkFileHash $base$ext $base$ext`.sha256
+      downloadRelease $Meta $base$ext, $base$ext.sha256
+      checkFileHash $base$ext $base$ext.sha256
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
       Move-Item -LiteralPath $buildDir/rg$exe $binDir -Force
       Move-Item -LiteralPath $buildDir/doc/rg.1 $dataDir/man/man1 -Force
@@ -870,8 +878,8 @@ StartupWMClass=localsend_app
     }
     taplo {
       $base = 'taplo-{0}-{1}' -f $go.os, $rust.arch
-      downloadRelease $Meta $base`.gz
-      gzip -df $buildDir/$base`.gz
+      downloadRelease $Meta $base.gz
+      gzip -df $buildDir/$base.gz
       Move-Item -LiteralPath $buildDir/$base$exe $binDir/taplo$exe -Force
       if (!$IsWindows) {
         chmod +x $binDir/taplo
@@ -896,8 +904,8 @@ StartupWMClass=localsend_app
         default { throw [System.NotImplementedException]::new() }
       }
       $base = 'tree-sitter-{0}-{1}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-      downloadRelease $Meta $base`.gz
-      gzip -df $buildDir/$base`.gz
+      downloadRelease $Meta $base.gz
+      gzip -df $buildDir/$base.gz
       Move-Item -LiteralPath $buildDir/$base $binDir/tree-sitter$exe -Force
       if (!$IsWindows) {
         chmod +x $binDir/tree-sitter
@@ -933,8 +941,8 @@ StartupWMClass=localsend_app
     }
     wasm-bindgen {
       $file = 'wasm-bindgen-{0}-{1}.tar.gz' -f $Meta.tag, ($rust.target -creplace '-gnu$', '-musl')
-      downloadRelease $Meta $file, $file`.sha256sum
-      checkFileHash $file $file`.sha256sum
+      downloadRelease $Meta $file, $file.sha256sum
+      checkFileHash $file $file.sha256sum
       tar -xf $buildDir/$file -C $buildDir --strip-components=1
       Move-Item $buildDir/wasm-*$exe $binDir -Force
       break

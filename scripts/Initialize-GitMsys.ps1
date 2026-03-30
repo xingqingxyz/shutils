@@ -19,17 +19,13 @@ if ($All) {
     'C:\Program Files\Git\mingw64\bin\pdftotext.exe'
     'C:\Program Files\Git\mingw64\bin\tclsh.exe'
     'C:\Program Files\Git\mingw64\bin\unxz.exe'
-    'C:\Program Files\Git\mingw64\bin\wish.exe'
     'C:\Program Files\Git\mingw64\bin\xz.exe'
     'C:\Program Files\Git\usr\bin\awk.exe'
     'C:\Program Files\Git\usr\bin\bash.exe'
-    'C:\Program Files\Git\usr\bin\env.exe'
     'C:\Program Files\Git\usr\bin\file.exe'
     'C:\Program Files\Git\usr\bin\gpg.exe'
     'C:\Program Files\Git\usr\bin\grep.exe'
     'C:\Program Files\Git\usr\bin\gzip.exe'
-    'C:\Program Files\Git\usr\bin\less.exe'
-    'C:\Program Files\Git\usr\bin\mintty.exe'
     'C:\Program Files\Git\usr\bin\openssl.exe'
     'C:\Program Files\Git\usr\bin\perl.exe'
     'C:\Program Files\Git\usr\bin\printf.exe'
@@ -37,7 +33,6 @@ if ($All) {
     'C:\Program Files\Git\usr\bin\sh.exe'
     'C:\Program Files\Git\usr\bin\ssp.exe'
     'C:\Program Files\Git\usr\bin\uname.exe'
-    'C:\Program Files\Git\usr\bin\winpty.exe'
   )
 }
 
@@ -56,9 +51,10 @@ if ($Go) {
 if (!(Get-Command cl -Type Application -TotalCount 1 -ea Ignore)) {
   vsdev
 }
- 
+
 $Path | ForEach-Object -Parallel {
   $execPath = 'L"\"' + $_.Replace('\', '\\') + '\""'
   $base = [System.IO.Path]::GetFileNameWithoutExtension($_)
-  cl /O1 /Oi /Os /GF /Gy /GL /GA /GS- /Zl /favor:AMD64 /std:c17 /utf-8 /nologo /DEXEC_PATH=$execPath /Fa$env:TEMP\$base /Fo$env:TEMP\$base /Fe$env:LOCALAPPDATA\prefix\bin\$base $env:SHUTILS_ROOT\fork\main.c /link /LTCG /OPT:REF /OPT:ICF /MERGE:.rdata=.text kernel32.lib msvcrt.lib
+  [string[]]$favor = if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ceq 'X64') { '/favor:INTEL64' }
+  cl /O1 /Oi /Os /GF /Gy /GL /GA /GS- $favor /std:c17 /utf-8 /nologo /DEXEC_PATH=$execPath /Fa$env:TEMP\$base /Fo$env:TEMP\$base /Fe$env:LOCALAPPDATA\prefix\bin\$base $env:SHUTILS_ROOT\fork\main.c /MD /link /LTCG /OPT:REF /OPT:ICF /MERGE:.rdata=.text
 } -ThrottleLimit $env:NUMBER_OF_PROCESSORS

@@ -22,8 +22,7 @@ Register-ArgumentCompleter -Native -CommandName btrfs -ScriptBlock {
   }
   $prev = $prev -is [System.Management.Automation.Language.StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
 
-  @(
-    if ($wordToComplete.StartsWith('-')) {
+  @(if ($wordToComplete.StartsWith('-')) {
       '--version', '--help', '--format=text', '--format=json', '-v', '--verbose', '-q', '--quiet', '--log=default', '--log=info', '--log=verbose', '--log=debug', '--log=quiet', '--dry-run'
     }
     switch ($command) {

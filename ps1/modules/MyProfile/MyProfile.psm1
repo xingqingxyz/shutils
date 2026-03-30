@@ -82,7 +82,7 @@ function Show-CommandInfo {
     [string]
     $FullName,
     [Parameter(ValueFromPipeline)]
-    [string]
+    [System.Object]
     $InputObject,
     [Parameter()]
     [switch]
@@ -103,8 +103,8 @@ function Show-CommandInfo {
     $Editor = $env:EDITOR ?? 'edit'
   )
   begin {
-    $items = @()
-    $inputs = @()
+    [string[]]$items = @()
+    [string[]]$inputs = @()
   }
   process {
     if ($FullName) {
@@ -479,8 +479,18 @@ function Invoke-Npx {
 [string]$pwshExe, [string]$sudoExe = (Get-Command pwsh, sudo -Type Application -TotalCount 1 -ea Ignore).Source
 function Invoke-Sudo {
   [string[]]$ags = $args.ForEach{ if ($null -ne $_) { $_ } }
+  if (!$ags) {
+    Write-CommandDebug $sudoExe $ags
+    return & $sudoExe
+  }
   if ($args[0] -is [scriptblock]) {
     $ags = $pwshExe, '-nop', '-cwa' + $ags
+    for ($i = 4; $i -lt $ags.Count; $i++) {
+      if ($ags[$i].StartsWith('-')) {
+        continue
+      }
+      $ags[$i] = "'" + $ags[$i].Replace("'", "''") + "'"
+    }
   }
   else {
     $info = Get-Command $ags[0] -ea Ignore
@@ -489,6 +499,10 @@ function Invoke-Sudo {
     }
     while ($true) {
       if (!$info) {
+        if ($ags[0].StartsWith('-')) {
+          Write-CommandDebug $sudoExe $ags
+          return & $sudoExe $ags
+        }
         throw [System.Management.Automation.CommandNotFoundException]::new($ags[0])
       }
       elseif ($info.CommandType -ceq 'Application') {
@@ -503,6 +517,12 @@ function Invoke-Sudo {
       elseif ($info.Module) {
         $ags[0] = $info.ModuleName + '\' + $info.Name
         $ags = $pwshExe, '-nop', '-c' + $ags
+        for ($i = 4; $i -lt $ags.Count; $i++) {
+          if ($ags[$i].StartsWith('-')) {
+            continue
+          }
+          $ags[$i] = "'" + $ags[$i].Replace("'", "''") + "'"
+        }
         break
       }
       else {
@@ -525,7 +545,7 @@ function Invoke-Sudo {
   }
   [string]$cmd, $ags = $ags
   Write-CommandDebug $cmd $ags
-  Start-Process -FilePath $cmd -ArgumentList $ags -Verb RunAs -WorkingDirectory .
+  Start-Process -FilePath $cmd -ArgumentList $ags -Verb runas
 }
 
 function x {
@@ -561,7 +581,10 @@ function x {
     [Alias('wd')]
     [Parameter()]
     [string]
-    $WorkingDirectory = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath
+    $WorkingDirectory = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath,
+    [Parameter(ValueFromPipeline)]
+    [System.Object]
+    $InputObject
   )
   $CommandName, $ArgumentList = @(
     switch ($env:TERM) {
@@ -572,8 +595,8 @@ function x {
         if ($IsWindows) {
           'wt', 'nt', '-d', $WorkingDirectory, '--'
         }
-        else {
-          'alacritty', '--hold', '--working-directory', $WorkingDirectory, '-e'
+        elseif ($IsLinux) {
+          'setsid', '-f', 'alacritty', '--hold', '--working-directory', $WorkingDirectory, '-e'
         }
         break
       }
@@ -587,6 +610,7 @@ function x {
     }
     $ArgumentList
   )
+  Write-CommandDebug $CommandName $ArgumentList
   if ($MyInvocation.ExpectingInput) {
     $input | & $CommandName @ArgumentList
   }

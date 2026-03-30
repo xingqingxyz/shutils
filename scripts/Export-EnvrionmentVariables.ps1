@@ -65,6 +65,7 @@ $commonVar = @{
   ANDROID_HOME             = $ANDROID_HOME
   DSC_RESOURCE_PATH        = $DSC_RESOURCE_PATH
   EDITOR                   = 'edit'
+  FLUTTER_GIT_URL          = 'https://mirrors.tuna.tsinghua.edu.cn/git/flutter-sdk.git'
   FLUTTER_STORAGE_BASE_URL = 'https://storage.flutter-io.cn'
   FZF_DEFAULT_OPTS         = $FZF_DEFAULT_OPTS
   JAVA_HOME                = $JAVA_HOME

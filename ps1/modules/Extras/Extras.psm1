@@ -12,7 +12,7 @@ function Clear-Module {
 }
 
 function Get-Region {
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName = 'LiteralPath')]
   [OutputType([string[]])]
   param (
     [Parameter(Mandatory, Position = 0)]
@@ -22,48 +22,41 @@ function Get-Region {
     [string]
     $LiteralPath,
     [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string]
+    [System.Object]
     $InputObject,
     [Parameter()]
     [string]
     $LineComment
   )
-  begin {
-    [string[]]$lines = @()
+  [string[]]$lines = $MyInvocation.ExpectingInput ? $input : (Get-Content -LiteralPath $LiteralPath -ea Ignore)
+  if ($LiteralPath) {
+    $lines = (Get-Content -LiteralPath $LiteralPath -ea Ignore) ?? ''
   }
-  process {
-    $lines += $InputObject
-  }
-  end {
-    if ($LiteralPath) {
-      $lines = (Get-Content -LiteralPath $LiteralPath -ea Ignore) ?? ''
-    }
-    $found = 0
-    foreach ($line in $lines) {
-      if (!$found -and $line.Trim() -ceq "$LineComment#region $Name") {
-        $found = 1
-      }
-      elseif ($found -eq 1) {
-        if ($line.Trim() -ceq "$LineComment#endregion") {
-          $found = 2
-          break
-        }
-        else {
-          $line
-        }
-      }
-    }
-    if (!$found) {
-      Write-Error "#region $Name mark not found"
+  $found = 0
+  foreach ($line in $lines) {
+    if (!$found -and $line.Trim() -ceq "$LineComment#region $Name") {
+      $found = 1
     }
     elseif ($found -eq 1) {
-      Write-Error '#endregion mark not found'
+      if ($line.Trim() -ceq "$LineComment#endregion") {
+        $found = 2
+        break
+      }
+      else {
+        $line
+      }
     }
+  }
+  if (!$found) {
+    Write-Error "#region $Name mark not found"
+  }
+  elseif ($found -eq 1) {
+    Write-Error '#endregion mark not found'
   }
 }
 
 function Set-Region {
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName = 'LiteralPath')]
   [OutputType([string[]])]
   param (
     [Parameter(Mandatory, Position = 0)]
@@ -80,56 +73,46 @@ function Set-Region {
     [switch]
     $Inplace,
     [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Stdin')]
-    [string]
+    [System.Object]
     $InputObject,
     [Parameter()]
     [string]
     $LineComment
   )
-  begin {
-    [string[]]$lines = @()
-  }
-  process {
-    $lines += $InputObject
-  }
-  end {
-    if ($LiteralPath) {
-      $lines = (Get-Content -LiteralPath $LiteralPath -ea Ignore) ?? ''
+  [string[]]$lines = $MyInvocation.ExpectingInput ? $input : (Get-Content -LiteralPath $LiteralPath -ea Ignore)
+  $found = 0
+  $newLines = $lines.ForEach{
+    if (!$found -and $_.Trim() -ceq "$LineComment#region $Name") {
+      $found = 1
+      $_
     }
-    $found = 0
-    $newLines = $lines.ForEach{
-      if (!$found -and $_.Trim() -ceq "$LineComment#region $Name") {
-        $found = 1
-        $_
-      }
-      elseif ($found -eq 1) {
-        if ($_.Trim() -ceq "$LineComment#endregion") {
-          $found = 2
-          $Value
-          $_
-        }
-      }
-      else {
-        $_
-      }
-    }
-    if ($found -lt 2) {
-      if ($found -eq 1) {
-        Write-Warning '#endregion mark not found'
-      }
-      $newLines = @(
-        $lines
-        "$LineComment#region $Name"
+    elseif ($found -eq 1) {
+      if ($_.Trim() -ceq "$LineComment#endregion") {
+        $found = 2
         $Value
-        "$LineComment#endregion"
-      )
-    }
-    if ($Inplace) {
-      $newLines > $LiteralPath
+        $_
+      }
     }
     else {
-      $newLines
+      $_
     }
+  }
+  if ($found -lt 2) {
+    if ($found -eq 1) {
+      Write-Warning '#endregion mark not found'
+    }
+    $newLines = @(
+      $lines
+      "$LineComment#region $Name"
+      $Value
+      "$LineComment#endregion"
+    )
+  }
+  if ($Inplace) {
+    $newLines > $LiteralPath
+  }
+  else {
+    $newLines
   }
 }
 
@@ -214,47 +197,65 @@ function Register-PSScheduledTask {
     $Name,
     [Parameter(Mandatory, Position = 1)]
     [string]
-    $ScriptText,
-    [Parameter(Mandatory)]
-    [ValidateSet('monthly', 'weekly', 'daily')]
+    $Command,
+    [Parameter()]
+    [ValidateSet('once', 'daily', 'weekly', 'monthly')]
     [string]
-    $Kind,
+    $Interval = 'once',
     [Parameter()]
     [datetime]
     $At = '0am',
     [Parameter()]
+    [string]
+    $WorkingDirectory = $HOME,
+    [Parameter()]
+    [switch]
+    $UsePowerShell,
+    [Parameter()]
+    [switch]
+    $AsAdmin,
+    [Parameter()]
     [switch]
     $Persistent
   )
-  $encodedCommand = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ScriptText))
+  if ($UsePowerShell) {
+    $Command = 'pwsh -noni -nop -e ' + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($Command))
+    $Name = 'pwsh-' + $Name
+  }
+  if ($Interval -cne 'once') {
+    $Name = $Interval + '-' + $Name
+  }
   if ($IsWindows) {
-    $trigger = switch ($Kind) {
+    $trigger = switch ($Interval) {
+      'once' { New-ScheduledTaskTrigger -At $At -Once; break }
       'daily' { New-ScheduledTaskTrigger -At $At -Daily; break }
       'weekly' { New-ScheduledTaskTrigger -At $At -Weekly -DaysOfWeek Monday; break }
       'monthly' { New-ScheduledTaskTrigger -At $At -Daily -DaysInterval 30; break }
     }
     # HACK: no show cmd window
-    $action = New-ScheduledTaskAction -Execute uvw -Argument "run -- pwsh -noni -nop -e $encodedCommand"
+    $action = New-ScheduledTaskAction -Execute (Get-Command uvw -Type Application -TotalCount 1).Source -Argument "run -- $Command" -WorkingDirectory $WorkingDirectory
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable:$Persistent
-    Register-ScheduledTask pwsh-$Kind-$Name -Force -Description "PowerShell $Kind $Name task" -Trigger $trigger -Action $action -Settings $settings
+    Register-ScheduledTask $Name -Force -Description "PowerShell $Name task" -Trigger $trigger -Action $action -Settings $settings -RunSeverity ($AsAdmin ? 'Highest' : 'Limited')
   }
   elseif ($IsLinux) {
-    $date, $acc = switch ($Kind) {
-      'monthly' { '*-*-01', '30d'; break }
-      'weekly' { 'Mon *-*-*', '7d'; break }
+    $date, $acc = switch ($Interval) {
+      'once' { $_, '2h'; break }
       'daily' { '*-*-*', '1d'; break }
+      'weekly' { 'Mon *-*-*', '7d'; break }
+      'monthly' { '*-*-01', '30d'; break }
     }
     $service = @"
 [Unit]
-Description=PowerShell $Kind $Name task
+Description=PowerShell $Name task
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/env pwsh -noni -nop -e $encodedCommand
+ExecStart=/usr/bin/env $Command
+WorkingDirectory=$WorkingDirectory
 "@
     $timer = @"
 [Unit]
-Description=PowerShell $Kind $Name task timer
+Description=PowerShell $Name task timer
 
 [Timer]
 OnCalendar=$date $($At.ToString('HH:mm:ss'))
@@ -264,10 +265,18 @@ AccuracySec=$acc
 [Install]
 WantedBy=timers.target
 "@
-    $service > ~/.config/systemd/user/pwsh-$Kind-$Name`.service
-    $timer > ~/.config/systemd/user/pwsh-$Kind-$Name`.timer
-    systemctl daemon-reload --user
-    systemctl enable --user --now pwsh-$Kind-$Name`.timer
+    if ($AsAdmin) {
+      $null = $service | sudo tee /etc/systemd/system/$Name.service
+      $null = $timer | sudo tee /etc/systemd/system/$Name.timer
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now $Name.timer
+    }
+    else {
+      $service > ~/.config/systemd/user/$Name.service
+      $timer > ~/.config/systemd/user/$Name.timer
+      systemctl daemon-reload --user
+      systemctl enable --user --now $Name.timer
+    }
   }
   else {
     throw [System.NotImplementedException]::new()
@@ -282,26 +291,35 @@ function Unregister-PSScheduledTask {
   [CmdletBinding()]
   param (
     [Parameter(Mandatory, Position = 0)]
-    [string]
-    $Name,
-    [Parameter(Mandatory)]
-    [ValidateSet('monthly', 'weekly', 'daily')]
     [string[]]
-    $Kind
+    $Name,
+    [Parameter()]
+    [switch]
+    $AsAdmin
   )
-  if ($IsLinux) {
-    $Kind.ForEach{
-      systemctl disable --user pwsh-$_-$Name`.timer
-      Remove-Item -LiteralPath ~/.config/systemd/user/pwsh-$_-$Name`.service, ~/.config/systemd/user/pwsh-$_-$Name`.timer -Force
-    }
-    systemctl daemon-reload --user
-  }
-  elseif ($IsWindows) {
+  if ($IsWindows) {
     # it's a $ConfirmPreference = 'High' operation
-    $pref = $ConfirmPreference
-    $ConfirmPreference = 'None'
-    Unregister-ScheduledTask $Kind.ForEach{ "pwsh-$_-$Name" }
-    $ConfirmPreference = $pref
+    Unregister-ScheduledTask $Name -Confirm:$false
+  }
+  elseif ($IsLinux) {
+    if ($AsAdmin) {
+      try {
+        sudo systemctl disable $Name.ForEach{ $_ + '.timer' }
+        sudo rm -f `-- $Name.ForEach{ "/etc/systemd/system/$_.service"; "/etc/systemd/system/$_.timer" }
+      }
+      finally {
+        sudo systemctl daemon-reload
+      }
+    }
+    else {
+      try {
+        systemctl disable --user $Name.ForEach{ $_ + '.timer' }
+        Remove-Item -LiteralPath $Name.ForEach{ "$HOME/.config/systemd/user/$_.service"; "$HOME/.config/systemd/user/$_.timer" } -Force
+      }
+      finally {
+        systemctl daemon-reload --user
+      }
+    }
   }
   else {
     throw [System.NotImplementedException]::new()
@@ -320,7 +338,7 @@ function Send-Notify {
     [Parameter()]
     [ValidateSet('Information', 'Warning', 'Error')]
     [string]
-    $Level = 'Information',
+    $Severity = 'Information',
     [Parameter()]
     [int]
     $Timeout = 3000
@@ -328,7 +346,7 @@ function Send-Notify {
   if ($IsWindows) {
     Add-Type -AssemblyName System.Windows.Forms
     $notify = [System.Windows.Forms.NotifyIcon]::new()
-    $notify.BalloonTipIcon = $Level -ceq 'Information' ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]$Level
+    $notify.BalloonTipIcon = $Severity -ceq 'Information' ? [System.Windows.Forms.ToolTipIcon]::Info : [System.Windows.Forms.ToolTipIcon]$Severity
     $notify.BalloonTipTitle = $Title
     $notify.BalloonTipText = $Text
     $notify.Icon = [System.Drawing.SystemIcons]::Application
@@ -339,12 +357,12 @@ function Send-Notify {
     $notify.ShowBalloonTip($Timeout)
   }
   elseif ($IsLinux) {
-    $urgency = switch -CaseSensitive ($Level) {
+    $urgency = switch -CaseSensitive ($Severity) {
       'Information' { 'low'; break }
       'Warning' { 'normal'; break }
       'Error' { 'critical'; break }
     }
-    notify-send $Text --app-name=$Title --urgency=$urgency --expire-time=$Timeout --icon=/usr/share/icons/breeze/status/64/dialog-$($Level.ToLowerInvariant()).svg
+    notify-send $Text --app-name=$Title --urgency=$urgency --expire-time=$Timeout --icon=/usr/share/icons/breeze/status/64/dialog-$($Severity.ToLowerInvariant()).svg
   }
   else {
     throw [System.NotImplementedException]::new()
