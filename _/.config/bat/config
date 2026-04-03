@@ -1,0 +1,6 @@
+--map-syntax ".*rc:json"
+--map-syntax "*.kdl:gradle"
+--map-syntax "*.slnx:XML"
+--map-syntax "config.ghostty:ini"
+--map-syntax "pip.conf:ini"
+--set-terminal-title

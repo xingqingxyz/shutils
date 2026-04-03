@@ -1,4 +1,4 @@
-### FZF command env:
+### FZF command Env:
 
 ```sh
 # main

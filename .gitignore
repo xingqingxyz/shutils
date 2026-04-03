@@ -1,8 +1,8 @@
 __pycache__
 logs
 node_modules
-/ps1/modules/*/bin
-/ps1/modules/*/obj
+/Modules/*/bin
+/Modules/*/obj
 
 @AutomationLog.txt
 *.exe
@@ -11,5 +11,3 @@ node_modules
 *.obj
 *.pdb
 test.*
-
-.marscode

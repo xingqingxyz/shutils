@@ -30,13 +30,15 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
   $command = $commands -join ' '
 
   if ($command -ceq 'x') {
-    return (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore | Where-Object BaseName -Like $wordToComplete* | Sort-Object -Unique).BaseName
+    return (Split-Path -Resolve -LeafBase node_modules/.bin/* -ea Ignore | Sort-Object -Unique | Where-Object { $_ -like "$wordToComplete*" }) ?? [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete, '', [System.Management.Automation.CommandTypes]::Application)
   }
-  elseif ($command.StartsWith('x ')) {
-    $astList = $commandAst.CommandElements | Select-Object -Skip 2
-    $commandName = Split-Path -LeafBase $astList[0].Value
-    $cursorPosition -= $astList[0].Extent.StartOffset
-    $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+  if ($command.StartsWith('x ')) {
+    [string]$line = $commandAst
+    $commandName = [System.IO.Path]::GetFileNameWithoutExtension($commandAst.CommandElements[2])
+    $i = $commandAst.CommandElements[2].Extent.StartOffset
+    $line = $line.Substring($i)
+    $cursorPosition -= $i
+    $commandAst = [Parser]::ParseInput($line, [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
     return & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
   }
 
@@ -70,17 +72,15 @@ Register-ArgumentCompleter -Native -CommandName bun -ScriptBlock {
         if ($wordToComplete.StartsWith('-')) {
           break
         }
-        # TODO: update this
         'react', 'vue', 'vite', 'svelte', 'astro', 'next', 'nuxt', 'preact', 'uniapp'
         break
       }
       'exec' {
         if ($wordToComplete.StartsWith('-')) {
           '--silent', '--filter', '-b', '--bun', '--shell', '--watch', '--hot', '--no-clear-screen', '--smol', '-r', '--preload', '--inspect', '--inspect-wait', '--inspect-brk', '--if-present', '--no-install', '--install', '-e', '--eval', '--print', '--prefer-offline', '--prefer-latest', '-p', '--port', '--conditions', '--fetch-preconnect', '--max-http-header-size', '--main-fields', '--extension-order', '--tsconfig-override', '-d', '--define', '--drop', '-l', '--loader', '--no-macros', '--jsx-factory', '--jsx-fragment', '--jsx-import-source', '--jsx-runtime', '--ignore-dce-annotations', '--env-file', '--cwd', '-c', '--config', '-h', '--help'
+          break
         }
-        elseif ($prev -eq 'exec') {
-          bash -c 'compgen -bc' | Select-Object -Unique
-        }
+        bash -c 'compgen -bc' | Select-Object -Unique
         break
       }
       'run' {

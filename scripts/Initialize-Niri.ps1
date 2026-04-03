@@ -9,4 +9,4 @@ else {
   throw [System.NotImplementedException]::new()
 }
 # vscode
-yq -i '.password-store = "gnome-libsecret"' ~/.config/Code/User/argv.json
+node $PSScriptRoot/niri-patch-vscode.ts code

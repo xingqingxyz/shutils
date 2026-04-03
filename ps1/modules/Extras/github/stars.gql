@@ -1,9 +1,0 @@
-query ($login: String!) {
-  user(login: $login) {
-    starredRepositories {
-      nodes {
-        nameWithOwner
-      }
-    }
-  }
-}

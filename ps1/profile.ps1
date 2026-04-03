@@ -1,33 +1,18 @@
 #Requires -Version 7.6
 
 #region common
-function .. {
-  Set-Location -LiteralPath ..
-}
-
-function ... {
-  Set-Location -LiteralPath ../..
-}
-
-function .... {
-  Set-Location -LiteralPath ../../..
-}
-
+$root = [System.IO.Path]::GetDirectoryName((Get-Item -LiteralPath $PSCommandPath).ResolvedTarget)
 # PSES
 if (Get-Module PowerShellEditorServices.Commands -ea Ignore) {
-  . $env:SHUTILS_ROOT/scripts/onEnterPSES.ps1
+  . $root/../scripts/Initialize-PSES.ps1
 }
 # load
-. $env:SHUTILS_ROOT/ps1/complete.ps1
-. $env:SHUTILS_ROOT/ps1/keybindings.ps1
-. $env:SHUTILS_ROOT/ps1/prompt.ps1
-. $env:SHUTILS_ROOT/ps1/z.ps1
-# preferences
-$InformationPreference = 'Continue'
-# aliases overrides exist commands must be explicitly set, due to module lazy
-Set-Alias npm Invoke-Npm
-Set-Alias npx Invoke-Npx
-Set-Alias sudo Invoke-Sudo
+. $root/complete.ps1
+. $root/keybindings.ps1
+. $root/z.ps1
+Remove-Variable root
+# the wish shell
+Import-Module LSColors, Profile -ea Ignore
 # excutable alias
 Set-Variable -Option ReadOnly -Force _executableAliasMap @{
   grep = 'grep', '--color=auto'
@@ -50,13 +35,14 @@ if ($IsWindows) {
       return Write-Error "alias not set $cmd"
     }
     # flat iterator args for native passing
-    $cmd, $ags = @($_executableAliasMap[$cmd]) + $args.ForEach{ if ($null -ne $_) { $_ } }
+    $cmd, $ags = $_executableAliasMap[$cmd] + $args.Where{ $null -ne $_ }
     $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
-    Write-CommandDebug $cmd $ags
     if ($MyInvocation.ExpectingInput) {
+      Write-Debug "| $cmd $ags"
       $input | & $cmd $ags
     }
     else {
+      Write-Debug "$cmd $ags"
       & $cmd $ags
     }
   }
@@ -110,17 +96,18 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   if ($MyInvocation.InvocationName -ceq '.') {
     return & $MyInvocation.MyCommand $args
   }
-  [string]$commandName = $MyInvocation.MyCommand.Name
-  if (!$_executableAliasMap.Contains($commandName)) {
-    return Write-Error "alias not set $commandName"
+  $cmd = $MyInvocation.MyCommand.Name
+  if (!$_executableAliasMap.Contains($cmd)) {
+    return Write-Error "alias not set $cmd"
   }
   # flat iterator args for native passing
-  [string[]]$ags = @('--') + $_executableAliasMap[$commandName] + $args.ForEach{ if ($null -ne $_) { $_ } }
-  Write-CommandDebug /usr/bin/env $ags
+  $ags = , '--' + $_executableAliasMap[$cmd] + $args.Where{ $null -ne $_ }
   if ($MyInvocation.ExpectingInput) {
+    Write-Debug "| /usr/bin/env $ags"
     $input | /usr/bin/env $ags
   }
   else {
+    Write-Debug "/usr/bin/env $ags"
     /usr/bin/env $ags
   }
 }
@@ -174,6 +161,5 @@ switch ((Get-Command apt, dnf -CommandType Application -TotalCount 1 -ea Ignore)
     }
     break
   }
-  default { break }
 }
 #endregion

@@ -1,3 +1,3 @@
-# SHUTILS
+# The Wise Shell
 
-> Some python automation scripts.
+Does things wisely in shell, what did i need?

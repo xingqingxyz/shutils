@@ -1,4 +1,4 @@
 {
-  "documents": "gql/**/*.gql",
+  "documents": "**/*.gql",
   "schema": "data/schema.docs.graphql"
 }

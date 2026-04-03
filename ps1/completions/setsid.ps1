@@ -8,18 +8,21 @@ Register-ArgumentCompleter -Native -CommandName setsid -ScriptBlock {
     }
   }
   switch ($commandAst.CommandElements.Count - $i) {
-    0 {
+    { $_ -le 1 } {
       if ($wordToComplete.StartsWith('-')) {
         @('-c', '--ctty', '-f', '--fork', '-w', '--wait', '-h', '--help', '-V', '--version').Where{ $_ -like "$wordToComplete*" }
+        break
       }
+      (Get-Command $wordToComplete* -Type Application).Name | Sort-Object -Unique
       break
     }
-    1 { [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete); break }
     default {
-      $astList = $commandAst.CommandElements | Select-Object -Skip $i
-      $commandName = Split-Path -LeafBase $astList[0].Value
-      $cursorPosition -= $astList[0].Extent.StartOffset
-      $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+      [string]$line = $commandAst
+      $commandName = [System.IO.Path]::GetFileNameWithoutExtension($commandAst.CommandElements[$i])
+      $i = $commandAst.CommandElements[$i].Extent.StartOffset
+      $line = $line.Substring($i)
+      $cursorPosition -= $i
+      $commandAst = [Parser]::ParseInput($line, [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
       & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
       break
     }

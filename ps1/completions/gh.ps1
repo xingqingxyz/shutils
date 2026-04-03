@@ -1,13 +1,14 @@
+# powershell completion for cobra drived cli tools
 Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker, gh, glow, golangci-lint, golangci-lint-v2, goreleaser, qodercli, sing-box, tstoy, vhs, yq -ScriptBlock {
-  # powershell completion for cobra drived cli tools
   param (
     [string]$wordToComplete,
     [System.Management.Automation.Language.CommandAst]$commandAst,
     [int]$cursorPosition
   )
-  function debug {
-    if ($env:COMP_DEBUG_FILE) {
-      "$args" >> $env:COMP_DEBUG_FILE
+
+  function debug ([string]$Message) {
+    if ($DebugPreference -ceq 'Break') {
+      $Message >> Temp:/cobra-completion-debug.log
     }
   }
 
@@ -74,7 +75,7 @@ Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker,
 
   #call the command store the output in $out and redirect stderr and stdout to null
   # $out is an array contains each line per element
-  $null = Invoke-Expression -OutVariable out "$RequestComp" 2>&1
+  [string[]]$out = Invoke-Expression "$RequestComp" 2>$null
 
   # get directive from last line
   [int]$Directive = $out[-1].TrimStart(':')
@@ -85,7 +86,7 @@ Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker,
   debug "The completion directive is: $Directive"
 
   # remove directive (last element) from out
-  $out = $out | Where-Object { $_ -ne $out[-1] }
+  $out = $out.Where{ $_ -ne $out[-1] }
   debug "The completions are: $out"
 
   if (($Directive -band $ShellCompDirectiveError) -ne 0 ) {
@@ -95,27 +96,27 @@ Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker,
   }
 
   $Longest = 0
-  $Values = @($out.ForEach{
-      #Split the output in name and description
-      $Name, $Description = $_.Split("`t", 2)
-      debug "Name: $Name Description: $Description"
+  $Values = $out.ForEach{
+    #Split the output in name and description
+    $Name, $Description = $_.Split("`t", 2)
+    debug "Name: $Name Description: $Description"
 
-      # Look for the longest completion so that we can format things nicely
-      if ($Longest -lt $Name.Length) {
-        $Longest = $Name.Length
-      }
+    # Look for the longest completion so that we can format things nicely
+    if ($Longest -lt $Name.Length) {
+      $Longest = $Name.Length
+    }
 
-      # Set the description to a one space string if there is none set.
-      # This is needed because the CompletionResult does not accept an empty string as argument
-      if (!$Description) {
-        $Description = ' '
-      }
-      @{ Name = "$Name"; Description = "$Description" }
-    })
+    # Set the description to a one space string if there is none set.
+    # This is needed because the CompletionResult does not accept an empty string as argument
+    if (!$Description) {
+      $Description = ' '
+    }
+    @{ Name = "$Name"; Description = "$Description" }
+  }
 
 
   $Space = ' '
-  if (($Directive -band $ShellCompDirectiveNoSpace) -ne 0 ) {
+  if (($Directive -band $ShellCompDirectiveNoSpace) -ne 0) {
     # remove the space here
     debug 'ShellCompDirectiveNoSpace is called'
     $Space = ''
@@ -186,7 +187,7 @@ Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker,
           debug 'Only one completion left'
 
           # insert space after value
-          [System.Management.Automation.CompletionResult]::new($($comp.Name | escapeStringWithSpecialChars) + $Space, "$($comp.Name)", 'ParameterValue', "$($comp.Description)")
+          [System.Management.Automation.CompletionResult]::new(($comp.Name | escapeStringWithSpecialChars) + $Space, $comp.Name, 'ParameterValue', $comp.Description)
         }
         else {
           # Add the proper number of spaces to align the descriptions
@@ -195,14 +196,14 @@ Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker,
           }
 
           # Check for empty description and only add parentheses if needed
-          if ($($comp.Description) -eq ' ') {
+          if ($comp.Description -eq ' ') {
             $Description = ''
           }
           else {
             $Description = "  ($($comp.Description))"
           }
 
-          [System.Management.Automation.CompletionResult]::new("$($comp.Name)$Description", "$($comp.Name)$Description", 'ParameterValue', "$($comp.Description)")
+          [System.Management.Automation.CompletionResult]::new($comp.Name + $Description, $comp.Name, 'ParameterValue', $comp.Description)
         }
       }
 
@@ -211,7 +212,7 @@ Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker,
         # insert space after value
         # MenuComplete will automatically show the ToolTip of
         # the highlighted value at the bottom of the suggestions.
-        [System.Management.Automation.CompletionResult]::new($($comp.Name | escapeStringWithSpecialChars) + $Space, "$($comp.Name)", 'ParameterValue', "$($comp.Description)")
+        [System.Management.Automation.CompletionResult]::new(($comp.Name | escapeStringWithSpecialChars) + $Space, $comp.Name, 'ParameterValue', $comp.Description)
       }
 
       # TabCompleteNext and in case we get something unknown
@@ -219,7 +220,7 @@ Register-ArgumentCompleter -Native -CommandName cosign, crush, dlv, dms, docker,
         # Like MenuComplete but we don't want to add a space here because
         # the user need to press space anyway to get the completion.
         # Description will not be shown because that's not possible with TabCompleteNext
-        [System.Management.Automation.CompletionResult]::new($($comp.Name | escapeStringWithSpecialChars), "$($comp.Name)", 'ParameterValue', "$($comp.Description)")
+        [System.Management.Automation.CompletionResult]::new(($comp.Name | escapeStringWithSpecialChars), $comp.Name, 'ParameterValue', $comp.Description)
       }
     }
   }

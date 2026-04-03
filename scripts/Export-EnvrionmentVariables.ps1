@@ -1,5 +1,4 @@
-# note: specially for zh_CN users
-$SHUTILS_ROOT = [System.IO.Path]::GetFullPath("$PSScriptRoot/..")
+$WISH_ROOT = [System.IO.Path]::GetDirectoryName($PSScriptRoot)
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
 if ($cmd = Get-Command java -CommandType Application -TotalCount 1 -ea Ignore) {
   $JAVA_HOME = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetDirectoryName((Get-Item -LiteralPath $cmd.Source -Force).ResolvedTarget))
@@ -7,8 +6,8 @@ if ($cmd = Get-Command java -CommandType Application -TotalCount 1 -ea Ignore) {
 $DSC_RESOURCE_PATH = $IsWindows ? '' : "$HOME/.local/dsc"
 
 # PSModulePath
-$PSModulePath = $IsWindows ? "$SHUTILS_ROOT\ps1\modules" : @"
-$SHUTILS_ROOT/ps1/modules
+$PSModulePath = $IsWindows ? "$WISH_ROOT\Modules" : @"
+$WISH_ROOT/Modules
 $HOME/.local/share/powershell/Modules
 /usr/local/share/powershell/Modules
 $PSHOME/Modules
@@ -76,7 +75,7 @@ $commonVar = @{
   PUB_HOSTED_URL           = 'https://pub.flutter-io.cn'
   RUSTUP_DIST_SERVER       = 'https://mirrors.tuna.tsinghua.edu.cn/rustup'
   RUSTUP_UPDATE_ROOT       = 'https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup'
-  SHUTILS_ROOT             = $SHUTILS_ROOT
+  WISH_ROOT                = $WISH_ROOT
 }
 
 if ($IsWindows) {
@@ -88,7 +87,7 @@ if ($IsWindows) {
     Set-ItemProperty -LiteralPath HKCU:\Environment $_.Key $_.Value
   }
   # only let windows events notify once
-  [System.Environment]::SetEnvironmentVariable('SHUTILS_ROOT', $SHUTILS_ROOT, 'User')
+  [System.Environment]::SetEnvironmentVariable('WISH_ROOT', $WISH_ROOT, 'User')
 }
 elseif ($IsLinux) {
   # path

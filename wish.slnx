@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/Modules/">
+    <Project Path="Modules/LSColors/LSColors.csproj" />
+  </Folder>
+</Solution>

@@ -1,18 +1,22 @@
 [CmdletBinding()]
 param (
+  [Parameter(Position = 0)]
+  [Alias('LP')]
+  [ValidateNotNullOrEmpty()]
+  [string[]]
+  $LiteralPath,
   [Parameter()]
   [switch]
   $All,
   [Parameter()]
   [switch]
-  $Go,
-  [Parameter(Position = 0)]
-  [string[]]
-  $Path
+  $Go
 )
 
+$ErrorActionPreference = 'Stop'
+
 if ($All) {
-  $Path += @(
+  $LiteralPath += @(
     'C:\Program Files\Git\mingw64\bin\brotli.exe'
     'C:\Program Files\Git\mingw64\bin\bunzip2.exe'
     'C:\Program Files\Git\mingw64\bin\bzip2.exe'
@@ -22,7 +26,7 @@ if ($All) {
     'C:\Program Files\Git\mingw64\bin\xz.exe'
     'C:\Program Files\Git\usr\bin\awk.exe'
     'C:\Program Files\Git\usr\bin\bash.exe'
-    'C:\Program Files\Git\usr\bin\file.exe'
+    'C:\Program Files\Git\usr\bin\PSystem.IO.Path.exe'
     'C:\Program Files\Git\usr\bin\gpg.exe'
     'C:\Program Files\Git\usr\bin\grep.exe'
     'C:\Program Files\Git\usr\bin\gzip.exe'
@@ -36,25 +40,36 @@ if ($All) {
   )
 }
 
-$Path | ForEach-Object {
+$LiteralPath.ForEach{
   if (![System.IO.Path]::IsPathFullyQualified($_)) {
-    throw "path must be absolute: $_"
+    throw "Literalpath must be absolute: $_"
   }
 }
 
+$binDir = $IsWindows ? "$env:LOCALAPPDATA\prefix\bin" : "$HOME/.local/bin"
+$buildDir = [System.IO.Path]::GetTempPath()
+
 if ($Go) {
-  return $Path | ForEach-Object -Parallel {
-    go build -o ~/tools/$([System.IO.Path]::GetFileName($_)) -a -trimpath -ldflags "-s -w -X `"main.execPath=$_`"" $env:SHUTILS_ROOT/fork/main.go
-  } -ThrottleLimit $env:NUMBER_OF_PROCESSORS
+  return $LiteralPath | ForEach-Object -Parallel {
+    go build -o $binDir\$$([System.IO.Path]::GetFileName($_)) -a -trimpath -ldflags "-s -w -X `"main.execPath=$_`"" 'github.com/xingqingxyz/wish/cmd/fork'
+  } -ThrottleLimit ($env:NUMBER_OF_PROCESSORS ?? 8)
+}
+
+if (!$IsWindows) {
+  throw [System.NotImplementedException]::new()
 }
 
 if (!(Get-Command cl -Type Application -TotalCount 1 -ea Ignore)) {
-  vsdev
+  Use-DevelopmentEnvironment VisualStudio
+  # clang-format, clang-tidy
+  if ($All -and ($info = Get-Command clang-format, clang-tidy -CommandType Application -TotalCount 1 -ea Ignore)) {
+    $LiteralPath += $info.Source
+  }
 }
 
-$Path | ForEach-Object -Parallel {
+$LiteralPath | ForEach-Object -Parallel {
   $execPath = 'L"\"' + $_.Replace('\', '\\') + '\""'
   $base = [System.IO.Path]::GetFileNameWithoutExtension($_)
   [string[]]$favor = if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ceq 'X64') { '/favor:INTEL64' }
-  cl /O1 /Oi /Os /GF /Gy /GL /GA /GS- $favor /std:c17 /utf-8 /nologo /DEXEC_PATH=$execPath /Fa$env:TEMP\$base /Fo$env:TEMP\$base /Fe$env:LOCALAPPDATA\prefix\bin\$base $env:SHUTILS_ROOT\fork\main.c /MD /link /LTCG /OPT:REF /OPT:ICF /MERGE:.rdata=.text
-} -ThrottleLimit $env:NUMBER_OF_PROCESSORS
+  cl /O1 /Oi /Os /GF /Gy /GL /GA /GS- $favor /std:c17 /utf-8 /nologo /DEXEC_PATH=$execPath /Fa$buildDir\$base /Fo$buildDir\$base /Fe$binDir\$base $PSScriptRoot\..\cmd\fork.c /MD /link /LTCG /OPT:REF /OPT:ICF /MERGE:.rdata=.text
+} -ThrottleLimit ($env:NUMBER_OF_PROCESSORS ?? 8)

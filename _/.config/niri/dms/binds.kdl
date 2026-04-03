@@ -5,5 +5,5 @@ binds {
     Super+E repeat=false hotkey-overlay-title="Notepad: Toggle" { spawn "dms" "ipc" "notepad" "toggle"; }
     Super+I repeat=false hotkey-overlay-title="Settings: Focus or Toggle" { spawn "dms" "ipc" "call" "settings" "focusOrToggle"; }
     Super+Shift+C repeat=false hotkey-overlay-title="Color Picker: Toggle" { spawn "dms" "ipc" "color-picker" "toggleInstant"; }
-    Super+P repeat=false hotkey-overlay-title="Power Menu: Toggle" { spawn "dms" "ipc" "powermenu" "toggle"; }
+    Super+X repeat=false hotkey-overlay-title="Power Menu: Toggle" { spawn "dms" "ipc" "powermenu" "toggle"; }
 }

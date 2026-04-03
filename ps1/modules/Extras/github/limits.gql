@@ -1,8 +1,0 @@
-query {
-  rateLimit {
-    limit
-    remaining
-    nodeCount
-    resetAt
-  }
-}

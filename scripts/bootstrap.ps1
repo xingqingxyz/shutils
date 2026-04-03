@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator -PSEdition Desktop
+#Requires -RunAsAdministrator
 
 $ErrorActionPreference = 'Stop'
 $isWin10 = try {
@@ -41,10 +41,7 @@ if ($isWin10) {
 }
 
 # setup repo
-Set-Location -LiteralPath (mkdir ~/p)
-git clone https://github.com/xingqingxyz/shutils
-Set-Location -LiteralPath shutils
-$env:SHUTILS_ROOT = "$HOME\p\shutils"
-# run
-Write-Host 'runing pwsh'
-pwsh -nop $env:SHUTILS_ROOT\scripts\Initialize-Computer.ps1
+git -C (New-Item -ItemType Directory ~/p) clone https://github.com/xingqingxyz/wish
+Set-Location -LiteralPath ~/p/wish
+# runs
+pwsh -nop $PSScriptRoot\Initialize-Computer.ps1

@@ -1,6 +1,6 @@
 using namespace System.Management.Automation.Language
 
-function npmConfigKeys {
+function __npmConfigKeys {
   '_auth', 'access', 'all', 'allow-same-version', 'audit', 'audit-level', 'auth-type', 'before', 'bin-links', 'browser', 'ca', 'cache', 'cafile', 'call', 'cidr', 'color', 'commit-hooks', 'cpu', 'depth', 'description', 'diff', 'diff-dst-prefix', 'diff-ignore-all-space', 'diff-name-only', 'diff-no-prefix', 'diff-src-prefix', 'diff-text', 'diff-unified', 'dry-run', 'editor', 'engine-strict', 'expect-result-count', 'expect-results', 'fetch-retries', 'fetch-retry-factor', 'fetch-retry-maxtimeout', 'fetch-retry-mintimeout', 'fetch-timeout', 'force', 'foreground-scripts', 'format-package-lock', 'fund', 'git', 'git-tag-version', 'global', 'globalconfig', 'heading', 'https-proxy', 'if-present', 'ignore-scripts', 'include', 'include-staged', 'include-workspace-root', 'init-author-email', 'init-author-name', 'init-author-url', 'init-license', 'init-module', 'init-version', 'install-links', 'install-strategy', 'json', 'legacy-peer-deps', 'libc', 'link', 'local-address', 'location', 'lockfile-version', 'loglevel', 'logs-dir', 'logs-max', 'long', 'maxsockets', 'message', 'node-options', 'noproxy', 'offline', 'omit', 'omit-lockfile-registry-resolved', 'os', 'otp', 'pack-destination', 'package', 'package-lock', 'package-lock-only', 'parseable', 'prefer-dedupe', 'prefer-offline', 'prefer-online', 'prefix', 'preid', 'progress', 'provenance', 'provenance-file', 'proxy', 'read-only', 'rebuild-bundle', 'registry', 'replace-registry-host', 'save', 'save-bundle', 'save-dev', 'save-exact', 'save-optional', 'save-peer', 'save-prefix', 'save-prod', 'sbom-format', 'sbom-type', 'scope', 'script-shell', 'searchexclude', 'searchlimit', 'searchopts', 'searchstaleness', 'shell', 'sign-git-commit', 'sign-git-tag', 'strict-peer-deps', 'strict-ssl', 'tag', 'tag-version-prefix', 'timing', 'umask', 'unicode', 'update-notifier', 'usage', 'user-agent', 'userconfig', 'version', 'versions', 'viewer', 'which', 'workspace', 'workspaces', 'workspaces-update', 'yes', 'also', 'cache-max', 'cache-min', 'cert', 'dev', 'global-style', 'init.author.email', 'init.author.name', 'init.author.url', 'init.license', 'init.module', 'init.version', 'key', 'legacy-bundling', 'only', 'optional', 'production', 'shrinkwrap'
 }
 
@@ -20,15 +20,12 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
   switch (0..$commands.Count) {
     $commands.Count { break }
     0 {
-      $commands[$_] = switch ($commands[$_]) {
-        'c' { 'config'; break }
-        'ln' { 'link'; break }
-        { @('add', 'i', 'in', 'ins', 'inst', 'insta', 'instal', 'isnt', 'isnta', 'isntal', 'isntall', 'up', 'update', 'upgrade').Contains($_) } { 'install'; break }
-        { @('rm', 'r', 'un', 'unlink', 'remove').Contains($_) } { 'uninstall'; break }
+      $commands[$_] = switch -CaseSensitive -Regex ($commands[$_]) {
+        '^c$' { 'config'; break }
+        '^ln$' { 'link'; break }
+        '^(add|in?s?t?a?l?|isnta?l?l?|up|update|upgrade)$' { 'install'; break }
+        '^(rm?|un|unlink|remove)$' { 'uninstall'; break }
         default { $_; break }
-      }
-      if ($commands[$_] -ceq 'exec' -and $commands.Count -gt 1) {
-        $commands = @('#exec')
       }
       continue
     }
@@ -41,7 +38,24 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
     }
     default { break }
   }
-  $command = $commands -join ';'
+  $command = $commands -join ' '
+
+  if ($command -ceq 'exec') {
+    if ($wordToComplete.StartsWith('-')) {
+      return @('--package=', '-c').Where{ $_ -like "$wordToComplete*" }
+    }
+    return (Split-Path -Resolve -LeafBase node_modules/.bin/* -ea Ignore | Sort-Object -Unique | Where-Object { $_ -like "$wordToComplete*" }) ?? [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete, '', [System.Management.Automation.CommandTypes]::Application)
+  }
+  if ($command.StartsWith('exec ')) {
+    [string]$line = $commandAst
+    $commandName = [System.IO.Path]::GetFileNameWithoutExtension($commandAst.CommandElements[2])
+    $i = $commandAst.CommandElements[2].Extent.StartOffset
+    $line = $line.Substring($i)
+    $cursorPosition -= $i
+    $commandAst = [Parser]::ParseInput($line, [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+    return & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
+  }
+
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
     if ($i.Extent.StartOffset -ge $cursorPosition) {
@@ -165,16 +179,16 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
         }
         break
       }
-      'config;get' {
+      'config get' {
         if ($wordToComplete.StartsWith('-')) {
           '-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor'
         }
         else {
-          npmConfigKeys
+          __npmConfigKeys
         }
         break
       }
-      'config;set' {
+      'config set' {
         if ($wordToComplete.StartsWith('-')) {
           '-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor'
         }
@@ -182,55 +196,34 @@ Register-ArgumentCompleter -Native -CommandName npm -ScriptBlock {
           ''
         }
         else {
-          npmConfigKeys
+          __npmConfigKeys
         }
         break
       }
-      'config;delete' {
+      'config delete' {
         if ($wordToComplete.StartsWith('-')) {
           '-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor'
         }
         else {
-          npmConfigKeys
+          __npmConfigKeys
         }
         break
       }
-      'config;list' {
+      'config list' {
         if ($wordToComplete.StartsWith('-')) {
           '-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor'
         }
         break
       }
-      'config;edit' {
+      'config edit' {
         if ($wordToComplete.StartsWith('-')) {
           '-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor'
         }
         break
       }
-      'config;fix' {
+      'config fix' {
         if ($wordToComplete.StartsWith('-')) {
           '-h', '--help', '-g', '--global', '--json', '-L', '--location', '-l', '--long', '--editor'
-        }
-        break
-      }
-      '#exec' {
-        for ($i = 0; $i -lt $commandAst.CommandElements.Count; $i++) {
-          if ($commandAst.CommandElements[$i].ToString().Contains('exec')) {
-            $i++
-            break
-          }
-        }
-        if ($commandAst.CommandElements.Count -eq $i -or
-          ($commandAst.CommandElements.Count -eq ($i + 1) -and
-          $cursorPosition -le $commandAst.CommandElements[$i].Extent.EndOffset)) {
-          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Sort-Object -Unique
-        }
-        else {
-          $astList = $commandAst.CommandElements | Select-Object -Skip $i
-          $commandName = Split-Path -LeafBase $astList[0].Value
-          $cursorPosition -= $astList[0].Extent.StartOffset
-          $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
-          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
         }
         break
       }

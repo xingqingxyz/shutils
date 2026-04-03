@@ -11,10 +11,11 @@ param (
 )
 
 $ErrorActionPreference = 'Stop'
+$root = [System.IO.Path]::GetDirectoryName($PSScriptRoot)
 $root = switch ($true) {
-  $IsWindows { "$env:SHUTILS_ROOT\_\windows"; break }
-  $IsMacOS { "$env:SHUTILS_ROOT/_/macos"; break }
-  default { "$env:SHUTILS_ROOT/_"; break }
+  $IsWindows { "$root\_\windows"; break }
+  $IsMacOS { "$root/_/macos"; break }
+  default { "$root/_"; break }
 }
 
 if ($Install) {

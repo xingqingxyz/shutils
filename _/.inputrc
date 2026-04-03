@@ -10,5 +10,4 @@ C-P: history-search-backward
 C-N: history-search-forward
 C-DEL: kill-word
 C-SPACE: possible-completions
-"\C-q": "\eb\"\ef\""
 $endif

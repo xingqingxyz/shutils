@@ -17,11 +17,6 @@ Register-ArgumentCompleter -Native -CommandName gio -ScriptBlock {
       }
       $i.Value
     }) -join ' '
-  $command = switch ($command) {
-    'help' { ''; break }
-    default { $_; break }
-  }
-
   $cursorPosition -= $wordToComplete.Length
   foreach ($i in $commandAst.CommandElements) {
     if ($i.Extent.StartOffset -ge $cursorPosition) {
@@ -30,8 +25,8 @@ Register-ArgumentCompleter -Native -CommandName gio -ScriptBlock {
     $prev = $i
   }
   $prev = $prev -is [StringConstantExpressionAst] ? $prev.Value : $prev.ToString()
-
   @(if ($wordToComplete.StartsWith('-')) {
+      '-h', '--help'
       switch ($command) {
         copy {
           '-T', '--no-target-directory', '-p', '--progress', '-i', '--interactive', '--preserve', '-b', '--backup', '-P', '--no-dereference', '--default-permissions', '--default-modified-time'
@@ -85,7 +80,7 @@ Register-ArgumentCompleter -Native -CommandName gio -ScriptBlock {
     }
     else {
       switch ($command) {
-        '' {
+        { $_ -ceq '' -or $_ -ceq 'help' } {
           'help', 'version', 'cat', 'copy', 'info', 'launch', 'list', 'mime', 'mkdir', 'monitor', 'mount', 'move', 'open', 'rename', 'remove', 'save', 'set', 'trash', 'tree'
           break
         }

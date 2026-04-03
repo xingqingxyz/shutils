@@ -842,7 +842,7 @@ wheels = [
 ]
 
 [[package]]
-name = "shutils"
+name = "wish"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

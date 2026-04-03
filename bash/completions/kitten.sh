@@ -227,7 +227,7 @@ _kitten() {
               IFS='=' read -r name value <<< "$query"
               if [ -z "$value" ]; then
                 compopt -o nospace
-                mapfile -t COMPREPLY < <(compgen -P env: -A export -- "$name")
+                mapfile -t COMPREPLY < <(compgen -P Env: -A export -- "$name")
               else
                 compopt +o default
               fi

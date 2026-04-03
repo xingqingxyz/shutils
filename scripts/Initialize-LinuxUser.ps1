@@ -35,3 +35,17 @@ New-Item -ItemType Directory $dirs -Force
 Invoke-RestMethod 'https://mirrors.ustc.edu.cn/gnu/gnu-keyring.gpg' -OutFile /tmp/gnu-keyring.gpg
 gpg --import /tmp/gnu-keyring.gpg
 #endregion
+# flatpak
+if (Get-Command flatpak -CommandType Application -TotalCount 1 -ea Ignore) {
+  flatpak remote-modify flathub --url=https://mirror.sjtu.edu.cn/flathub
+}
+# autostart
+New-Item -ItemType Directory ~/.config/autostart -Force
+[string[]]$desktop = switch ((Get-Command fcitx5, wechat, alacritty, ghostty, kitty -CommandType Application -TotalCount 1 -ea Ignore).Name) {
+  'fcitx5' { 'org.fcitx.Fcitx5.desktop'; continue }
+  'wechat' { 'wechat.desktop'; continue }
+  'alacritty' { 'Alacritty.desktop'; break }
+  'ghostty' { 'com.mitchellh.ghostty.desktop'; break }
+  'kitty' { 'kitty.desktop'; break }
+}
+$desktop.ForEach{ New-Item -ItemType SymbolicLink -Force -Target /usr/share/applications/$_ ~/.config/autostart/$_ }

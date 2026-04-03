@@ -30,8 +30,21 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
     }
   }
   [string]$command = $commands -join ' '
+
+  if ($command -ceq 'exec') {
+    if ($wordToComplete.StartsWith('-')) {
+      return @('-r', '-c').Where{ $_ -like "$wordToComplete*" }
+    }
+    return (Split-Path -Resolve -LeafBase node_modules/.bin/* -ea Ignore | Sort-Object -Unique | Where-Object { $_ -like "$wordToComplete*" }) ?? [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete, '', [System.Management.Automation.CommandTypes]::Application)
+  }
   if ($command.StartsWith('exec ')) {
-    $command = '#exec'
+    [string]$line = $commandAst
+    $commandName = [System.IO.Path]::GetFileNameWithoutExtension($commandAst.CommandElements[2])
+    $i = $commandAst.CommandElements[2].Extent.StartOffset
+    $line = $line.Substring($i)
+    $cursorPosition -= $i
+    $commandAst = [Parser]::ParseInput($line, [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+    return & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
   }
 
   $cursorPosition -= $wordToComplete.Length
@@ -72,36 +85,6 @@ Register-ArgumentCompleter -Native -CommandName pnpm -ScriptBlock {
         if ($wordToComplete.StartsWith('-')) {
           '--audit-level', '-D', '--dev', '--fix', '--ignore-registry-errors', '--json', '--no-optional', '-P', '--prod'
           break
-        }
-        break
-      }
-      'exec' {
-        if ($wordToComplete.StartsWith('-')) {
-          '--color', '--no-color', '--aggregate-output', '--parallel', '--reporter', '-C', '--dir', '-h', '--help', '--loglevel=debug', '--loglevel=info', '--loglevel=warn', '--loglevel=error', '--silent', '--no-reporter-hide-prefix', '--parallel', '-r', '--recursive', '--report-summary', '--resume-from', '-c', '--shell-mode', '--stream', '--use-stderr', '-w', '--workspace-root', '--changed-files-ignore-pattern', '--changed-files-ignore-', '--fail-if-no-match', '--filter', '--filter-prod', '--test-pattern'
-        }
-        elseif ($prev -ceq 'exec') {
-          Split-Path node_modules/.bin/* -LeafBase -Resolve | Sort-Object -Unique
-        }
-        break
-      }
-      '#exec' {
-        for ($i = 0; $i -lt $commandAst.CommandElements.Count; $i++) {
-          if ($commandAst.CommandElements[$i].ToString().Contains('exec')) {
-            $i++
-            break
-          }
-        }
-        if ($commandAst.CommandElements.Count -eq $i -or
-          ($commandAst.CommandElements.Count -eq ($i + 1) -and
-          $cursorPosition -le $commandAst.CommandElements[$i].Extent.EndOffset)) {
-          (Get-ChildItem -LiteralPath node_modules/.bin -ea Ignore).BaseName | Sort-Object -Unique
-        }
-        else {
-          $astList = $commandAst.CommandElements | Select-Object -Skip 2
-          $commandName = Split-Path -LeafBase $astList[0].Value
-          $cursorPosition -= $astList[0].Extent.StartOffset
-          $commandAst = [Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
-          & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
         }
         break
       }

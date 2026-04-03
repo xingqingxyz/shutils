@@ -1,28 +1,41 @@
+using namespace System.Management.Automation.Language
+
 Register-ArgumentCompleter -Native -CommandName sudo -ScriptBlock {
-  param ([string]$wordToComplete, [System.Management.Automation.Language.CommandAst]$commandAst, [int]$cursorPosition)
-  if ($commandAst.CommandElements?[1] -like '-*' -and $wordToComplete.StartsWith('-')) {
-    return @(switch ($true) {
-        $IsLinux {
-          '-A', '--askpass', '-b', '--background', '-B', '--bell', '-C', '--close-from=', '-D', '--chdir=', '-E', '--preserve-env', '--preserve-env=', '-e', '--edit', '-g', '--group=', '-H', '--set-home', '-h', '--help', '-h', '--host=', '-i', '--login', '-K', '--remove-timestamp', '-k', '--reset-timestamp', '-l', '--list', '-n', '--non-interactive', '-P', '--preserve-groups', '-p', '--prompt=#', '-R', '--chroot=/root', '-r', '--role=', '-S', '--stdin', '-s', '--shell', '-t', '--type=', '-T', '--command-timeout=12000', '-U', '--other-user=', '-u', '--user=', '-V', '--version', '-v', '--validate'
-          break
-        }
-        $IsWindows {
-          break
-        }
-        $IsMacOS {
-          break
-        }
+  param ([string]$wordToComplete, [CommandAst]$commandAst, [int]$cursorPosition)
+  for ($i = 1; $i -lt $commandAst.CommandElements.Count; $i++) {
+    if (!$commandAst.CommandElements[$i].ToString().StartsWith('-')) {
+      break
+    }
+  }
+  switch ($commandAst.CommandElements.Count - $i) {
+    { $_ -le 1 } {
+      if ($wordToComplete.StartsWith('-')) {
+        @(switch ($true) {
+            $IsWindows {
+              break
+            }
+            $IsMacOS {
+              break
+            }
+            $IsLinux {
+              '-A', '--askpass', '-b', '--background', '-B', '--bell', '-C', '--close-from=', '-D', '--chdir=', '-E', '--preserve-env', '--preserve-env=', '-e', '--edit', '-g', '--group=', '-H', '--set-home', '-h', '--help', '-h', '--host=', '-i', '--login', '-K', '--remove-timestamp', '-k', '--reset-timestamp', '-l', '--list', '-n', '--non-interactive', '-P', '--preserve-groups', '-p', '--prompt=#', '-R', '--chroot=/root', '-r', '--role=', '-S', '--stdin', '-s', '--shell', '-t', '--type=', '-T', '--command-timeout=12000', '-U', '--other-user=', '-u', '--user=', '-V', '--version', '-v', '--validate'
+              break
+            }
+          }).Where{ $_ -like "$wordToComplete*" }
+        break
       }
-    ).Where{ $_ -like "$wordToComplete*" }
+      (Get-Command $wordToComplete* -Type Application).Name | Sort-Object -Unique
+      break
+    }
+    default {
+      [string]$line = $commandAst
+      $commandName = [System.IO.Path]::GetFileNameWithoutExtension($commandAst.CommandElements[$i])
+      $i = $commandAst.CommandElements[$i].Extent.StartOffset
+      $line = $line.Substring($i)
+      $cursorPosition -= $i
+      $commandAst = [Parser]::ParseInput($line, [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
+      & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
+      break
+    }
   }
-  if ($commandAst.CommandElements.Count -le 2 -and
-    $cursorPosition -le $commandAst.CommandElements[-1].Extent.EndOffset) {
-    return $([System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)) ??
-    [System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete)
-  }
-  $astList = $commandAst.CommandElements | Select-Object -Skip 1
-  $commandName = Split-Path -LeafBase $astList[0].Value
-  $cursorPosition -= $astList[0].Extent.StartOffset
-  $commandAst = [System.Management.Automation.Language.Parser]::ParseInput("$astList", [ref]$null, [ref]$null).EndBlock.Statements[0].PipelineElements[0]
-  & (Get-ArgumentCompleter $commandName) $wordToComplete $commandAst $cursorPosition
 }

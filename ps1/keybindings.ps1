@@ -40,16 +40,6 @@ Set-PSReadLineKeyHandler -Chord Ctrl+F1 -Description 'Try to open powershell doc
     Start-Process $info.HelpUri
   }
 }
-Set-PSReadLineKeyHandler -Chord Ctrl+t -Description 'Fzf select relative files to insert' -ScriptBlock {
-  # note: expects "`n" not in path
-  $items = fzf '--walker=file,hidden' -m
-  if (!$items) {
-    return
-  }
-  [Microsoft.PowerShell.PSConsoleReadLine]::Insert($items.ForEach{
-      "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'"
-    } -join ' ')
-}
 Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history files to replace command line' -ScriptBlock {
   $history = switch ($true) {
     $IsWindows { "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\$($Host.Name)_history.txt"; break }
@@ -63,6 +53,16 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
     return
   }
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, $history)
+}
+Set-PSReadLineKeyHandler -Chord Ctrl+t -Description 'Fzf select relative files to insert' -ScriptBlock {
+  # note: expects "`n" not in path
+  $items = fzf '--walker=file,hidden' -m
+  if (!$items) {
+    return
+  }
+  [Microsoft.PowerShell.PSConsoleReadLine]::Insert($items.ForEach{
+      "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'"
+    } -join ' ')
 }
 Set-PSReadLineKeyHandler -Chord Alt+c -Description 'Fzf select sub directories to cd' -ScriptBlock {
   # note: expects "`n" not in path
@@ -87,11 +87,12 @@ Set-PSReadLineKeyHandler -Chord Alt+C -Description 'Fzf select parent directorie
   Set-Location -LiteralPath $dir
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
-Set-PSReadLineKeyHandler -Chord Alt+d -Description 'Execute current command as delayed background job' -ScriptBlock {
-  $text = ''
-  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
-  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "delay 0:12 $text &")
-  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+Set-PSReadLineKeyHandler -Chord Alt+S -Description 'Fzf select stared repo name to insert' -ScriptBlock {
+  $repo = Get-Content -LiteralPath "$PSScriptRoot/../data/stars.txt" | fzf --scheme=path
+  if (!$repo) {
+    return
+  }
+  [Microsoft.PowerShell.PSConsoleReadLine]::Insert($repo)
 }
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
   $dir = (Invoke-Z -List).Key | fzf --scheme=path
@@ -100,6 +101,12 @@ Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -S
   }
   Invoke-Z $dir
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+}
+Set-PSReadLineKeyHandler -Chord Alt+d -Description 'Execute current command as delayed background job' -ScriptBlock {
+  $text = ''
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$text, [ref]$null)
+  [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $text.Length, "delay 0:12 $text &")
+  [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
 Set-PSReadLineKeyHandler -Chord Alt+s -Description 'Add sudo to command line and accept it' -ScriptBlock {
   [System.Management.Automation.Language.Ast]$ast = $null

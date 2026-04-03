@@ -1,7 +1,7 @@
 [project]
-name = "shutils"
+name = "wish"
 version = "0.1.0"
-description = "Some python automation scripts."
+description = "Python part of the wise shell."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

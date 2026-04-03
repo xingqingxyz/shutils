@@ -5,6 +5,8 @@
 [url "https://github.com"]
 	insteadOf = gh:
 	insteadOf = github:
+[url "https://gitlab.com"]
+	insteadOf = gitlab:
 [user]
 	name = xingqingxyz
 	email = cm.email@qq.com
@@ -13,18 +15,21 @@
 [core]
 	editor = \"C:\\Users\\cmema\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code\" --wait
 	symlinks = true
+	pager = delta
 [mergetool]
 	prompt = true
 [credential]
 	helper =
 	helper = manager
-[http]
-	sslbackend = openssl
-[fetch]
-	prune = false
 [gui]
-	recentrepo = C:/Users/cmema/p/shutils
+	recentrepo = C:/Users/cmema/p/wish
 [rerere]
 	enabled = true
 [safe]
 	directory = *
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+[merge]
+	conflictStyle = zdiff3

@@ -11,7 +11,7 @@ HISTSIZE=9000
 HISTFILESIZE=120000
 TIMEFORMAT=$'\nreal\t%6lR\nuser\t%6lU\nsys\t%6lS\ncpu\t%P'
 
-# shutils
+# wish
 FZF_CTRL_T_OPTS='--preview="bat -p --color=always {}"'
 FZF_ALT_C_OPTS='--preview="fd -tf --color=always --hyperlink=always {}"'
 
@@ -145,6 +145,7 @@ case "$OSTYPE" in
     alias ls='ls --color=auto'
     ;;
   *)
-    eval "$(printf '. %q\n' "$SHUTILS_ROOT"/bash/*.sh)"
+    REPLY=$(realpath -- "${BASH_SOURCE[0]}")
+    eval "$(printf '. %q\n' "${REPLY%/*}"/*.sh)"
     ;;
 esac

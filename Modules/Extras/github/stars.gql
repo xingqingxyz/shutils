@@ -1,0 +1,13 @@
+query ($login: String!, $cursor: String!) {
+  user(login: $login) {
+    starredRepositories(after: $cursor) {
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+      nodes {
+        nameWithOwner
+      }
+    }
+  }
+}

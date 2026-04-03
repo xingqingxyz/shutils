@@ -5,7 +5,7 @@ case "$OSTYPE" in
   *linux*) ;;
   *) false ;;
 esac
-if [ ! -v SHUTILS_ROOT ]; then
+if [ ! -v WISH_ROOT ]; then
   echo 'setup repo' >&2
   if type -aP aptt &> /dev/null; then
     sudo apt install -y git aria2
@@ -16,10 +16,8 @@ if [ ! -v SHUTILS_ROOT ]; then
     exit 2
   fi
   mkdir ~/p
-  cd ~/p
-  git clone https://github.com/xingqingxyz/shutils
-  cd shutils
-  export SHUTILS_ROOT=$HOME/p/shutils
+  git -C ~/p clone https://github.com/xingqingxyz/wish
+  export WISH_ROOT=$HOME/p/wish
 fi
 echo 'setup pwsh' >&2
 case "$(arch)" in
@@ -37,5 +35,6 @@ sudo tar -xf /tmp/"$file" -C "$baseDir"
 sudo chmod +x "$baseDir"/pwsh
 sudo ln -sf "$baseDir"/pwsh /usr/bin
 # run
+cd "$WISH_ROOT"
 echo 'runing pwsh' >&2
-pwsh -nop "$SHUTILS_ROOT"/scripts/Initialize-Computer.ps1
+pwsh -nop ./scripts/Initialize-Computer.ps1

@@ -1,0 +1,28 @@
+{
+  "author": "Ming Chen <cm.email@qq.com> (https://github.com/xingqingxyz)",
+  "bugs": {
+    "url": "https://github.com/xingqingxyz/wish/issues"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
+  },
+  "description": "TypeScript part of the wise shell.",
+  "devDependencies": {
+    "@types/node": "^25.5.0"
+  },
+  "homepage": "https://github.com/xingqingxyz/wish#readme",
+  "keywords": [],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "wish",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xingqingxyz/wish.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "version": "0.0.1"
+}

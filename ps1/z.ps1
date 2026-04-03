@@ -25,7 +25,7 @@ function Invoke-Z {
     }
   }
   [hashtable]$itemsMap = $json.itemsMap
-  $sum = $json.rankSum
+  [double]$sum = $json.rankSum
   switch ($PSCmdlet.ParameterSetName) {
     'Add' {
       if ($PWD.Provider.Name -cne 'FileSystem') {
@@ -62,12 +62,11 @@ function Invoke-Z {
       break
     }
     'Delete' {
-      Get-Item $Queries -ea Ignore | ForEach-Object {
-        [string]$path = $_.Attributes.HasFlag([System.IO.FileAttributes]::ReparsePoint) ? $_.ResolvedTarget : $_.FullName
-        $item = $itemsMap[$path]
-        if ($item) {
-          $itemsMap.Remove($path)
-          $sum -= $item.rank
+      # no wildcard expansion for non-existent paths
+      $Queries.ForEach{
+        if ($itemsMap.Contains($_)) {
+          $sum -= $itemsMap[$_].rank
+          $itemsMap.Remove($_)
         }
       }
       break
