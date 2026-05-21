@@ -69,7 +69,7 @@
   # NestedModules        = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('Get-GithubRepositoryBlob', 'Invoke-GithubGraphQL', 'Register-PSScheduledTask', 'Unregister-PSScheduledTask', 'Get-Region', 'Set-Region', 'ConvertTo-RelativeSymlink', 'New-RelativeSymlink', 'Get-DarkMode', 'Set-Wallpaper', 'Send-Notify', 'de', 'de.f', 'figlet.f', 'jq.f', 'rg.f')
+  FunctionsToExport    = @('Get-GithubRepositoryBlob', 'Invoke-GithubGraphQL', 'Register-PSScheduledTask', 'Unregister-PSScheduledTask', 'Get-Region', 'Set-Region', 'ConvertTo-RelativeSymlink', 'New-RelativeSymlink', 'Get-DarkMode', 'Set-Wallpaper', 'Send-Notify', 'Show-ScreenText', 'de', 'de.f', 'figlet.f', 'jq.f', 'rg.f')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = @()

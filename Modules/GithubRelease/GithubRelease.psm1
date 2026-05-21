@@ -476,6 +476,7 @@ function Get-LocalVersion ([string]$Name) {
   try {
     $line = switch ($Name) {
       binaryen { wasm2js --version; break }
+      cargo-release { cargo-release release --version; break }
       go { go version; break }
       less { (less --version 2>$null)[0].Split(' ', 3)[1] + '.0'; break }
       wabt { wat2wasm --version; break }
@@ -503,7 +504,7 @@ function Get-LocalVersion ([string]$Name) {
         (Get-Content -LiteralPath ~/.config/Kingsoft/Office.conf).Where({ $_.StartsWith('plugins\kaccountsdk\storage\office\appv=linux-office:linux_365:') }, 'First', 1)[0]
         break
       }
-      { $_ -ceq 'localsend' -or $_ -ceq 'nerd-fonts' } {
+      { $_ -ceq 'cargo-careful' -or $_ -ceq 'localsend' -or $_ -ceq 'nerd-fonts' } {
         (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -CEQ $_).version
         break
       }
@@ -720,11 +721,53 @@ function Install-Release {
       $null = New-Item -ItemType SymbolicLink -Force -Target bun$exe $binDir/bunx$exe
       break
     }
+    cargo-about {
+      $file = 'cargo-about-{0}-{1}.tar.gz' -f $Meta.tag, ($rust.target -replace '-gnu$', '-musl')
+      Invoke-ReleaseDownload $Meta $file, $file`.sha256
+      Assert-FileHash $file $file`.sha256
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/cargo-about$exe $binDir -Force
+      break
+    }
+    cargo-careful {
+      if ([RuntimeInformation]::OSArchitecture -cne 'X64') {
+        cargo install cargo-careful@$($Meta.version)
+        break
+      }
+      $file = switch ($true) {
+        $IsLinux { 'cargo-careful-x86_64-unknown-linux-musl'; break }
+        $IsMacOS { 'cargo-careful-x86_64-apple-darwin'; break }
+        $IsWindows { 'cargo-careful-windows.exe'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      Invoke-ReleaseDownload $Meta $file
+      Move-Item -LiteralPath $buildDir/$file $binDir/cargo-careful$exe -Force
+      if (!$IsWindows) {
+        chmod +x $binDir/cargo-careful
+      }
+      break
+    }
     cargo-generate {
       $file = 'cargo-generate-{0}-{1}.tar.gz' -f $Meta.tag, $rust.target
       Invoke-ReleaseDownload $Meta $file
       tar -xf $buildDir/$file -C $buildDir
       Move-Item -LiteralPath $buildDir/cargo-generate$exe $binDir -Force
+      break
+    }
+    cargo-release {
+      $file = 'cargo-release-{0}-{1}{2}' -f $Meta.tag, ($rust.target -replace '-gnu$', '-musl'), $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $buildDir
+      Move-Item -LiteralPath $buildDir/cargo-release$exe $binDir -Force
+      break
+    }
+    cargo-valgrind {
+      if ($IsWindows) {
+        throw [System.NotImplementedException]::new()
+      }
+      $file = 'cargo-valgrind-{0}-{1}{2}' -f $Meta.tag, ($rust.target -replace '-gnu$', '-musl'), $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $binDir
       break
     }
     code {
@@ -744,8 +787,15 @@ function Install-Release {
       break
     }
     copilot {
-      $file = 'github-copilot-{0}.tgz' -f $Meta.tag.Substring(1)
-      Invoke-ReleaseDownload $Meta $file
+      $os = switch ($true) {
+        $IsWindows { 'win32'; break }
+        $IsLinux { 'linux'; break }
+        $IsMacOS { 'darwin'; break }
+        default { throw [System.NotImplementedException]::new() }
+      }
+      $file = 'github-copilot-{0}-{1}-{2}.tgz' -f $Meta.tag.Substring(1), $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+      Invoke-ReleaseDownload $Meta $file, SHA256SUMS.txt
+      Assert-FileHash $file SHA256SUMS.txt
       tar -xf $buildDir/$file -C (New-Item -Type Directory $prefixDir/copilot -Force) --strip-components=1
       # Install-Binary $prefixDir/copilot/index.js
       break
@@ -1273,8 +1323,8 @@ StartupWMClass=localsend_app
         default { throw [System.NotImplementedException]::new() }
       }
       $base = 'tree-sitter-{0}-{1}' -f $os, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-      Invoke-ReleaseDownload $Meta $base.gz
-      gzip -df $buildDir/$base.gz
+      Invoke-ReleaseDownload $Meta $base`.gz
+      gzip -df $buildDir/$base`.gz
       Move-Item -LiteralPath $buildDir/$base $binDir/tree-sitter$exe -Force
       if (!$IsWindows) {
         chmod +x $binDir/tree-sitter

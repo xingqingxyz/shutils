@@ -16,7 +16,7 @@ if ($IsWindows) {
   Set-ItemProperty -LiteralPath 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'AppsUseLightTheme' -Value ([int]$Off.IsPresent) -Type DWord
 
   # 发送 WM_SETTINGCHANGE 消息以刷新主题，无需重启 Explorer
-  $type = Add-Type -Namespace 'Win32' -PassThru '_SendMessageTimeout' @'
+  $type = Add-Type -Namespace Win32 _SendMessageTimeout -PassThru @'
 [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
 public static extern bool SendMessageTimeout(
     IntPtr hWnd,

@@ -9,7 +9,6 @@ astral-sh/uv
 AvengeMedia/DankMaterialShell
 awesome-css-group/awesome-css
 badboy/mdbook-mermaid
-BuddiesOfBudgie/budgie-desktop
 BurntSushi/jiff
 BurntSushi/ripgrep
 cargo-generate/cargo-generate
@@ -26,6 +25,7 @@ DavidAnson/markdownlint
 EbookFoundation/free-programming-books
 eemeli/yaml
 element-plus/element-plus
+EmbarkStudios/cargo-about
 eslint/eslint
 facebook/react
 facebook/react-native
@@ -33,7 +33,6 @@ fastapi/fastapi
 fastapi/typer
 FFmpeg/FFmpeg
 fontforge/fontforge
-gdamore/tcell
 Genymobile/scrcpy
 github/codeql-cli-binaries
 github/copilot-cli
@@ -54,7 +53,6 @@ JohnnyMorganz/StyLua
 josephburnett/jd
 jqlang/jq
 jquery/jquery
-jroimartin/gocui
 koalaman/shellcheck
 lokesh/color-thief
 lovell/sharp
@@ -77,6 +75,7 @@ mvdan/sh
 nabijaczleweli/cargo-update
 niri-wm/niri
 nodejs/node
+nvim-telescope/telescope.nvim
 openclaw/openclaw
 opencontainers/runc
 openjdk/jdk
@@ -93,11 +92,10 @@ PowerShell/vscode-powershell
 prettier/prettier
 prettier/prettier-vscode
 prisma/prisma
-pterm/pterm
 pydantic/monty
 ratatui/ratatui
+rayon-rs/rayon
 redhat-developer/yaml-language-server
-rivo/tview
 rolldown/rolldown
 rollup/rollup
 rui314/mold
@@ -131,7 +129,6 @@ ultraworkers/claw-code
 videolan/vlc
 vitejs/vite
 vitest-dev/vitest
-voidzero-dev/vite-plus
 vuejs/core
 vuejs/language-tools
 vueuse/vueuse

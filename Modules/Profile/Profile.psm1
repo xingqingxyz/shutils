@@ -359,7 +359,7 @@ function sudo {
   $ags = Get-PowerShellExecArgs $ags -ExpectingInput:$MyInvocation.ExpectingInput
   if ($cmd = (Get-Command sudo -CommandType Application -TotalCount 1 -ea Ignore).Source) {
     $ags = if ($ags[0] -ceq 'pwsh') {
-      $options + '--preserve-env=PATH,PSModulePath', '--' + $ags
+      $options + ($IsWindows ? '-E' : '--preserve-env=PATH,PSModulePath'), '--' + $ags
     }
     else {
       $options + '--' + $ags

@@ -552,6 +552,132 @@ function Send-Notify {
   }
 }
 
+function Show-ScreenText {
+  <#
+  .OUTPUTS
+  ScriptBlock to dispose the form.
+  #>
+  [CmdletBinding()]
+  [OutputType([scriptblock])]
+  param (
+    [Parameter(Mandatory, Position = 0)]
+    [ValidateNotNullOrEmpty()]
+    [string]
+    $Text,
+    [Parameter()]
+    [ValidateSet('TopLeft', 'TopCenter', 'TopRight', 'MiddleLeft', 'MiddleCenter', 'MiddleRight', 'BottomLeft', 'BottomCenter', 'BottomRight')]
+    [string]
+    $Position = 'MiddleCenter',
+    [Parameter()]
+    [string]
+    $FontFamily = 'SimSun',
+    [Parameter()]
+    [int]
+    $FontSize = 72,
+    [Parameter()]
+    [switch]
+    $PassThru
+  )
+
+  if ($IsWindows) {
+    throw [System.NotImplementedException]::new()
+  }
+
+  $run = {
+    param ([string]$Text, [string]$Position, [string]$FontFamily, [int]$FontSize, [psobject]$Shared)
+
+    function Get-Position ([string]$position, [System.Drawing.SizeF]$textSize, [System.Drawing.Size]$clientSize) {
+      switch ($position) {
+        'TopLeft' { return [System.Drawing.PointF]::new(0, 0) }
+        'TopCenter' { return [System.Drawing.PointF]::new(($clientSize.Width - $textSize.Width) / 2, 0) }
+        'TopRight' { return [System.Drawing.PointF]::new($clientSize.Width - $textSize.Width, 0) }
+        'MiddleLeft' { return [System.Drawing.PointF]::new(0, ($clientSize.Height - $textSize.Height) / 2) }
+        'MiddleCenter' { return [System.Drawing.PointF]::new(($clientSize.Width - $textSize.Width) / 2, ($clientSize.Height - $textSize.Height) / 2) }
+        'MiddleRight' { return [System.Drawing.PointF]::new($clientSize.Width - $textSize.Width, ($clientSize.Height - $textSize.Height) / 2) }
+        'BottomLeft' { return [System.Drawing.PointF]::new(0, $clientSize.Height - $textSize.Height) }
+        'BottomCenter' { return [System.Drawing.PointF]::new(($clientSize.Width - $textSize.Width) / 2, $clientSize.Height - $textSize.Height) }
+        'BottomRight' { return [System.Drawing.PointF]::new($clientSize.Width - $textSize.Width, $clientSize.Height - $textSize.Height) }
+      }
+    }
+
+    Add-Type -Namespace Win32 _SetForegroundWindow @'
+[DllImport("user32.dll")]
+public static extern bool SetForegroundWindow(IntPtr hWnd);
+'@
+    Add-Type -Namespace Win32 _SetActiveWindow @'
+[DllImport("user32.dll")]
+public static extern bool SetActiveWindow(IntPtr hWnd);
+'@
+
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+
+    $form = New-Object System.Windows.Forms.Form
+    $form.FormBorderStyle = 'None'
+    $form.TopMost = $true
+    $form.ShowInTaskbar = $false
+    $form.StartPosition = 'Manual'
+    $form.Bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    $form.BackColor = [System.Drawing.Color]::Black
+    $form.TransparencyKey = [System.Drawing.Color]::Black
+
+    $font = New-Object System.Drawing.Font($FontFamily, $FontSize, [System.Drawing.FontStyle]::Bold)
+    $brush = [System.Drawing.Brushes]::White
+
+    $form.Add_Paint({
+        param($s, $e)
+        $g = $e.Graphics
+        $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
+        $pos = Get-Position $Position $g.MeasureString($Text, $font) $form.ClientSize
+        $g.DrawString($Text, $font, $brush, $pos.X, $pos.Y)
+      })
+
+    $form.Add_KeyDown({
+        param($s, $e)
+        if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
+          $form.Close()
+        }
+      })
+
+    $form.Add_Load({
+        param($s, $e)
+        $null = [Win32._SetForegroundWindow]::SetForegroundWindow($form.Handle)
+        $null = [Win32._SetActiveWindow]::SetActiveWindow($form.Handle)
+      })
+
+    [System.Windows.Forms.Application]::Run($form)
+    $null = Start-ThreadJob {
+      param ($Shared)
+      $Shared.ps.Stop()
+      $Shared.ps.Dispose()
+      $Shared.rs.Close()
+      $Shared.rs.Dispose()
+    } -ArgumentList $Shared
+  }
+
+  $rs = [runspacefactory]::CreateRunspace()
+  $rs.ApartmentState = 'STA'
+  $rs.Open()
+  $ps = [powershell]::Create().AddScript($run).AddArgument($Text).AddArgument($Position).AddArgument($FontFamily).AddArgument($FontSize)
+  $null = $ps.AddArgument([pscustomobject]@{
+      ps = $ps
+      rs = $rs
+    })
+  $ps.Runspace = $rs
+  $null = $ps.BeginInvoke()
+
+  if ($PassThru) {
+    {
+      Add-Type -AssemblyName System.Windows.Forms
+      [System.Windows.Forms.Application]::Exit()
+      $ps.Stop()
+      $ps.Dispose()
+      $rs.Close()
+      $rs.Dispose()
+    }.GetNewClosure()
+  }
+}
+
 function de {
   [CmdletBinding()]
   param (

@@ -29,11 +29,10 @@ else {
   Register-PSScheduledTask "Show-Clock-$dinner" $scriptText.Replace('%clock%', $clock).Replace('%dinner%', $dinner) -DaysInterval 1 -At $clock -UsePowerShell -Graphical -Force
 }
 Register-PSScheduledTask 'Stop-Computer' {
-  Send-Notify -Title 'Stop-Computer' -Severity Error 'Computer will be force stop after 3 minutes.'
+  if ($IsWindows) {
+    return shutdown.exe -s -t 180
+  }
+  Send-Notify -Title 'Stop-Computer' -Severity Error 'Computer will shutdown in 3 minutes.'
   Start-Sleep 0:3
   Stop-Computer
-  if ($IsWindows) {
-    Start-Sleep 0:3
-    Stop-Computer -Force
-  }
 } -DaysInterval 1 -At 23:27 -UsePowerShell -Force

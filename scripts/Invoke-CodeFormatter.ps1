@@ -28,9 +28,25 @@ param (
   $InputObject
 )
 
-function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) {
+function Get-ParserName ([string]$Path) {
   switch -CaseSensitive -Regex ([System.IO.Path]::GetExtension($Path)) {
-    '^\.(?:asciipb|c|c\+\+|cc|cp|cpp|cs|cxx|h|h\+\+|hh|hpp|hxx|inl|ipp|java|m|mm|proto|protodevel|sv|svh|td|textpb|textproto|txtpb|v|vh)$' {
+    '^\.(?:asciipb|c|c\+\+|cc|cp|cpp|cs|cxx|h|h\+\+|hh|hpp|hxx|inl|ipp|java|m|mm|proto|protodevel|sv|svh|td|textpb|textproto|txtpb|v|vh)$' { 'clang-format'; break }
+    '^\.(?:dart)$' { 'dart'; break }
+    '^\.(?:go)$' { 'goimports'; break }
+    '^\.(?:js|cjs|mjs|jsx|tsx|ts|cts|mts|json|jsonc|json5|yml|yaml|htm|html|xhtml|shtml|vue|gql|graphql|css|scss|sass|less|hbs|handlebars|md|markdown|toml)$' { 'oxfmt'; break }
+    '^\.(?:ps1|psd1|psm1)$' { 'PSScriptAnalyzer'; break }
+    '^\.(?:py|pyi|pyw|pyx|pxd|gyp|gypi|ipynb)$' { 'ruff'; break }
+    '^\.(?:rs)$' { 'rustfmt'; break }
+    '^\.(?:sh|bash|zsh|ash)$' { 'shfmt'; break }
+    '^\.(?:lua)$' { 'stylua'; break }
+    '^\.(?:zig)$' { 'zig'; break }
+    default { 'none'; break }
+  }
+}
+
+function Get-Parser ([string]$Name, [switch]$Inplace, [switch]$Stdin) {
+  switch -CaseSensitive ($Name) {
+    'clang-format' {
       if ($Inplace) {
         { clang-format -i --style=LLVM `-- $args }
       }
@@ -42,7 +58,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:dart)$' {
+    'dart' {
       if ($Inplace) {
         { dart format `-- $args }
       }
@@ -54,7 +70,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:go)$' {
+    'goimports' {
       if ($Inplace) {
         { goimports -w `-- $args }
       }
@@ -66,7 +82,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:js|cjs|mjs|jsx|tsx|ts|cts|mts|json|jsonc|json5|yml|yaml|htm|html|xhtml|shtml|vue|gql|graphql|css|scss|sass|less|hbs|handlebars|md|markdown|toml)$' {
+    'oxfmt' {
       $ags = ($Force -or !$Inplace) ? '--ignore-path=', '--with-node-modules' : @()
       if ($Inplace) {
         { try { oxfmt --write $ags `-- $args } catch { return } }
@@ -79,7 +95,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:ps1|psd1|psm1)$' {
+    'PSScriptAnalyzer' {
       if ($Inplace) {
         { $args.ForEach{ Out-File -NoNewline -LiteralPath $_ -InputObject (PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $_) -Settings $env:WISH_ROOT/CodeFormatting.psd1) } }
       }
@@ -91,7 +107,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:py|pyi|pyw|pyx|pxd|gyp|gypi|ipynb)$' {
+    'ruff' {
       if ($Inplace) {
         { ruff format -n `-- $args }
       }
@@ -103,7 +119,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:rs)$' {
+    'rustfmt' {
       if ($Inplace) {
         { rustfmt `-- $args }
       }
@@ -115,7 +131,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:sh|bash|zsh|ash)$' {
+    'shfmt' {
       if ($Inplace) {
         $ags = @(if ($Force) { '--apply-ignore' })
         { shfmt -i 2 -bn -ci -sr -s -w $ags `-- $args }
@@ -128,7 +144,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:lua)$' {
+    'stylua' {
       if ($Inplace) {
         { stylua `-- $args }
       }
@@ -140,7 +156,7 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
       }
       break
     }
-    '^\.(?:zig)$' {
+    'zig' {
       if ($Inplace) {
         { zig fmt $args }
       }
@@ -169,17 +185,25 @@ function Get-CodeFormatParser ([string]$Path, [switch]$Inplace, [switch]$Stdin) 
 
 if ($MyInvocation.ExpectingInput) {
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
-    return $input | & (Get-CodeFormatParser $FileName -Stdin)
+    return $input | & (Get-Parser $FileName -Stdin)
   }
-  return $input | & (Get-CodeFormatParser $FileName -Stdin) | bat -p --file-name=$FileName
+  return $input | & (Get-Parser $FileName -Stdin) | bat -p --file-name=$FileName
 }
 if ($Path) {
   $LiteralPath = Convert-Path $Path -Force
 }
+[System.Collections.Generic.Dictionary[string, string[]]]$fileMap = @{}
+$LiteralPath.ForEach{ $fileMap[(Get-ParserName $_)] += $_ }
 if ($Inplace) {
-  return & (Get-CodeFormatParser $LiteralPath[0] -Inplace) @LiteralPath
+  return $fileMap.GetEnumerator() | ForEach-Object -Parallel {
+    & (Get-Parser $_.Key -Inplace) $_.Value
+  } -ThrottleLimit ($env:NUMBER_OF_PROCESSORS ?? 8)
 }
 if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
-  return & (Get-CodeFormatParser $LiteralPath[0]) @LiteralPath
+  return $fileMap.GetEnumerator() | ForEach-Object -Parallel {
+    & (Get-Parser $_.Key) $_.Value
+  } -ThrottleLimit ($env:NUMBER_OF_PROCESSORS ?? 8)
 }
-& (Get-CodeFormatParser $LiteralPath[0]) @LiteralPath | bat -p --file-name $LiteralPath[0]
+$fileMap.GetEnumerator().ForEach{
+  & (Get-Parser $_.Key) $_.Value
+} | bat -p --file-name $LiteralPath[0]

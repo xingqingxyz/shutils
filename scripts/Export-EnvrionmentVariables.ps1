@@ -86,6 +86,8 @@ $commonVar = @{
 
 if ($IsWindows) {
   ($commonVar + @{
+    BAT_PAGER         = 'less.cmd'
+    PNPM_HOME         = "$env:LOCALAPPDATA\pnpm"
     UV_PYTHON_BIN_DIR = "$env:LOCALAPPDATA\prefix\bin"
     UV_TOOL_BIN_DIR   = "$env:LOCALAPPDATA\prefix\bin"
   }).GetEnumerator().ForEach{
@@ -95,7 +97,7 @@ if ($IsWindows) {
   $Path = @'
 %USERPROFILE%\.cargo\bin
 %USERPROFILE%\go\bin
-%LOCALAPPDATA%\pnpm\bin
+%PNPM_HOME%\bin
 %USERPROFILE%\.dotnet\tools
 '@.Split("`n") + (Get-Item -LiteralPath HKCU:\Environment).GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames).Split(';') | Select-Object -Unique | Join-String -Separator ';'
   Set-ItemProperty -LiteralPath HKCU:\Environment Path $Path -Type ExpandString

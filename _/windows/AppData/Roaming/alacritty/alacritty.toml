@@ -62,5 +62,5 @@ color = "#111111"
 duration = 216
 
 [general]
-import = ["alacritty-theme/themes/tokyo_night_enhanced.toml"]
+import = ["alacritty-theme/themes/dark_plus.toml"]
 live_config_reload = true

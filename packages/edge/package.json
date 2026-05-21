@@ -1,0 +1,18 @@
+{
+  "name": "edge",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Edge browser toys.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Ming Chen <cm.email@qq.com> (https://github.com/xingqingxyz)",
+  "type": "module",
+  "scripts": {
+    "start": "rolldown -c -w",
+    "prepublish": "rolldown -c --environment NODE_ENV:production"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.258",
+    "jszip": "^3.10.1"
+  }
+}

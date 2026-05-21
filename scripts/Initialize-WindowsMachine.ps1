@@ -15,6 +15,28 @@ New-Item -ItemType Directory -Force @(
   "$env:ProgramData\prefix\share\jar"
   1..8 | ForEach-Object { "$env:ProgramData\prefix\share\man\man$_" }
 )
+# Windows Defender Exclusions
+Defender\Add-MpPreference -ExclusionPath @(
+  # apps
+  "${env:ProgramFiles(x86)}\Microsoft Visual Studio"
+  "$env:LOCALAPPDATA\prefix\flutter"
+  "$env:ProgramFiles\Android\Android Studio"
+  "$HOME\.rustup\toolchains"
+  $env:ANDROID_HOME
+  # caches
+  "$(go env GOPATH)\pkg"
+  "$env:LOCALAPPDATA\Pub\Cache"
+  "$HOME\.bun\install\cache"
+  "$HOME\.cargo\registry\cache"
+  "$HOME\.gradle\caches"
+  "$HOME\.nuget\packages"
+  "$HOME\p"
+  (deno info --json | ConvertFrom-Json).denoDir
+  go env GOCACHE
+  npm c get cache
+  pnpm store path
+  uv cache dir
+) -ExclusionProcess (Get-Command go -CommandType Application -TotalCount 1).Source
 # alacritty shortcut
 if (Test-Path -LiteralPath 'C:\Program Files\Alacritty\alacritty.exe') {
   $shell = New-Object -ComObject WScript.Shell

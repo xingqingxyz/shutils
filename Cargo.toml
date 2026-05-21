@@ -8,5 +8,7 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 num_cpus = "1.17.0"
+tokio = "1.52.3"
 
 [dependencies]
+tokio = { workspace = true, features = ["full"] }

@@ -1,5 +1,3 @@
-#Requires -RunAsAdministrator
-
 [CmdletBinding()]
 param (
   [Parameter()]
@@ -20,7 +18,12 @@ Get-ChildItem -LiteralPath $PSScriptRoot/tasks -Force -ea Stop | ForEach-Object 
       }
       $params = @{}
       $props.ForEach{ $params[$_] = $true }
-      Register-PSScheduledTask $name "pwsh -noni -nop $_" -DaysInterval $dir.Name -Persistent -Force @params
+      if ($props.Admin) {
+        sudo Register-PSScheduledTask $name "pwsh -noni -nop $_" -DaysInterval $dir.Name -Persistent -Force @params
+      }
+      else {
+        Register-PSScheduledTask $name "pwsh -noni -nop $_" -DaysInterval $dir.Name -Persistent -Force @params
+      }
     }
     return
   }

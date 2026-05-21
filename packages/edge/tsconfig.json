@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "exclude": ["*.ts"],
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "types": ["chrome"],
+    "jsx": "react"
+  }
+}

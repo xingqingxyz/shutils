@@ -45,11 +45,8 @@ Write-Host "$PSCommandPath -$($PSBoundParameters.Keys)"
 if ($PreCommit) {
   cargo check
   golangci-lint run
-  # FIXME: pwsh % -Parallel exits when first cmd fails, and
-  # PSScriptAnalyzer\Invoke-Formatter doesn't supports parallel
-  git diff --cached --name-only --diff-filter=ACMRT | Tee-Object -Variable files | ForEach-Object {
-    & ./scripts/Invoke-CodeFormatter.ps1 -LiteralPath $_ -Inplace
-  }
+  $files = git diff --cached --name-only --diff-filter=ACMRT
+  ./scripts/Invoke-CodeFormatter.ps1 -LiteralPath $files -Inplace
   git add $files
 }
 else {
@@ -57,6 +54,13 @@ else {
     '^scripts/(Export-EnvrionmentVariables|Initialize-Dotfiles|Initialize-Tasks)\.ps1$' {
       Write-Host ". $_"
       . $_
+      continue
+    }
+  }
+  switch -CaseSensitive -Regex (git diff --name-only --diff-filter=AD HEAD^..HEAD) {
+    '^scripts/tasks/.+$' {
+      Write-Host '. ./scripts/Initialize-Tasks.ps1'
+      . ./scripts/Initialize-Tasks.ps1
       continue
     }
   }

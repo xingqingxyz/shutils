@@ -1,24 +1,27 @@
-$shared = @{}
+$shared = [pscustomobject]@{
+  now      = Get-Date
+  status   = $false
+  duration = $null
+}
+
 $job = Start-ThreadJob {
-  begin {
-    $shared = $Using:shared
-  }
+  param ([psobject]$Shared)
   end {
-    Send-Notify "Update-System started at $($shared['now'].ToString('HH:mm:ss'))."
+    Send-Notify "Update-System started at $($Shared.now.ToString('HH:mm:ss'))."
     while ($true) {
       Start-Sleep 0:10
       Send-Notify "Update-System running $((++$i)*10) minutes."
     }
   }
   clean {
-    Send-Notify "Update-System $($shared['status'] ? 'finished' : 'failed') in $(Format-Duration $shared['duration'] -NoColor)." -Severity ($shared['status'] ? 'Information' : 'Error')
+    Send-Notify "Update-System $($Shared.status ? 'finished' : 'failed') in $(Format-Duration $Shared.duration -NoColor)." -Severity ($Shared.status ? 'Information' : 'Error')
   }
-}
-$shared['now'] = Get-Date
+} -ArgumentList $shared
+
 Update-System -Force
-$shared['status'] = $?
-$shared['duration'] = (Get-Date) - $shared['now']
-if (!$shared['status']) {
+$shared.status = $?
+$shared.duration = (Get-Date) - $shared.now
+if (!$shared.status) {
   Get-Error > Temp:/Update-System-error.log
 }
 Stop-Job $job

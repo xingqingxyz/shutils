@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Edge Toys",
+  "version": "0.0.0",
+  "description": "Edge browser toys.",
+  "background": { "service_worker": "./sw.js" },
+  "content_scripts": [
+    {
+      "js": ["./content-scripts-bilibili.js"],
+      "matches": [
+        "https://www.bilibili.com/",
+        "https://www.bilibili.com/anime/*",
+        "https://www.bilibili.com/video/*",
+        "https://show.bilibili.com/platform/*"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}

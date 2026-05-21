@@ -168,6 +168,7 @@ fedora:
   - jd
   - mkcert
   - mdbook
+  - mdbook-mermaid
   - node
   - numbat
   - pastel
@@ -203,6 +204,7 @@ macos:
   - jq
   - mkcert
   - mdbook
+  - mdbook-mermaid
   - node
   - numbat
   - pastel
@@ -286,6 +288,7 @@ ubuntu:
   - jd
   - mkcert
   - mdbook
+  - mdbook-mermaid
   - node
   - numbat
   - pastel
@@ -324,6 +327,7 @@ winget:
   - astral-sh.ruff
   - astral-sh.ty
   - astral-sh.uv
+  - badboy.mdbook-mermaid
   - BurntSushi.ripgrep.MSVC
   - dandavison.delta
   - DenoLand.Deno
@@ -354,6 +358,7 @@ winget:
   - OpenJS.NodeJS
   - Oracle.JDK.25
   - Oven-sh.Bun
+  - Rustlang.mdBook
   - Rustlang.Rustup
   - sharkdp.bat
   - sharkdp.fd
