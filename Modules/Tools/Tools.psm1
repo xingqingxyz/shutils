@@ -358,6 +358,12 @@ function Update-SessionEnvironment {
   .SYNOPSIS
   Updates environment variables from registry to current powershell session.
   #>
+  [CmdletBinding()]
+  param (
+    [Parameter()]
+    [switch]
+    $Force
+  )
   if (!$IsWindows) {
     throw [System.NotImplementedException]::new()
   }
@@ -367,19 +373,25 @@ function Update-SessionEnvironment {
     $envMap[$_] = $regEnv.GetValue($_)
   }
   $machinePath = $envMap['Path']
+  $machinePSMPath = $envMap['PSModulePath']
   $regEnv = Get-Item -LiteralPath 'HKCU:\Environment\'
   $regEnv.GetValueNames().ForEach{
     $envMap[$_] = $regEnv.GetValue($_)
   }
-  # try to find the prepended or appended paths e.g. $PSHOME or venv paths
-  $path = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-  $idx = $env:Path.LastIndexOf($path + ';')
-  $path = $idx -lt 0 ? '' : $env:Path.Substring($idx + $path.Length)
-  $idx = $env:Path.IndexOf(';' + [System.Environment]::GetEnvironmentVariable('Path', 'Machine')) + 1
-  $path = $env:Path.Substring(0, $idx) + $machinePath + ';' + $envMap['Path'] + $path
-  $envMap['Path'] = $path.Split(';').Where{ $_ } -join ';'
-  # keep some common process vars
-  $envMap['PSModulePath'] = $env:PSModulePath
+  if ($Force) {
+    $envMap['Path'] = $machinePath + ';' + $envMap['Path']
+    $envMap['PSModulePath'] = $machinePSMPath + ';' + $envMap['PSModulePath']
+  }
+  else {
+    # try to find the prepended or appended paths e.g. $PSHOME or venv paths
+    $path = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+    $idx = $env:Path.LastIndexOf($path + ';')
+    $path = $idx -lt 0 ? '' : $env:Path.Substring($idx + $path.Length)
+    $idx = $env:Path.IndexOf(';' + [System.Environment]::GetEnvironmentVariable('Path', 'Machine')) + 1
+    $envMap['Path'] = $env:Path.Substring(0, $idx) + $machinePath + ';' + $envMap['Path'] + $path
+    # keep common prosess vars
+    $envMap['PSModulePath'] = $env:PSModulePath
+  }
   $envMap.GetEnumerator().ForEach{
     [System.Environment]::SetEnvironmentVariable($_.Key, $_.Value)
   }

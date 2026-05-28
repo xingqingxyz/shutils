@@ -255,7 +255,10 @@ function Update-Software {
     }
     psm1 {
       if (Update-Module -AcceptLicense -PassThru) {
-        Clear-Module
+        # remove older packages
+        Get-Package -AllVersions | Group-Object Name | Where-Object Count -GT 1 | ForEach-Object {
+          $_.Group | Sort-Object -Descending { [version]$_.Version } | Select-Object -Skip 1
+        } | ForEach-Object { Uninstall-Module $_.Name -RequiredVersion $_.Version }
       }
       if ($Force -and $pkgs) {
         Install-Module $pkgs
@@ -292,10 +295,10 @@ function Update-Software {
         Write-Warning 'calling winget on non-Windows platform'
         continue
       }
-      $ags = @(if ($Force) { '--include-pinned' })
-      sudo winget upgrade -r --accept-package-agreements $ags
+      $ags = @(if ($Force) { '--pinned' })
+      sudo winget upgrade -h -r --accept-package-agreements $ags
       if ($Force -and $pkgs) {
-        sudo winget install --accept-package-agreements $pkgs
+        sudo winget install -h --no-upgrade --accept-package-agreements $pkgs
       }
       continue
     }
@@ -425,11 +428,17 @@ function Install-Binary ([string[]]$Path) {
       '.js' { $cmd = 'node ' + $cmd; break }
       '' {
         if ($IsWindows) {
-          break
+          throw [System.NotImplementedException]::new()
         }
         chmod +x $fullName
         ln -sf $fullName $binDir/$name
         return
+      }
+      default {
+        if ($IsWindows -and $env:PATHEXT.Split(';') -notcontains $_) {
+          throw [System.NotImplementedException]::new()
+        }
+        break
       }
     }
     if ($IsWindows) {
@@ -477,6 +486,7 @@ function Get-LocalVersion ([string]$Name) {
     $line = switch ($Name) {
       binaryen { wasm2js --version; break }
       cargo-release { cargo-release release --version; break }
+      dsc { (dsc --version).Split(' ', 2)[1].Replace('-preview', ''); break }
       go { go version; break }
       less { (less --version 2>$null)[0].Split(' ', 3)[1] + '.0'; break }
       wabt { wat2wasm --version; break }
@@ -604,7 +614,7 @@ function Update-LatestVersion ($Meta, [switch]$Force) {
       $Meta.version = switch ($Meta.name) {
         binaryen { $tag.Split('_', 2)[1] + '.0'; break }
         bun { $tag.Substring(5); break }
-        dsc { $tag.Split('-', 2)[0]; break }
+        dsc { $tag.Substring(1).Replace('-preview', ''); break }
         gswin64c { $tag.Substring(2, 2) + '.' + $tag.Substring(4, 2) + '.' + $tag.Substring(6); break }
         jq { $tag.Split('-', 2)[1]; break }
         less { $tag.Substring(6) + '.0'; break }
@@ -852,15 +862,24 @@ function Install-Release {
       break
     }
     dsc {
-      $base = if ($IsLinux) {
-        'DSC-{0}-{1}-linux' -f $Meta.version, $rust.arch
+      $tag = $Meta.tag.Substring(1)
+      $file = switch ($true) {
+        $IsFedora { 'dsc-{0}-1.{1}.rpm' -f $tag, $rust.arch; break }
+        ($IsUbuntu -or $IsRaspi) { 'dsc_{0}-1_{1}.deb' -f $tag, $go.arch; break }
+        $IsLinux { 'DSC-{0}-{1}-linux{2}' -f $tag, $rust.arch, $ext; break }
+        ($IsWindows -or $IsMacOS) { 'DSC-{0}-{1}{2}' -f $tag, $rust.target, $ext; break }
+        default { throw [System.NotImplementedException]::new() }
       }
-      else {
-        'DSC-{0}-{1}' -f $Meta.version, $rust.target
+      Invoke-ReleaseDownload $Meta $file
+      switch ($true) {
+        $IsFedora { sudo dnf install -y $buildDir/$file; break }
+        ($IsUbuntu -or $IsRaspi) { sudo apt install -y --fix-broken $buildDir/$file; break }
+        default {
+          tar -xf $buildDir/$file -C (New-EmptyDir $prefixDir/dsc)
+          Install-Binary $prefixDir/dsc/dsc$exe
+          break
+        }
       }
-      Invoke-ReleaseDownload $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/dsc)
-      Install-Binary $prefixDir/dsc/dsc$exe
       break
     }
     edit {
@@ -893,9 +912,11 @@ function Install-Release {
       break
     }
     fzf {
-      $base = 'fzf-{0}-{1}_{2}' -f $Meta.version, $go.os, $go.arch
-      Invoke-ReleaseDownload $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C $binDir
+      $file = 'fzf-{0}-{1}_{2}{3}' -f $Meta.version, $go.os, $go.arch, $ext
+      $CheckSums = 'fzf_{0}_checksums.txt' -f $Meta.version
+      Invoke-ReleaseDownload $Meta $file, $CheckSums
+      Assert-FileHash $file $CheckSums
+      tar -xf $buildDir/$file -C $binDir
       break
     }
     gh {
@@ -950,7 +971,7 @@ function Install-Release {
       }
       switch ($true) {
         $IsWindows {
-          sudo msiexec /qn /norestart /log "${env:TEMP}msiexec.log" /i $buildDir/$file
+          sudo msiexec /qn /norestart /log $env:TEMP\msiexec.log /i $buildDir\$file
           break
         }
         $IsLinux {
@@ -1022,7 +1043,7 @@ function Install-Release {
       [System.IO.File]::WriteAllBytes("$file.minisig", [System.Convert]::FromBase64String([System.IO.File]::ReadAllText("$file.sig")))
       minisign -Vm $file -P $Meta.pubkey
       switch ($true) {
-        $IsWindows { sudo msiexec /qn /norestart /log "${env:TEMP}msiexec.log" /i $buildDir/$file; break }
+        $IsWindows { sudo msiexec /qn /norestart /log $env:TEMP\msiexec.log /i $buildDir\$file; break }
         $IsFedora { sudo dnf install -y $buildDir/$file; break }
         ($IsUbuntu -or $IsRaspi) { sudo apt install -y --fix-broken $buildDir/$file; break }
       }
@@ -1178,7 +1199,7 @@ StartupWMClass=localsend_app
       }
       Invoke-FileDownload "https://nodejs.org/dist/$($Meta.tag)/$file"
       switch ($true) {
-        $IsWindows { sudo msiexec /qn /norestart /log "${env:TEMP}msiexec.log" /i $buildDir/$file; break }
+        $IsWindows { sudo msiexec /qn /norestart /log $env:TEMP\msiexec.log /i $buildDir\$file; break }
         $IsMacOS { sudo installer -pkg $buildDir/$file -dumplog > Temp:/$file.log; break }
         $IsLinux {
           $root = "$prefixDir/nodejs/$($Meta.tag)"
@@ -1189,10 +1210,25 @@ StartupWMClass=localsend_app
       }
     }
     numbat {
-      $base = 'numbat-{0}-{1}' -f $Meta.tag, $rust.target
-      Invoke-ReleaseDownload $Meta $base$ext
-      tar -xf $buildDir/$base$ext -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
+      $file = 'numbat-{0}-{1}{2}' -f $Meta.tag, $rust.target, $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C (New-EmptyDir $prefixDir/numbat) --strip-components=1
       Install-Binary $prefixDir/numbat/numbat$exe
+      break
+    }
+    nushell {
+      if ($IsWindows) {
+        $ext = '.msi'
+      }
+      $file = 'nushell-{0}-{1}{2}' -f $Meta.tag, $rust.target, $ext
+      Invoke-ReleaseDownload $Meta $file, SHA256SUMS
+      Assert-FileHash $file SHA256SUMS
+      if ($IsWindows) {
+        sudo msiexec /qn /norestart /log $env:TEMP\msiexec.log /i $buildDir\$file
+        break
+      }
+      tar -xf $buildDir/$file -C (New-EmptyDir $prefixDir/nu)
+      Install-Binary $prefixDir/nu/nu$exe
       break
     }
     pastel {
@@ -1206,9 +1242,12 @@ StartupWMClass=localsend_app
     }
     plantuml {
       $file = 'plantuml-gplv2-{0}.jar' -f $Meta.version
-      Invoke-ReleaseDownload $Meta $file
+      $jsFile = 'js-plantuml-{0}.zip' -f $Meta.version
+      Invoke-ReleaseDownload $Meta $file, $file`.asc, $jsFile
+      gpg --verify $buildDir/$file.asc $buildDir/$file
       Move-Item -LiteralPath $buildDir/$file $dataDir/jar/plantuml.jar -Force
       Install-Binary $dataDir/jar/plantuml.jar
+      Expand-Archive $buildDir/$jsFile (New-EmptyDir $dataDir/plantuml) -Force
       break
     }
     pwsh {
@@ -1218,7 +1257,7 @@ StartupWMClass=localsend_app
         $IsWindows {
           $file = 'PowerShell-{0}-win-{1}.msi' -f $id, $arch
           Invoke-ReleaseDownload $Meta $file
-          sudo msiexec /qn /norestart /log "${env:TEMP}msiexec.log" /i $buildDir/$file
+          sudo msiexec /qn /norestart /log $env:TEMP\msiexec.log /i $buildDir\$file
           break
         }
         $IsMacOS {

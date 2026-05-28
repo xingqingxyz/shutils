@@ -1,1 +1,41 @@
-../linux/.gitconfig
+[init]
+	defaultBranch = main
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+[credential "https://github.com"]
+	helper =
+	helper = !'C:\\Program Files\\GitHub CLI\\gh.exe' auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !'C:\\Program Files\\GitHub CLI\\gh.exe' auth git-credential
+[url "https://github.com"]
+	insteadOf = gh:
+	insteadOf = github:
+[url "https://gitlab.com"]
+	insteadOf = gitlab:
+[user]
+	name = xingqingxyz
+	email = cm.email@qq.com
+[pull]
+	rebase = false
+[rerere]
+	enabled = true
+[safe]
+	directory = *
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	hyperlinks = true
+	hyperlinks-file-link-format = vscode://file{path}:{line}
+	line-numbers = true
+	navigate = true
+[merge]
+	conflictStyle = zdiff3
+[diff "gpg"]
+	textconv = gpg -dq --batch --no-tty
+	binary = true
+[filter "gpg"]
+	smudge = gpg -dq --batch --no-tty
+	clean = gpg -eq --batch --no-tty -r cm.email@qq.com

@@ -1,6 +1,7 @@
 521xueweihan/HelloGitHub
 alacritty/alacritty
 ant-design/ant-design
+anthropics/buffa
 aria2/aria2
 ArtifexSoftware/ghostpdl
 astral-sh/ruff
@@ -19,7 +20,9 @@ charmbracelet/crush
 charmbracelet/glamour
 chenglou/pretext
 cjpais/Handy
+ClementTsang/bottom
 cli/cli
+crate-ci/cargo-release
 dandavison/delta
 DavidAnson/markdownlint
 EbookFoundation/free-programming-books
@@ -48,11 +51,13 @@ Hammerspoon/Spoons
 ImageMagick/ImageMagick
 istanbuljs/nyc
 itchyny/gojq
+jfrimmel/cargo-valgrind
 jgm/pandoc
 JohnnyMorganz/StyLua
 josephburnett/jd
 jqlang/jq
 jquery/jquery
+junegunn/fzf
 koalaman/shellcheck
 lokesh/color-thief
 lovell/sharp
@@ -69,12 +74,14 @@ microsoft/typescript-go
 microsoft/vscode
 microsoft/vscode-eslint
 microsoft/vscode-vsce
+mikefarah/yq
 morphx666/CoreAudio
 mui/base-ui
 mvdan/sh
 nabijaczleweli/cargo-update
 niri-wm/niri
 nodejs/node
+nushell/nushell
 nvim-telescope/telescope.nvim
 openclaw/openclaw
 opencontainers/runc
@@ -85,6 +92,7 @@ pheralb/svgl
 phiresky/ripgrep-all
 pingdotgg/t3code
 plantuml/plantuml
+PowerShell/DSC
 PowerShell/PowerShell
 PowerShell/PowerShellEditorServices
 PowerShell/PSScriptAnalyzer
@@ -93,8 +101,10 @@ prettier/prettier
 prettier/prettier-vscode
 prisma/prisma
 pydantic/monty
+RalfJung/cargo-careful
 ratatui/ratatui
 rayon-rs/rayon
+raysan5/raylib
 redhat-developer/yaml-language-server
 rolldown/rolldown
 rollup/rollup
@@ -103,6 +113,9 @@ rust-lang/futures-rs
 rust-lang/mdBook
 rust-lang/rust
 rust-lang/rust-analyzer
+rust-shell-script/rust_cmd_lib
+rustsec/advisory-db
+rustsec/rustsec
 ryanoasis/nerd-fonts
 sharkdp/bat
 sharkdp/diskus
@@ -112,6 +125,7 @@ sharkdp/hyperfine
 sharkdp/pastel
 sigstore/cosign
 sindresorhus/awesome
+smol-rs/smol
 spf13/cobra
 supabase-community/postgres-language-server
 swc-project/swc

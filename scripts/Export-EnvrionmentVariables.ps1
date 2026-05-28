@@ -34,6 +34,7 @@ $FZF_DEFAULT_OPTS = @'
 --bind=alt-b:preview-page-up
 --bind=alt-f:preview-page-down
 --bind=alt-J:jump
+--bind=alt-l:replace-query
 --bind=alt-n:preview-down
 --bind=alt-p:preview-up
 --bind=alt-z:toggle-wrap
@@ -44,12 +45,10 @@ $FZF_DEFAULT_OPTS = @'
 --bind=ctrl-alt-m:change-multi
 --bind=ctrl-b:page-up
 --bind=ctrl-backspace:backward-kill-subword
---bind=ctrl-d:half-page-down
 --bind=ctrl-delete:kill-word
 --bind=ctrl-f:page-down
 --bind=ctrl-left:backward-word
 --bind=ctrl-right:forward-word
---bind=ctrl-u:half-page-up
 --bind=tab:toggle-out
 '@.ReplaceLineEndings(' ')
 

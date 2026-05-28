@@ -9,7 +9,7 @@ try {
 }
 catch {
   if (!$Force) {
-    return Write-Error 'has staged changes'
+    throw 'has staged changes'
   }
 }
 git ls-files -s | ForEach-Object {

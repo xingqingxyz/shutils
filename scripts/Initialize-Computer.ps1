@@ -30,6 +30,8 @@ Invoke-RestMethod 'https://mirrors.ustc.edu.cn/gnu/gnu-keyring.gpg' -OutFile Tem
 gpg --import (Convert-Path Temp:/gnu-keyring.gpg)
 # oven-sh/bun
 gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys F3DCC08A8572C0749B3E18888EAB4D40A7B22B59
+# plantuml/plantuml
+gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys 019586D44BD80213
 # xingqingxyz
 gpg --import $PSScriptRoot/data/pubkey.asc
 #endregion

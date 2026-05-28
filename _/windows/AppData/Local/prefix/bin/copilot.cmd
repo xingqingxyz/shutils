@@ -14,9 +14,9 @@ goto parse_loop
 REM adjust based on script name
 set "args=%args% --yolo"
 REM run the command and pipe through glow
-node "%LOCALAPPDATA%\prefix\copilot" %args% | glow
+node "%LOCALAPPDATA%\prefix\copilot\index.js" %args% | glow
 exit /b
 
 :end_parse
 REM final exec without glow when loop finishes with single arg
-node "%LOCALAPPDATA%\prefix\copilot" %args%
+node "%LOCALAPPDATA%\prefix\copilot\index.js" %args%

@@ -30,7 +30,7 @@ if ($isWin10) {
 
   # 安装 PowerShell 7
   while ($true) {
-    winget install --source winget --accept-source-agreements --accept-package-agreements --id Microsoft.PowerShell Git.Git aria2.aria2
+    winget install -h -s winget --accept-source-agreements --accept-package-agreements --id Microsoft.PowerShell Git.Git aria2.aria2
     if ($LASTEXITCODE) {
       Start-Sleep 0:12
     }

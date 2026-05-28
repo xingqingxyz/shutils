@@ -81,7 +81,4 @@ else {
       New-Item -ItemType SymbolicLink -Force -Target $target $file
     }
   }
-  if ($IsWindows) {
-    & $PSScriptRoot\Repair-GitSymlinks.ps1
-  }
 }

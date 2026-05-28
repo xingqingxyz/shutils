@@ -46,10 +46,8 @@ Set-PSReadLineKeyHandler -Chord Ctrl+r -Description 'Fzf select from history fil
 }
 Set-PSReadLineKeyHandler -Chord Ctrl+t -Description 'Fzf select relative files to insert' -ScriptBlock {
   # note: expects "`n" not in path
-  try { $items = fzf '--walker=file,hidden' -m } catch { return }
-  [Microsoft.PowerShell.PSConsoleReadLine]::Insert($items.ForEach{
-      "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_))'"
-    } -join ' ')
+  try { $items = fzf -m '--walker=file,follow,hidden' '--preview=bat -p --color=always {}' } catch { return }
+  [Microsoft.PowerShell.PSConsoleReadLine]::Insert("'$($items -creplace "'", "''" -join "' '")'")
 }
 Set-PSReadLineKeyHandler -Chord Alt+c -Description 'Fzf select sub directories to cd' -ScriptBlock {
   # note: expects "`n" not in path
@@ -67,30 +65,27 @@ Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -S
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -ScriptBlock {
-  $pythonVenvActivate = Test-Path -LiteralPath .venv/
   if (Test-Path -LiteralPath Function:\deactivate) {
-    if ([System.IO.Path]::Join($ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath, '.venv') -eq $env:VIRTUAL_ENV) {
-      $pythonVenvActivate = $false
-    }
-    else {
-      $pythonVenvDeactivate = $true
-    }
+    deactivate
+    [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+    return
   }
-  switch ($true) {
-    $pythonVenvDeactivate {
-      deactivate
-      [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
-    }
-    $pythonVenvActivate {
+  $root = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath
+  $fsRoot = [System.IO.Path]::GetPathRoot($root)
+  do {
+    $venvPath = [System.IO.Path]::Join($root, '.venv')
+    if ([System.IO.Path]::Exists($venvPath)) {
       if ($IsWindows) {
-        .\.venv\Scripts\Activate.ps1
+        & $venvPath\Scripts\Activate.ps1
       }
       else {
-        ./.venv/bin/activate.ps1
+        & $venvPath/bin/activate.ps1
       }
       [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+      break
     }
-  }
+    $root = [System.IO.Path]::GetDirectoryName($root)
+  } while ($root -cne $fsRoot)
 }
 $cmd = {
   [System.Management.Automation.Language.Ast]$ast = $null

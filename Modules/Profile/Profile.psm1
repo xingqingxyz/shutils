@@ -283,6 +283,7 @@ function uev {
 
 function npx {
   $root = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath
+  $fsRoot = [System.IO.Path]::GetPathRoot($root)
   $npm = $(do {
       $lockFile = Split-Path -Resolve -Leaf $root/pnpm-lock.yaml, $root/bun.lock?, $root/yarn.lock, $root/deno.json -ea Ignore | Select-Object -First 1
       if ($lockFile) {
@@ -290,7 +291,7 @@ function npx {
         break
       }
       $root = [System.IO.Path]::GetDirectoryName($root)
-    } while (![System.IO.Path]::IsPathRooted($root))) ?? 'npm'
+    } while ($root -cne $fsRoot)) ?? 'npm'
   $cmd, $ags = $args.ForEach{ $_.Where{ $null -ne $_ } }
   $cmd = (Get-Command ./node_modules/.bin/$cmd, $root/node_modules/.bin/$cmd, $cmd -CommandType Application -TotalCount 1 -ea Ignore)?[0].Source
   if (!$cmd) {
@@ -415,19 +416,19 @@ function x {
   [string]$cmd = $ags[0]
   $term = switch ($term[0]) {
     'alacritty' {
-      if ($IsWindows) {
-        'conhost', 'alacritty', '--title', $cmd, '-e'
-      }
-      elseif (Get-Process alacritty -ea Ignore) {
-        # alacritty msg working directory is defined by config or $HOME
-        'alacritty', 'msg', 'create-window', '--working-directory', $ExecutionContext.SessionState.Path. CurrentFileSystemLocation.ProviderPath, '--title', $cmd, '-e'
-      }
-      elseif ($IsMacOS) {
-        'open', '-n', '-a', 'alacritty.app', '--', '--title', $cmd, '-e'
-      }
-      else {
-        'sh', '-c', 'setsid -f "$0" "$@" > /dev/null 2>&1', 'alacritty', '--title', $cmd, '-e'
-      }
+      @(if ($IsWindows) {
+          'conhost', 'alacritty'
+        }
+        elseif (Get-Process alacritty -ea Ignore) {
+          # alacritty msg working directory is defined by config or $HOME
+          'alacritty', 'msg', 'create-window', '--working-directory', $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.ProviderPath
+        }
+        elseif ($IsMacOS) {
+          'open', '-n', '-a', 'alacritty.app', '--'
+        }
+        else {
+          'sh', '-c', 'setsid -f "$@" &> /dev/null', 'alacritty'
+        }) + '--title', $cmd, '-e'
       break
     }
     'ghostty' { 'ghostty', '+new-window', '--title', $cmd, '-e'; break }
@@ -486,11 +487,11 @@ for /l %_ in () do (
 while true; do
   $ags
   ec=`$?
-  if [ "`$ec" != 0 ]; then
+  if ((ec)); then
     echo "process exited with code `$ec" >&2
     echo 'press ctrl+d to exit, or press enter to retry' >&2
     while read -rsn1 -t "`$EPOCHSECONDS"; do
-      if [ "`$REPLY" = $'\004' ]; then
+      if [ "`$REPLY" = `$'\004' ]; then
         break
       elif [ -z "`$REPLY" ]; then
         continue 2

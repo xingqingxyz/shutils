@@ -1,0 +1,13 @@
+"$schema" = "https://raw.githubusercontent.com/ClementTsang/bottom/main/schema/nightly/bottom.json"
+
+[cpu]
+default = "average"
+
+[processes]
+default_sort = "Command"
+
+[flags]
+disable_gpu = true
+expanded = true
+tree = true
+process_memory_as_value = true

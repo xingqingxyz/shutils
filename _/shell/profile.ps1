@@ -10,7 +10,7 @@ if ($psEditor) {
   . $root/onEnterPSES.ps1
 }
 # load
-. $root/complete.ps1
+. $root/completion.ps1
 . $root/keybindings.ps1
 . $root/z.ps1
 Remove-Variable root
@@ -74,7 +74,7 @@ if ($IsWindows) {
       }
       $ok = Read-Host "Install $id`? (Y/N)"
       if ($ok -eq 'y') {
-        sudo winget install -s winget --accept-package-agreements --no-vt --id $id | Out-Host
+        sudo winget install -h -s winget --accept-package-agreements --no-vt --id $id | Out-Host
         if ($?) {
           $e.CommandScriptBlock = [scriptblock]::Create("Update-SessionEnvironment; if (`$MyInvocation.ExpectingInput) { `$input | & $($e.CommandName) `$args } else { & $($e.CommandName) `$args }")
           return

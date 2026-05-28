@@ -1,14 +1,14 @@
 ﻿using CoreAudio;
 
-namespace PSCoreAudio;
+namespace Utility;
 
-public static class Device
+public static class AudioDevice
 {
     private static readonly MMDeviceEnumerator _enumerator;
     private static readonly MMDevice _defaultDevice;
     private static readonly AudioEndpointVolume? _volumeControl;
 
-    static Device()
+    static AudioDevice()
     {
         _enumerator = new MMDeviceEnumerator();
         _defaultDevice = _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);

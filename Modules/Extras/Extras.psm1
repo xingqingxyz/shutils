@@ -134,6 +134,9 @@ function Register-PSScheduledTask {
     $WorkingDirectory = $HOME,
     [Parameter()]
     [switch]
+    $AtStartup,
+    [Parameter()]
+    [switch]
     $Persistent,
     [Parameter()]
     [switch]
@@ -154,9 +157,17 @@ function Register-PSScheduledTask {
   if ($UsePowerShell) {
     $Command = 'pwsh -noni -nop -e ' + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($Command))
   }
-  $Name = 'pwsh-' + ($DaysInterval ? "${DaysInterval}d" : 'once') + '-' + $Name
+  $Name = 'pwsh-' + ($AtStartup ? 'startup' : $DaysInterval ? "${DaysInterval}d" : 'once') + '-' + $Name
   if ($IsWindows) {
-    $trigger = if ($DaysInterval) {
+    $trigger = if ($AtStartup) {
+      if ($AsAdmin) {
+        New-ScheduledTaskTrigger -AtStartup
+      }
+      else {
+        New-ScheduledTaskTrigger -AtLogOn
+      }
+    }
+    elseif ($DaysInterval) {
       New-ScheduledTaskTrigger -At $At -Daily -DaysInterval $DaysInterval
     }
     else {
@@ -171,6 +182,9 @@ function Register-PSScheduledTask {
     if (!$Force -and (systemctl show @(if (!$AsAdmin) { '--user' }) $Name -p ExecStart)) {
       return Write-Error "Task $Name already exists."
     }
+    if (![System.IO.Path]::IsPathFullyQualified($Command.Split(' ', 2)[0])) {
+      $Command = '/usr/bin/env ' + $Command
+    }
     $service = @"
 [Unit]
 Description=PowerShell $Name task
@@ -181,12 +195,12 @@ After=network-online.target' : '')
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/env $Command
+ExecStart=$Command
 WorkingDirectory=$WorkingDirectory
 Environment="HOME=$HOME" "PSModulePath=$env:PSModulePath"
 Restart=on-failure
 RestartSec=12m
-$(!$AsAdmin -and $Network ? 'ExecStartPre=/usr/bin/bash -c "until ping -c1 -W1 8.8.8.8; do sleep 1; done"' : '')
+$(!$AsAdmin -and $Network ? 'ExecStartPre=/bin/sh -c "until ping -c1 -W1 8.8.8.8; do sleep 1; done"' : '')
 $($AsAdmin ? "[Install]
 WantedBy=$($Graphical ? 'graphical.target' : 'multi-user.target')" : '')
 "@
@@ -197,6 +211,7 @@ Description=PowerShell $Name task timer
 [Timer]
 OnCalendar=$($DaysInterval -eq 1 ? '*-*-*' : $At.ToString('yyyy-MM-dd')) $($At.ToString('HH:mm:ss'))
 OnUnitActiveSec=$($DaysInterval -le 1 ? [int]::MaxValue : $DaysInterval)d
+$($AtStartup ? "On$($AsAdmin ? 'Boot' : 'Startup')Sec=10s" : '')
 Persistent=$($Persistent.ToString().ToLowerInvariant())
 AccuracySec=$($Persistent ? [System.Math]::Floor($DaysInterval * 12) : 0)h
 

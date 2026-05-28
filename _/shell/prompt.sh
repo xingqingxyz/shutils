@@ -15,10 +15,12 @@ _prompt() {
   elif ((left == 0)); then
     color=36
     left=${right:0:3}
-    dur=${left##+(0)}.${right:3}ms
+    right=${right:3}
+    dur=${left##+(0)}.${right%%+(0)}ms
   elif ((left < 1000)); then
     color=34
-    dur=$left.${right:0:3}s
+    right=${right:0:3}
+    dur=$left.${right%%+(0)}s
   elif ((right = left % 60)) && (((left /= 60) < 60)); then
     color=33
     dur=${left}m${right}s
@@ -53,11 +55,11 @@ MAPFILE=(
 )
 case "$OSTYPE" in
   msys | cygwin)
-    MAPFILE[2]=${MAPFILE[2]/'$PWD'/'$(cygpath -w "$PWD")'}
+    MAPFILE[2]=${MAPFILE[2]/'$PWD'/'/$(cygpath -m "$PWD")'}
     ;;
   linux-gnu)
     if declare -xp WSL_DISTRO_NAME &> /dev/null; then
-      MAPFILE[2]=${MAPFILE[2]/'$PWD'/'$(wslpath -w "$PWD")'}
+      MAPFILE[2]=${MAPFILE[2]/'$PWD'/'/$(wslpath -m "$PWD")'}
     fi
     ;;
 esac

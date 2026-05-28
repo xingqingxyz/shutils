@@ -1,4 +1,7 @@
 # dedup
-$historyPath = (Get-PSReadLineOption).HistorySavePath
-$lines = Get-Content -LiteralPath $historyPath | Select-Object -Unique
-$lines > $historyPath
+Convert-Path -LiteralPath @(
+  (Get-PSReadLineOption).HistorySavePath
+  "$HOME/.bash_history"
+) -ea Ignore | ForEach-Object {
+  Out-File -InputObject (Get-Content -LiteralPath $_ | Select-Object -Unique) $_
+}

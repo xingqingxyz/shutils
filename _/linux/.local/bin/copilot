@@ -4,10 +4,10 @@ while [ $# -ne 0 ]; do
   case "$1" in
     -p | --prompt)
       args+=('--yolo')
-      exec -a copilot glow < <(node "$HOME/.local/copilot" "${args[@]}")
+      exec -a copilot glow < <(node "$HOME/.local/copilot/index.js" "${args[@]}")
       ;;
     *) ;;
   esac
   shift
 done
-exec -a copilot node "$HOME/.local/copilot" "${args[@]}"
+exec -a copilot node "$HOME/.local/copilot/index.js" "${args[@]}"

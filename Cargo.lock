@@ -237,6 +237,3 @@ dependencies = [
 [[package]]
 name = "wish"
 version = "0.1.0"
-dependencies = [
- "tokio",
-]

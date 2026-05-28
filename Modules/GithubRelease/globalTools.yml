@@ -345,10 +345,9 @@ winget:
   - junegunn.fzf
   - Kingsoft.WPSOffice.CN
   - koalaman.shellcheck
-  - Meta.Zstandard
   - Microsoft.Edge
   - Microsoft.PowerShell
-  - Microsoft.VisualStudio.Community
+  - Microsoft.VisualStudio.BuildTools
   - Microsoft.VisualStudioCode
   - Microsoft.WindowsTerminal
   - Microsoft.WSL
