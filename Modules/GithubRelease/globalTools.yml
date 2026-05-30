@@ -159,7 +159,6 @@ fedora:
   - cargo-generate
   - deno
   - diskus
-  - flutter
   - fzf
   - gh
   - go
@@ -195,7 +194,6 @@ macos:
   - deno
   - diskus
   - dotnet
-  - flutter
   - fzf
   - go
   - golangci-lint
@@ -278,7 +276,6 @@ ubuntu:
   - diskus
   - edit
   - fd
-  - flutter
   - fzf
   - gh
   - go
@@ -314,7 +311,6 @@ uv-python:
 windows:
   - cargo-generate
   - diskus
-  - flutter
   - golangci-lint
   - gswin64c
   - numbat

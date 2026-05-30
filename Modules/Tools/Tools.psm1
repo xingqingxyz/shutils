@@ -1,5 +1,8 @@
 using namespace System.Collections.Generic
 
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 #region exports
 function Get-MemoryInfo {
   if ($IsWindows) {
@@ -402,9 +405,12 @@ function Use-DevelopmentEnvironment {
   [Alias('ude')]
   param (
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('AndroidStudio', 'GitBash', 'VisualStudio')]
+    [ValidateSet('AndroidStudio', 'GitBash', 'OCaml', 'VisualStudio')]
     [string]
-    $Name
+    $Name,
+    [Parameter(ValueFromRemainingArguments, Position = 1)]
+    [string[]]
+    $ArgumentList
   )
   switch ($Name) {
     AndroidStudio {
@@ -428,6 +434,13 @@ function Use-DevelopmentEnvironment {
         'C:\Program Files\Git\usr\bin'
         'C:\Program Files\Git\mingw64\bin'
       ) -join [System.IO.Path]::PathSeparator
+      break
+    }
+    OCaml {
+      if ($ArgumentList.Count -eq 1) {
+        $ArgumentList = '--switch=' + $ArgumentList[0]
+      }
+      opam env --shell=pwsh $ArgumentList | Out-String | Invoke-Expression
       break
     }
     VisualStudio {

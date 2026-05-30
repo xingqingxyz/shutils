@@ -60,8 +60,8 @@ Set-PSReadLineKeyHandler -Chord Alt+S -Description 'Fzf select stared repo name 
   [Microsoft.PowerShell.PSConsoleReadLine]::Insert($repo)
 }
 Set-PSReadLineKeyHandler -Chord Alt+z -Description 'Fzf select z paths to cd' -ScriptBlock {
-  try { $dir = (Invoke-Z -List).Key | fzf --scheme=path } catch { return }
-  Invoke-Z $dir
+  try { $dir = (Invoke-Z -List).path | fzf --scheme=path } catch { return }
+  Set-Location -LiteralPath $dir
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
 }
 Set-PSReadLineKeyHandler -Chord Alt+v -Description 'Toggle .venv environment' -ScriptBlock {
@@ -107,7 +107,7 @@ $cmd = {
   [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $ast.Extent.EndOffset, $text)
   [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
-Set-PSReadLineKeyHandler -Chord Alt+d -Description 'Add delay & to command line and accept it' -ScriptBlock $cmd
+Set-PSReadLineKeyHandler -Chord Alt+D -Description 'Add delay & to command line and accept it' -ScriptBlock $cmd
 Set-PSReadLineKeyHandler -Chord Alt+s -Description 'Add sudo to command line and accept it' -ScriptBlock $cmd
 Set-PSReadLineKeyHandler -Chord Alt+x -Description 'Add x to command line and accept it' -ScriptBlock $cmd
 Remove-Variable cmd

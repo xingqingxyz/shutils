@@ -32,7 +32,14 @@ Register-ArgumentCompleter -Native -CommandName code, code-insiders, cursor, qod
           '--sync' { 'on', 'off'; break }
           '--locale' { 'en-US', 'zh-CN', 'zh-TW'; break }
           '--log' { 'critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'; break }
-          '--profile' { 'flutter', 'gc', 'java', 'lldb'; break }
+          '--profile' {
+            $path = (Get-ChildItem -LiteralPath ~/.config/Code/User/sync/profiles | Sort-Object LastWriteTime -Descending)?[0].FullName
+            if (!$path) {
+              break
+            }
+            ((Get-Content -LiteralPath $path -Raw | ConvertFrom-Json).content | ConvertFrom-Json | Where-Object id -CNotMatch ^[a-z]+$).name
+            break 
+          }
           '--category' {
             'builtin', 'deprecated', 'disabled', 'enabled', 'featured', 'installed', 'popular', 'recentlyPublished', 'recommended', 'updates', 'workspaceUnsupported', 'ext:', 'id:', 'tag:', 'sort:installs', 'sort:name', 'sort:publishedDate', 'sort:rating', 'sort:updateDate'
             ('ai', 'azure', 'chat', 'data science', 'debuggers', 'education', 'extension packs', 'formatters', 'keymaps', 'language packs', 'linters', 'notebooks', 'machine learning', 'others', 'programming languages', 'scm providers', 'snippets', 'testing', 'themes', 'visualization').ForEach{ "category:`"$_`"" }

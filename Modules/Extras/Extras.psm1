@@ -1,3 +1,7 @@
+
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 #region exports
 function Get-GithubRepositoryBlob {
   [CmdletBinding()]
@@ -185,24 +189,40 @@ function Register-PSScheduledTask {
     if (![System.IO.Path]::IsPathFullyQualified($Command.Split(' ', 2)[0])) {
       $Command = '/usr/bin/env ' + $Command
     }
+    $wants = if ($Network -and $AsAdmin) {
+      @'
+Wants=network-online.target
+After=network-online.target
+'@
+    }
+    $execStartPre = if ($Network -and !$AsAdmin) {
+      'ExecStartPre=/bin/sh -c "until ping -c1 -W1 8.8.8.8; do sleep 1; done"'
+    }
+    $wantedBy = if ($AsAdmin) {
+      "WantedBy=$($Graphical ? 'graphical.target' : 'multi-user.target')"
+    }
+    $onUnitActiveSec = if ($DaysInterval -gt 1) {
+      "OnUnitActiveSec=$DaysInterval`d"
+    }
+    $onStartUpSec = if ($AtStartup) {
+      "On$($AsAdmin ? 'Boot' : 'Startup')Sec=10s"
+    }
     $service = @"
 [Unit]
 Description=PowerShell $Name task
-StartLimitIntervalSec=12m
-StartLimitBurst=2
-$($AsAdmin -and $Network ? 'Wants=network-online.target
-After=network-online.target' : '')
+$wants
 
 [Service]
 Type=oneshot
+$execStartPre
 ExecStart=$Command
 WorkingDirectory=$WorkingDirectory
 Environment="HOME=$HOME" "PSModulePath=$env:PSModulePath"
 Restart=on-failure
 RestartSec=12m
-$(!$AsAdmin -and $Network ? 'ExecStartPre=/bin/sh -c "until ping -c1 -W1 8.8.8.8; do sleep 1; done"' : '')
-$($AsAdmin ? "[Install]
-WantedBy=$($Graphical ? 'graphical.target' : 'multi-user.target')" : '')
+
+[Install]
+$wantedBy
 "@
     $timer = @"
 [Unit]
@@ -210,10 +230,10 @@ Description=PowerShell $Name task timer
 
 [Timer]
 OnCalendar=$($DaysInterval -eq 1 ? '*-*-*' : $At.ToString('yyyy-MM-dd')) $($At.ToString('HH:mm:ss'))
-OnUnitActiveSec=$($DaysInterval -le 1 ? [int]::MaxValue : $DaysInterval)d
-$($AtStartup ? "On$($AsAdmin ? 'Boot' : 'Startup')Sec=10s" : '')
+$onUnitActiveSec
+$onStartUpSec
 Persistent=$($Persistent.ToString().ToLowerInvariant())
-AccuracySec=$($Persistent ? [System.Math]::Floor($DaysInterval * 12) : 0)h
+AccuracySec=$($Persistent ? $DaysInterval * 12 : 0)h
 
 [Install]
 WantedBy=timers.target
@@ -352,7 +372,7 @@ function Set-Region {
     if (!$Force) {
       return Write-Error "file $LiteralPath not found"
     }
-    New-Item $LiteralPath -Force
+    $null = New-Item $LiteralPath -Force
   }
   [string[]]$lines = $MyInvocation.ExpectingInput ? $input : (Get-Content -LiteralPath $LiteralPath)
   $found = 0
@@ -594,7 +614,7 @@ function Show-ScreenText {
     $PassThru
   )
 
-  if ($IsWindows) {
+  if (!$IsWindows) {
     throw [System.NotImplementedException]::new()
   }
 
@@ -733,8 +753,15 @@ function figlet.f ([string]$Value) {
 }
 
 function jq.f {
-  $file = fzf '--walker=file,hidden' -q '.json$ '
-  if (!$file) {
+  [CmdletBinding()]
+  param (
+    [Parameter()]
+    [ValidateNotNullOrWhiteSpace()]
+    [string]
+    $LiteralPath
+  )
+  $LiteralPath ??= fzf '--walker=file,hidden' -q '.json$ '
+  if (!$LiteralPath) {
     return
   }
   $query = jq -r 'paths | map(
@@ -747,10 +774,10 @@ function jq.f {
         end)
     else
       "[\(.)]"
-    end) | join("")' `-- $file | fzf
+    end) | join("")' `-- $LiteralPath | fzf
   $query = "jq '{0}' '{1}'" -f @(
     [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($query)
-    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent((Convert-Path -LiteralPath $file)))
+    [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent((Convert-Path -LiteralPath $LiteralPath)))
   $query
   [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($query)
 }
@@ -762,7 +789,7 @@ function rg.f {
     [ValidateNotNullOrEmpty()]
     [string]
     $Query,
-    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [Parameter(ValueFromRemainingArguments, Position = 1)]
     [ValidateNotNullOrEmpty()]
     [string[]]
     $Options,

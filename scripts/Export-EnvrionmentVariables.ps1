@@ -1,7 +1,7 @@
 $WISH_ROOT = [System.IO.Path]::GetDirectoryName($PSScriptRoot)
 $ANDROID_HOME = $IsWindows ? "$env:LOCALAPPDATA\Android\Sdk" : "$HOME/.local/share/Android/Sdk"
-$DSC_RESOURCE_PATH = if (Get-Command dsc -CommandType Application -TotalCount 1 -ea Ignore) {
-  ((dsc resource list | ConvertFrom-Json).directory | Sort-Object -Unique) -join [System.IO.Path]::PathSeparator
+$DSC_RESOURCE_PATH = if ($cmd = Get-Command dsc -CommandType Application -TotalCount 1 -ea Ignore) {
+  [System.IO.Path]::GetDirectoryName((Get-Item -LiteralPath $cmd.Source).ResolvedTarget)
 }
 $FLUTTER_HOME = $IsWindows ? "$env:LOCALAPPDATA\prefix\flutter" : "$HOME/.local/flutter"
 $JAVA_HOME = if ($cmd = (Get-Command java -CommandType Application -TotalCount 1 -ea Ignore).Source) {

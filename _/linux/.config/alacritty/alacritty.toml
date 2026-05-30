@@ -28,18 +28,6 @@ command = { program = "sh", args = ["-c", '''
 '''] }
 
 [[keyboard.bindings]]
-key = "+"
-mods = "Alt|Shift"
-command = { program = "alacritty", args = [
-  "msg",
-  "create-window",
-  "-T",
-  "bash",
-  "-e",
-  "bash",
-] }
-
-[[keyboard.bindings]]
 key = "Enter"
 mods = "Alt"
 action = "ToggleFullscreen"

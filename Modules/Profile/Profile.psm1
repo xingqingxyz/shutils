@@ -1,5 +1,8 @@
 using namespace System.Collections.Generic
 
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 #region exports
 function Format-Duration {
   [CmdletBinding()]
@@ -475,10 +478,14 @@ for /l %_ in () do (
   $ags &
   if errorlevel 1 (
     set ec=!ERRORLEVEL! &
-    echo process exited with code !ec! >&2 &
+    echo process exited with code !ec! &
     choice /d n /t 9999 /m Retry &
     if errorlevel 2 ($clean & exit /b !ec!)
-  ) else ($clean & exit /b 0)
+  ) else (
+    choice /d n /t 10 /m "this window will be closed in 10 seconds" &
+    if errorlevel 2 (pause & echo press ctrl+c to trigger clean) &
+    $clean & exit /b !ec!
+  )
 )
 "@ -creplace '\r?\n\s*', ' ')
   }
@@ -488,8 +495,8 @@ while true; do
   $ags
   ec=`$?
   if ((ec)); then
-    echo "process exited with code `$ec" >&2
-    echo 'press ctrl+d to exit, or press enter to retry' >&2
+    echo "process exited with code `$ec"
+    echo 'press ctrl+d to exit, or press enter to retry'
     while read -rsn1 -t "`$EPOCHSECONDS"; do
       if [ "`$REPLY" = `$'\004' ]; then
         break
@@ -497,6 +504,12 @@ while true; do
         continue 2
       fi
     done
+  else
+    read -rsn1 -t 10 -p 'this window will be closed in 10 seconds (Y/n)'
+    if [ "`${REPLY@u}" = N ]; then
+      sleep "`$EPOCHSECONDS"
+      echo 'press ctrl+c to trigger clean'
+    fi
   fi
   $clean
   exit "`$ec"
@@ -748,7 +761,7 @@ filter showFile ([string[]]$ArgumentList) {
       break
     }
     '\.cpio?$' {
-      Get-Content -LiteralPath $_ | cpio -itv | less
+      Get-Content -LiteralPath $_ -Raw | cpio -itv | less
       break
     }
     '\.gpg$' {
@@ -761,6 +774,10 @@ filter showFile ([string[]]$ArgumentList) {
     }
     '\.(md|markdown)$' {
       glow $_
+      break
+    }
+    '\.nu' {
+      Get-Content -LiteralPath $_ -Raw | nu --stdin -c nu-highlight | less
       break
     }
     default {

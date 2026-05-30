@@ -1,0 +1,3 @@
+(library
+ (name hello)
+ (preprocess (pps ppx_deriving.show)))

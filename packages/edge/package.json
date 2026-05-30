@@ -12,7 +12,7 @@
     "prepublish": "rolldown -c --environment NODE_ENV:production"
   },
   "devDependencies": {
-    "@types/chrome": "0.0.258",
+    "@types/chrome": "0.1.42",
     "jszip": "^3.10.1"
   }
 }

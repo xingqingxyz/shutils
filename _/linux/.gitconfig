@@ -34,8 +34,7 @@
 [merge]
 	conflictStyle = zdiff3
 [diff "gpg"]
-	textconv = gpg -dq --batch --no-tty
-	binary = true
+	textconv = cat
 [filter "gpg"]
 	smudge = gpg -dq --batch --no-tty
 	clean = gpg -eq --batch --no-tty -r cm.email@qq.com

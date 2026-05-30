@@ -38,7 +38,7 @@ Set-Item -LiteralPath $_executableAliasMap.Keys.ForEach{ "Function:$_" } {
   }
   # flat iterator args for native passing
   $cmd, $ags = $_executableAliasMap[$cmd] + $args.ForEach{ $_.Where{ $null -ne $_ } }
-  $cmd = (Get-Command $cmd -Type Application -TotalCount 1 -ea Stop).Source
+  $cmd = (Get-Command $cmd -Type Application -TotalCount 1).Source
   if ($MyInvocation.ExpectingInput) {
     Write-Debug "| $cmd $ags"
     $input | & $cmd $ags

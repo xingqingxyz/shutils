@@ -1,5 +1,5 @@
 $env.PROMPT_COMMAND = {
-    let ec = if $env.LAST_EXIT_CODE > 0 { ansi red } else { ansi green }
+    let ec = if $env.LAST_EXIT_CODE != 0 { $"(ansi red)($env.LAST_EXIT_CODE)" } else { $"(ansi green)nu" }
     let hist = (history | last | default { index: 0 }).index + 1
     let ms = $env.CMD_DURATION_MS | into int
     let dur = if $ms <= 1 {
@@ -27,6 +27,6 @@ $env.PROMPT_COMMAND = {
     } else {
         $"file://($env.PWD)"
     } | ansi link --text $dir
-    $"($ec)($env.LAST_EXIT_CODE)(ansi reset) \(($hist):($dur.0)($dur.1)(ansi reset)\) ($dir)"
+    $"($ec)(ansi reset) \(($hist):($dur.0)($dur.1)(ansi reset)\) ($dir)"
 }
 $env.PROMPT_COMMAND_RIGHT = ''

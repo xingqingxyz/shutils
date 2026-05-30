@@ -57,7 +57,7 @@ else {
       continue
     }
   }
-  switch -CaseSensitive -Regex (git diff --name-only --diff-filter=AD HEAD^..HEAD) {
+  switch -CaseSensitive -Regex (git diff --name-only --diff-filter=A HEAD^..HEAD) {
     '^scripts/tasks/.+$' {
       Write-Host '. ./scripts/Initialize-Tasks.ps1'
       . ./scripts/Initialize-Tasks.ps1
