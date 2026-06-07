@@ -90,7 +90,7 @@ Register-ArgumentCompleter -Native -CommandName gio -ScriptBlock {
           break
         }
         mime {
-          Get-Content -LiteralPath /usr/share/applications/mimeapps.list -ea Stop | ForEach-Object { $_.Split('=', 2)[0] }
+          Get-Content -LiteralPath /usr/share/applications/mimeapps.list | ForEach-Object { $_.Split('=', 2)[0] }
           break
         }
         { $_.StartsWith('mime ') } {

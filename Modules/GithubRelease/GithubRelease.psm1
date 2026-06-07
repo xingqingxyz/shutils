@@ -1,5 +1,8 @@
 using namespace System.Runtime.InteropServices
 
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 #region exports
 function Update-Release {
   [CmdletBinding()]
@@ -645,7 +648,7 @@ function Install-Release {
     [System.Object]
     $Meta
   )
-  Write-Information "Installing $($Meta.name)@$($Meta.version)"
+  Write-Debug "Installing $($Meta.name)@$($Meta.version)"
   $ext = $IsWindows ? '.zip' : '.tar.gz'
   $exe = $IsWindows ? '.exe' : ''
   switch ($Meta.name) {
@@ -864,7 +867,7 @@ function Install-Release {
     dsc {
       $tag = $Meta.tag.Substring(1)
       $file = switch ($true) {
-        $IsFedora { 'dsc-{0}-1.{1}.rpm' -f $tag, $rust.arch; break }
+        $IsFedora { 'dsc-{0}-1.{1}.rpm' -f $tag.Replace('-', '.'), $rust.arch; break }
         ($IsUbuntu -or $IsRaspi) { 'dsc_{0}-1_{1}.deb' -f $tag, $go.arch; break }
         $IsLinux { 'DSC-{0}-{1}-linux{2}' -f $tag, $rust.arch, $ext; break }
         ($IsWindows -or $IsMacOS) { 'DSC-{0}-{1}{2}' -f $tag, $rust.target, $ext; break }
@@ -1220,14 +1223,14 @@ StartupWMClass=localsend_app
       if ($IsWindows) {
         $ext = '.msi'
       }
-      $file = 'nushell-{0}-{1}{2}' -f $Meta.tag, $rust.target, $ext
+      $file = 'nu-{0}-{1}{2}' -f $Meta.tag, $rust.target, $ext
       Invoke-ReleaseDownload $Meta $file, SHA256SUMS
       Assert-FileHash $file SHA256SUMS
       if ($IsWindows) {
         sudo msiexec /qn /norestart /log $env:TEMP\msiexec.log /i $buildDir\$file
         break
       }
-      tar -xf $buildDir/$file -C (New-EmptyDir $prefixDir/nu)
+      tar -xf $buildDir/$file -C (New-EmptyDir $prefixDir/nu) --strip-components=1
       Install-Binary $prefixDir/nu/nu$exe
       break
     }
@@ -1274,7 +1277,7 @@ StartupWMClass=localsend_app
           sudo mkdir -p $baseDir
           sudo tar -xf $buildDir/$file -C $baseDir
           sudo chmod +x $baseDir/pwsh
-          sudo ln -sf $baseDir/pwsh $sudoBinDir
+          sudo ln -sf $baseDir/pwsh /usr/bin
           break
         }
         default { throw [System.NotImplementedException]::new() }

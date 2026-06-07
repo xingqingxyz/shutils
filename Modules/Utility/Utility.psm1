@@ -1,5 +1,10 @@
+
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 function Get-AudioDevice {
   [CmdletBinding()]
+  [OutputType([double])]
   param (
     [Parameter(ParameterSetName = 'Volume')]
     [switch]
@@ -8,11 +13,11 @@ function Get-AudioDevice {
   switch ($true) {
     $Volume {
       if ($IsWindows) {
-        [Sys.AudioDevice]::GetVolume()
+        [Utility.AudioDevice]::GetVolume()
         break
       }
       elseif ($IsLinux) {
-        (wpctl get-volume '@DEFAULT_AUDIO_SINK@').Split(' ', 2)[1]
+        (wpctl get-volume '@DEFAULT_AUDIO_SINK@').Split(' ', 3)[1] -as [double]
         break
       }
       throw [System.NotImplementedException]::new()
@@ -31,7 +36,7 @@ function Set-AudioDevice {
   switch ($PSCmdlet.ParameterSetName) {
     Volume {
       if ($IsWindows) {
-        [Sys.AudioDevice]::SetVolume($Volume)
+        [Utility.AudioDevice]::SetVolume($Volume)
         break
       }
       elseif ($IsLinux) {

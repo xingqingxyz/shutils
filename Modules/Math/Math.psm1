@@ -1,13 +1,17 @@
+
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 function hex {
   [CmdletBinding()]
   [Alias('bin', 'dec', 'oct')]
   param (
+    [Parameter(ValueFromPipeline, Position = 0)]
+    [System.Object]
+    $InputObject,
     [Parameter()]
     [switch]
-    $NoPrefix,
-    [Parameter(ValueFromPipeline = $true)]
-    [System.Object]
-    $InputObject
+    $NoPrefix
   )
   process {
     $value = $InputObject

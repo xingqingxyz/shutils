@@ -31,6 +31,7 @@ param (
 function Get-ParserName ([string]$Path) {
   switch -CaseSensitive -Regex ([System.IO.Path]::GetExtension($Path)) {
     '^\.(?:asciipb|c|c\+\+|cc|cp|cpp|cs|cxx|h|h\+\+|hh|hpp|hxx|inl|ipp|java|m|mm|proto|protodevel|sv|svh|td|textpb|textproto|txtpb|v|vh)$' { 'clang-format'; break }
+    '^\.(?:cs|fs|xml)$' { 'csharpier'; break }
     '^\.(?:dart)$' { 'dart'; break }
     '^\.(?:go)$' { 'goimports'; break }
     '^\.(?:js|cjs|mjs|jsx|tsx|ts|cts|mts|json|jsonc|json5|yml|yaml|htm|html|xhtml|shtml|vue|gql|graphql|css|scss|sass|less|hbs|handlebars|md|markdown|toml)$' { 'oxfmt'; break }
@@ -55,6 +56,18 @@ function Get-Parser ([string]$Name, [switch]$Inplace, [switch]$Stdin) {
       }
       else {
         { clang-format --style=LLVM `-- $args }
+      }
+      break
+    }
+    'csharpier' {
+      if ($Inplace) {
+        { csharpier format --ignore-path= `-- $args }
+      }
+      elseif ($Stdin) {
+        { $input | csharpier format --ignore-path= --stdin-path=$args }
+      }
+      else {
+        { csharpier format --ignore-path= --write-stdout `-- $args }
       }
       break
     }
@@ -97,7 +110,10 @@ function Get-Parser ([string]$Name, [switch]$Inplace, [switch]$Stdin) {
     }
     'PSScriptAnalyzer' {
       if ($Inplace) {
-        { $args.ForEach{ Out-File -NoNewline -LiteralPath $_ -InputObject (PSScriptAnalyzer\Invoke-Formatter (Get-Content -Raw -LiteralPath $_) -Settings $env:WISH_ROOT/CodeFormatting.psd1) } }
+        { $args.ForEach{
+            $text = Get-Content -Raw -LiteralPath $_
+            PSScriptAnalyzer\Invoke-Formatter $text -Settings $env:WISH_ROOT/CodeFormatting.psd1 | Out-File -LiteralPath $_ -NoNewline
+          } }
       }
       elseif ($Stdin) {
         { PSScriptAnalyzer\Invoke-Formatter (@($input) -join "`n") -Settings $env:WISH_ROOT/CodeFormatting.psd1 }
@@ -185,9 +201,9 @@ function Get-Parser ([string]$Name, [switch]$Inplace, [switch]$Stdin) {
 
 if ($MyInvocation.ExpectingInput) {
   if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
-    return $input | & (Get-Parser $FileName -Stdin)
+    return $input | & Get-Parser (Get-ParserName $FileName -Stdin)
   }
-  return $input | & (Get-Parser $FileName -Stdin) | bat -p --file-name=$FileName
+  return $input | & Get-Parser (Get-ParserName $FileName -Stdin) | bat -p --file-name=$FileName
 }
 if ($Path) {
   $LiteralPath = Convert-Path $Path -Force
@@ -195,15 +211,18 @@ if ($Path) {
 [System.Collections.Generic.Dictionary[string, string[]]]$fileMap = @{}
 $LiteralPath.ForEach{ $fileMap[(Get-ParserName $_)] += $_ }
 if ($Inplace) {
-  return $fileMap.GetEnumerator() | ForEach-Object -Parallel {
-    & (Get-Parser $_.Key -Inplace) $_.Value
-  } -ThrottleLimit ($env:NUMBER_OF_PROCESSORS ?? 8)
+  return $fileMap.GetEnumerator().ForEach{
+    $files = $_.Value
+    & (Get-Parser $_.Key -Inplace) @files
+  }
 }
 if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength) {
-  return $fileMap.GetEnumerator() | ForEach-Object -Parallel {
-    & (Get-Parser $_.Key) $_.Value
-  } -ThrottleLimit ($env:NUMBER_OF_PROCESSORS ?? 8)
+  return $fileMap.GetEnumerator().ForEach{
+    $files = $_.Value
+    & (Get-Parser $_.Key) @files
+  }
 }
 $fileMap.GetEnumerator().ForEach{
-  & (Get-Parser $_.Key) $_.Value
+  $files = $_.Value
+  & (Get-Parser $_.Key) @files
 } | bat -p --file-name $LiteralPath[0]

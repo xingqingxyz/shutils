@@ -65,6 +65,8 @@ gpgcheck=1
     'wcurl'
   )
   dnf remove -y $pkgs
+  # msedit
+  ln -sf msedit /usr/bin/edit
 }
 elseif ($PSVersionTable.OS.StartsWith('Ubuntu ')) {
   $label = (Get-Content -LiteralPath /etc/os-release | Select-String -Raw -SimpleMatch UBUNTU_CODENAME=).Split('=', 2)[1]

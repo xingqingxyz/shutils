@@ -11,7 +11,7 @@ def _fzf_ident [] {
     if $out == null {
         return
     }
-    commandline edit --insert $"$env.config($out)"
+    commandline edit --insert $"$env.config.($out)"
 }
 
 $env.config.menus ++= [
@@ -73,7 +73,7 @@ $env.config.keybindings ++= [
     }
     {
         name: prepend_delay
-        modifier: alt
+        modifier: alt_shift
         keycode: char_d
         mode: [emacs]
         event: [

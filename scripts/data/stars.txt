@@ -13,7 +13,6 @@ awesome-css-group/awesome-css
 axodotdev/cargo-dist
 badboy/mdbook-mermaid
 belav/csharpier
-bnjbvr/cargo-machete
 BurntSushi/jiff
 BurntSushi/ripgrep
 cargo-generate/cargo-generate
@@ -98,8 +97,12 @@ niri-wm/niri
 nodejs/node
 nushell/nushell
 nvim-telescope/telescope.nvim
+<<<<<<< HEAD
 obi1kenobi/cargo-semver-checks
 ocaml-ppx/ppx_deriving
+||||||| 4a3de24
+=======
+>>>>>>> af4fa716e69a43183596af5b441c03cd509e4593
 ocaml/ocaml
 ocaml/ocaml-lsp
 openclaw/openclaw
@@ -179,7 +182,11 @@ wasm-bindgen/wasm-bindgen
 watchexec/watchexec
 WebAssembly/binaryen
 xai-org/x-algorithm
+<<<<<<< HEAD
 xd009642/tarpaulin
+||||||| 4a3de24
+=======
+>>>>>>> af4fa716e69a43183596af5b441c03cd509e4593
 xoofx/Tomlyn
 yinkaisheng/Python-UIAutomation-for-Windows
 yt-dlp/yt-dlp

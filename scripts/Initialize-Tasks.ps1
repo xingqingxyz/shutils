@@ -9,7 +9,7 @@ param (
 if ($IsLinux) {
   $null = New-Item -ItemType Directory ~/.config/systemd/user -Force
 }
-Get-ChildItem -LiteralPath $PSScriptRoot/tasks -Force -ea Stop | ForEach-Object {
+Get-ChildItem -LiteralPath $PSScriptRoot/tasks -Force | ForEach-Object {
   if ($_.Attributes.HasFlag([System.IO.FileAttributes]::Directory)) {
     $dir = $_
     $_.GetFiles().ForEach{

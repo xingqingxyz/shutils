@@ -5,7 +5,11 @@ const NU_LIB_DIRS = [
 source completion.nu
 source keybindings.nu
 source prompt.nu
-source z.nu
+overlay use z.nu
+
+alias cls = clear
+alias e = edit
+alias l = ls
 
 $env.config.completions.algorithm = 'fuzzy'
 $env.config.show_banner = false
@@ -25,3 +29,4 @@ $env.config.menus ++= [
         }
     }
 ]
+$env.config.hooks.display_output = 'table'
