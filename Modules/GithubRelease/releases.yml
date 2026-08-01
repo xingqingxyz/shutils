@@ -20,38 +20,126 @@
   tag: bun-v1.3.14
 - name: cargo-about
   repo: EmbarkStudios/cargo-about
-  tag: 0.9.0
-  version: 0.9.0
+  tag: 0.9.1
+  version: 0.9.1
+- name: cargo-audit
+  repo: rustsec/rustsec
+  tag: cargo-audit/v0.22.1
+  version: 0.22.1
+- name: cargo-auditable
+  repo: rust-secure-code/cargo-auditable
+  tag: v0.7.5
+  version: 0.7.5
+- name: cargo-bloat
+  repo: RazrFalcon/cargo-bloat
 - name: cargo-careful
   repo: RalfJung/cargo-careful
   tag: v0.4.10
   version: 0.4.10
+- name: cargo-cross
+  repo: zijiren233/cargo-cross
+- name: cargo-deny
+  repo: EmbarkStudios/cargo-deny
+  tag: 0.20.2
+  version: 0.20.2
+- name: cargo-dist
+  repo: axodotdev/cargo-dist
+  tag: v0.32.0
+  version: 0.32.0
+- name: cargo-expand
+  repo: dtolnay/cargo-expand
+- name: cargo-flamegraph
+  repo: flamegraph-rs/flamegraph
+- name: cargo-fuzz
+  repo: rust-fuzz/cargo-fuzz
+  tag: 0.13.1
+  version: 0.13.1
+- name: cargo-geiger
+  repo: geiger-rs/cargo-geiger
 - name: cargo-generate
   repo: cargo-generate/cargo-generate
-  tag: v0.23.9
-  version: 0.23.9
+  tag: v0.23.11
+  version: 0.23.11
+- name: cargo-hack
+  repo: taiki-e/cargo-hack
+  tag: v0.6.45
+  version: 0.6.45
+- name: cargo-insta
+  repo: mitsuhiko/insta
+  tag: 1.47.2
+  version: 1.47.2
+- name: cargo-llvm-cov
+  repo: taiki-e/cargo-llvm-cov
+  tag: v0.8.7
+  version: 0.8.7
+- name: cargo-machete
+  repo: bnjbvr/cargo-machete
+  tag: v0.9.2
+  version: 0.9.2
+- name: cargo-make
+  repo: sagiegurari/cargo-make
+  tag: 0.37.24
+  version: 0.37.24
+- name: cargo-msrv
+  repo: foresterre/cargo-msrv
+  tag: v0.19.3
+  version: 0.19.3
+- name: cargo-nextest
+  repo: nextest-rs/cargo-nextest
+  tag: cargo-nextest-0.9.140
+  version: 0.9.140
+- name: cargo-outdated
+  repo: kbknapp/cargo-outdated
+  tag: v0.19.0
+  version: 0.19.0
 - name: cargo-release
   repo: crate-ci/cargo-release
   tag: v1.1.2
   version: 1.1.2
+- name: cargo-semver-checks
+  repo: obi1kenobi/cargo-semver-checks
+  tag: v0.48.0
+  version: 0.48.0
+- name: cargo-tarpaulin
+  repo: xd009642/tarpaulin
+  tag: 0.35.4
+  version: 0.35.4
+- name: cargo-udeps
+  repo: est31/cargo-udeps
+  tag: v0.1.61
+  version: 0.1.61
 - name: cargo-valgrind
   repo: jfrimmel/cargo-valgrind
   tag: 2.4.1
   version: 2.4.1
+- name: cargo-vet
+  repo: mozilla/cargo-vet
+  tag: v0.10.0
+  version: 0.10.0
+- name: cargo-xwin
+  repo: rust-cross/cargo-xwin
+  tag: v0.22.0
+  version: 0.22.0
+- name: cargo-zigbuild
+  repo: rust-cross/cargo-zigbuild
+  tag: v0.22.3
+  version: 0.22.3
 - name: code
   repo: microsoft/vscode
   version: 0.45.1
   tag: v0.45.1
 - name: copilot
   repo: github/copilot-cli
-  tag: v1.0.51
-  version: 1.0.51
+  tag: v1.0.70
+  version: 1.0.70
 - name: cosign
   repo: sigstore/cosign
+  tag: v3.0.6
+  version: 3.0.6
 - name: crush
   repo: charmbracelet/crush
-  tag: v0.66.0
-  version: 0.66.0
+  tag: v0.84.0
+  version: 0.84.0
 - name: deno
   repo: denoland/deno
   tag: v2.7.4
@@ -81,8 +169,8 @@
   sha256: 03c3235aa9e4b6fffdbac2176f803731cf5a5c998a3a5e57f840b4b202afa4f6
 - name: fzf
   repo: junegunn/fzf
-  tag: v0.71.0
-  version: 0.71.0
+  tag: v0.74.2
+  version: 0.74.2
 - name: gh
   repo: cli/cli
   tag: v2.91.0
@@ -97,10 +185,10 @@
   version: 2.1.1
 - name: go
   repo: golang/go
-  tag: go1.26.2
-  version: 1.26.2
-  sha256: 990e6b4bbba816dc3ee129eaeaf4b42f17c2800b88a2166c265ac1a200262282
-  file: go1.26.2.linux-amd64.tar.gz
+  tag: go1.26.5
+  version: 1.26.5
+  sha256: 5c2c3b16caefa1d968a94c1daca04a7ca301a496d9b086e17ad77bb81393f053
+  file: go1.26.5.linux-amd64.tar.gz
 - name: golangci-lint
   repo: golangci/golangci-lint
   tag: v2.12.2
@@ -109,12 +197,12 @@
   repo: goreleaser/goreleaser
   tag: v2.12.5
   version: 2.12.5
-- name: gum
-  repo: charmbracelet/gum
 - name: gswin64c
   repo: ArtifexSoftware/ghostpdl-downloads
   tag: gs10070
   version: 10.07.0
+- name: gum
+  repo: charmbracelet/gum
 - name: handy
   repo: cjpais/Handy
   pubkey: dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJBQjcyMDk1MjA2NjAxRjkKUldUNUFXWWdsU0MzdXRRZi8zYzhqV2FaNUVDbDd2Rk5VM1IvWWowVXdmRFNKQ1BrMXF5RFFsLy8K
@@ -162,8 +250,8 @@
   version: 1.4.4
 - name: mold
   repo: rui314/mold
-  tag: v2.40.4
-  version: 2.40.4
+  tag: v2.41.0
+  version: 2.41.0
 - name: nerd-fonts
   repo: ryanoasis/nerd-fonts
   fonts:
@@ -174,16 +262,16 @@
   version: 3.4.0
 - name: node
   repo: nodejs/node
-  tag: v26.2.0
-  version: 26.2.0
+  tag: v26.5.0
+  version: 26.5.0
 - name: numbat
   repo: sharkdp/numbat
   tag: v1.23.0
   version: 1.23.0
 - name: nushell
   repo: nushell/nushell
-  tag: 0.113.0
-  version: 0.113.0
+  tag: 0.114.0
+  version: 0.114.0
 - name: pastel
   repo: sharkdp/pastel
   tag: v0.12.0
@@ -194,8 +282,8 @@
   version: 1.2026.4
 - name: pwsh
   repo: PowerShell/PowerShell
-  tag: v7.6.2
-  version: 7.6.2
+  tag: v7.6.4
+  version: 7.6.4
 - name: rg
   repo: BurntSushi/ripgrep
   tag: 15.1.0
@@ -206,11 +294,15 @@
   version: 0.10.10
 - name: ruff
   repo: astral-sh/ruff
-  tag: 0.15.15
-  version: 0.15.15
+  tag: 0.15.21
+  version: 0.15.21
 - name: rustup
   repo: rust-lang/rustup
   version: 1.28.2
+- name: sccache
+  repo: mozilla/sccache
+  tag: v0.15.0
+  version: 0.15.0
 - name: sing-box
   repo: SagerNet/sing-box
   tag: v1.13.5
@@ -233,12 +325,12 @@
   version: 0.26.9
 - name: ty
   repo: astral-sh/ty
-  tag: 0.0.40
-  version: 0.0.40
+  tag: 0.0.58
+  version: 0.0.58
 - name: uv
   repo: astral-sh/uv
-  version: 0.11.17
-  tag: 0.11.17
+  version: 0.11.28
+  tag: 0.11.28
 - name: vhs
   repo: charmbracelet/vhs
 - name: vncviewer
@@ -255,6 +347,10 @@
   repo: drager/wasm-pack
   tag: v0.14.0
   version: 0.14.0
+- name: watchexec
+  repo: watchexec/watchexec
+  tag: v2.5.1
+  version: 2.5.1
 - name: wechat
   version: 4.1.1
 - name: wps
@@ -263,8 +359,8 @@
   rpm: https://wps-linux-personal.wpscdn.cn/wps/download/ep/Linux2023/25882/wps-office-12.1.2.25882.AK.preread.sw.Personal-1-663297.x86_64.rpm
 - name: xan
   repo: medialab/xan
-  tag: 0.57.1
-  version: 0.57.1
+  tag: 0.60.0
+  version: 0.60.0
 - name: yq
   repo: mikefarah/yq
   tag: v4.52.5

@@ -149,7 +149,7 @@ function Show-CommandInfo {
     $Man = $MyInvocation.InvocationName -eq 'k',
     [Parameter()]
     [switch]
-    $Edit = $MyInvocation.InvocationName -eq 'e' -or $PSBoundParameters.ContainsKey('Editor'),
+    $Code,
     [ArgumentCompleter({
         param (
           [string]$CommandName,
@@ -159,10 +159,17 @@ function Show-CommandInfo {
         [System.Management.Automation.CompletionCompleters]::CompleteCommand($wordToComplete)
       })]
     [Parameter()]
+    [ValidateNotNullOrEmpty()]
     [string]
-    $Editor = $env:EDITOR ?? 'edit'
+    $Editor = $(if ($PSBoundParameters.ContainsKey('Code')) {
+        'code'
+      }
+      elseif ($MyInvocation.InvocationName -eq 'e') {
+        $env:EDITOR
+      })
   )
   begin {
+    $Edit = ![string]::IsNullOrEmpty($Editor)
     [string[]]$items = @()
     [string[]]$inputs = @()
   }
@@ -273,9 +280,6 @@ function uev {
       Write-Debug "$cmd $ags"
       & $cmd $ags
     }
-    if ($LASTEXITCODE) {
-      throw "$cmd exit code $LASTEXITCODE"
-    }
   }
   finally {
     $savedEnvMap.GetEnumerator().ForEach{
@@ -315,9 +319,6 @@ function npx {
   else {
     Write-Debug "$cmd $ags"
     & $cmd $ags
-  }
-  if ($LASTEXITCODE) {
-    throw "npx exit code $LASTEXITCODE"
   }
 }
 
@@ -375,9 +376,6 @@ function sudo {
     else {
       Write-Debug "$cmd $ags"
       & $cmd $ags
-    }
-    if ($LASTEXITCODE) {
-      throw "sudo exit code $LASTEXITCODE"
     }
     return
   }
@@ -518,9 +516,6 @@ done
   }
   Write-Debug "$cmd $ags"
   & $cmd $ags
-  if ($LASTEXITCODE) {
-    throw "x exit code $LASTEXITCODE"
-  }
 }
 #endregion
 
@@ -784,7 +779,7 @@ filter showFile ([string[]]$ArgumentList) {
       $path = $_
       switch -CaseSensitive (file -Lb --mime-encoding $_) {
         binary { sh -c 'hexyl "$@" | less' `-- $path $ArgumentList <# auto close hexyl pipe #>; break }
-        { $_ -ceq $OutputEncoding.WebName -or $_.StartsWith('unknown') } { bat -p $path $ArgumentList; break }
+        { $_ -ceq $OutputEncoding.WebName -or $_.StartsWith('unknown') } { bat -Ap $path $ArgumentList; break }
         default { Get-Content -LiteralPath $path -Encoding ([System.Text.Encoding]::GetEncoding($_)) | bat -p --file-name=$path $ArgumentList; break }
       }
       break

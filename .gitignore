@@ -1,7 +1,9 @@
+.ruff_cache
 __pycache__
 logs
 node_modules
 *.egg-info
+/dist
 /target
 /Modules/*/bin
 /Modules/*/obj

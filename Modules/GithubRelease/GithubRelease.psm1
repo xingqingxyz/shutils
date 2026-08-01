@@ -30,7 +30,7 @@ function Update-Release {
       return Write-Warning "skipping unknown pkg $_"
     }
     if (Update-LatestVersion $pkgMap[$_] -Force:$Force) {
-      try { Install-Release $pkgMap[$_] } catch {}
+      try { Install-Release $pkgMap[$_] } catch { Write-Warning $_ }
     }
   }
   $pkgMap.Values | ConvertTo-Yaml > $PSScriptRoot/releases.yml
@@ -281,6 +281,14 @@ function Update-Software {
       }
       continue
     }
+    sccache {
+      $file = 'sccache-{0}-{1}.tar.gz' -f $Meta.tag, ($rust.target -replace '-gnu$', '-musl')
+      Invoke-ReleaseDownload $Meta $file, $file`.sha256
+      Assert-FileHash $file $file`.sha256
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/sccache$exe $binDir -Force
+      break
+    }
     uv {
       if ($Global) {
         uv tool upgrade --all
@@ -305,7 +313,14 @@ function Update-Software {
       }
       continue
     }
-    { $_ -ceq 'windows' -or $_ -ceq 'macos' -or $_ -ceq 'fedora' -or $_ -ceq 'ubuntu' -or $_ -ceq 'wsl' -or $_ -ceq 'raspi' } {
+    {
+      $_ -ceq 'windows' -or
+      $_ -ceq 'macos' -or
+      $_ -ceq 'fedora' -or
+      $_ -ceq 'ubuntu' -or
+      $_ -ceq 'wsl' -or
+      $_ -ceq 'raspi'
+    } {
       if ($pkgs) {
         Update-Release $pkgs
       }
@@ -389,7 +404,8 @@ function rustenv {
     $IsMacOS { break }
     $IsLinux { 'gnu'; break }
   }
-  $target = ($arch, $platform, $os, $clib).Where{ $_ } -join '-'
+  $target = ($arch, $platform, $os, $clib).Where{
+    $_ } -join '-'
   [pscustomobject]@{
     arch     = $arch
     platform = $platform
@@ -400,7 +416,8 @@ function rustenv {
 }
 
 function execute {
-  $cmd, $ags = $args.ForEach{ $_ }
+  $cmd, $ags = $args.ForEach{
+    $_ }
   $cmd = (Get-Command $cmd -Type Application -TotalCount 1).Source
   if ($MyInvocation.ExpectingInput) {
     Write-Debug "| $cmd $ags"
@@ -415,7 +432,14 @@ function execute {
 function Assert-FileHash ([string]$Name, [string]$CheckSums) {
   Write-Debug "checking file hash: $Name"
   $actual = (Get-FileHash -LiteralPath $buildDir/$Name).Hash
-  $expected = (Get-Content -LiteralPath $buildDir/$CheckSums | Select-String -Raw -SimpleMatch $Name).Split(' ', 2)[0]
+  $lines = Get-Content -LiteralPath $buildDir/$CheckSums
+  if ($lines.Count -gt 1) {
+    $lines = $lines | Select-String -Raw -SimpleMatch $Name
+  }
+  if (!$lines) {
+    throw 'file hash not found'
+  }
+  $expected = $lines.Split(' ', 2)[0]
   if ($actual -ne $expected) {
     throw "file hash not match: $Name ($actual) $expected"
   }
@@ -488,10 +512,10 @@ function Get-LocalVersion ([string]$Name) {
   try {
     $line = switch ($Name) {
       binaryen { wasm2js --version; break }
-      cargo-release { cargo-release release --version; break }
       dsc { (dsc --version).Split(' ', 2)[1].Replace('-preview', ''); break }
       go { go version; break }
       less { (less --version 2>$null)[0].Split(' ', 3)[1] + '.0'; break }
+      nushell { nu --version; break }
       wabt { wat2wasm --version; break }
       vncviewer {
         if (Test-Path -LiteralPath $dataDir/jar/vncviewer.jar) {
@@ -517,13 +541,20 @@ function Get-LocalVersion ([string]$Name) {
         (Get-Content -LiteralPath ~/.config/Kingsoft/Office.conf).Where({ $_.StartsWith('plugins\kaccountsdk\storage\office\appv=linux-office:linux_365:') }, 'First', 1)[0]
         break
       }
-      { $_ -ceq 'cargo-careful' -or $_ -ceq 'localsend' -or $_ -ceq 'nerd-fonts' } {
+      { $_.StartsWith('cargo-') } { cargo $_.Split('-', 2)[1] --version; break }
+      {
+        $_ -ceq 'cargo-careful' -or
+        $_ -ceq 'localsend' -or
+        $_ -ceq 'nerd-fonts'
+      } {
         (Get-Content -Raw -LiteralPath $PSScriptRoot/releases.yml | ConvertFrom-Yaml | Where-Object name -CEQ $_).version
         break
       }
       default { @(& $_ --version 2>$null)[0]; break }
     }
-    [regex]::Match($line, '\d+\.\d+(?:\.\d+(?:-\d+)?|)').Value.Replace('-', '.')
+    $version = [regex]::Match($line, '\d+\.\d+(?:\.\d+(?:-\d+)?|)').Value.Replace('-', '.')
+    Write-Debug "detected local $Name@$version"
+    $version
   }
   catch {
     Write-Warning "cannot detect local version for $Name"
@@ -598,7 +629,8 @@ function Update-LatestVersion ($Meta, [switch]$Force) {
       break
     }
     wps {
-      $Meta.deb, $Meta.rpm = (Invoke-WebRequest 'https://www.wps.cn/product/wpslinux#').Links.href.Where{ $_.EndsWith('.deb') -or $_.EndsWith('.rpm') }
+      $Meta.deb, $Meta.rpm = (Invoke-WebRequest 'https://www.wps.cn/product/wpslinux#').Links.href.Where{ $_.EndsWith('.deb') -or
+        $_.EndsWith('.rpm') }
       $Meta.version = [regex]::Match($Meta.deb, '(\d+\.){3}\d+').Value
       break
     }
@@ -610,6 +642,7 @@ function Update-LatestVersion ($Meta, [switch]$Force) {
         '--exclude-pre-releases'
         switch ($Meta.name) {
           node { '-L5', '--json', 'tagName,isLatest', '-q', 'first(.[] | select(.isLatest)) | .tagName'; break }
+          cargo-audit { '-L10', '--json', 'tagName', '-q', "first(.[].tagName | select(startswith(`"$_/`")))"; break }
           default { '-L1', '--json', 'tagName', '-q', '.[0].tagName'; break }
         }
       }
@@ -617,6 +650,9 @@ function Update-LatestVersion ($Meta, [switch]$Force) {
       $Meta.version = switch ($Meta.name) {
         binaryen { $tag.Split('_', 2)[1] + '.0'; break }
         bun { $tag.Substring(5); break }
+        cargo-audit { $tag.Split('/', 2)[1].Substring(1); break }
+        cargo-geiger { $tag.Split('-')[-1]; break }
+        cargo-nextest { $tag.Split('-')[-1]; break }
         dsc { $tag.Substring(1).Replace('-preview', ''); break }
         gswin64c { $tag.Substring(2, 2) + '.' + $tag.Substring(4, 2) + '.' + $tag.Substring(6); break }
         jq { $tag.Split('-', 2)[1]; break }
@@ -674,7 +710,8 @@ function Install-Release {
           sudo dnf install -y $buildDir/$file
           break
         }
-        ($IsUbuntu -or $IsRaspi) {
+        ($IsUbuntu -or
+        $IsRaspi) {
           $file = 'balena-etcher_{0}_{1}.deb' -f $Meta.version, $go.arch
           Invoke-ReleaseDownload $Meta $file
           sudo dpkg -i $buildDir/$file
@@ -734,12 +771,12 @@ function Install-Release {
       $null = New-Item -ItemType SymbolicLink -Force -Target bun$exe $binDir/bunx$exe
       break
     }
-    cargo-about {
-      $file = 'cargo-about-{0}-{1}.tar.gz' -f $Meta.tag, ($rust.target -replace '-gnu$', '-musl')
-      Invoke-ReleaseDownload $Meta $file, $file`.sha256
-      Assert-FileHash $file $file`.sha256
+    cargo-audit {
+      $ext = $IsWindows ? $ext : '.tgz'
+      $file = 'cargo-audit-{0}-v{1}{2}' -f $rust.target, $Meta.version, $ext
+      Invoke-ReleaseDownload $Meta $file
       tar -xf $buildDir/$file -C $buildDir --strip-components=1
-      Move-Item -LiteralPath $buildDir/cargo-about$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/cargo-audit$exe $binDir -Force
       break
     }
     cargo-careful {
@@ -760,11 +797,64 @@ function Install-Release {
       }
       break
     }
+    cargo-fuzz {
+      if ([RuntimeInformation]::OSArchitecture -cne 'X64') {
+        throw [System.NotImplementedException]::new()
+      }
+      $file = '{0}-{1}-{2}{3}' -f $_, $Meta.tag, ($rust.target -replace '-gnu$', '-musl'), $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $binDir
+      break
+    }
     cargo-generate {
       $file = 'cargo-generate-{0}-{1}.tar.gz' -f $Meta.tag, $rust.target
       Invoke-ReleaseDownload $Meta $file
       tar -xf $buildDir/$file -C $buildDir
       Move-Item -LiteralPath $buildDir/cargo-generate$exe $binDir -Force
+      break
+    }
+    cargo-machete {
+      $target = if ($IsLinux -and [RuntimeInformation]::OSArchitecture -ceq 'X64') {
+        $rust.target -replace '-gnu$', '-musl'
+      }
+      else {
+        $rust.target
+      }
+      $file = '{0}-{1}-{2}.tar.gz' -f $_, $Meta.tag, $target
+      Invoke-ReleaseDownload $Meta $file, $file`.sha256
+      Assert-FileHash $file $file`.sha256
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
+      break
+    }
+    cargo-make {
+      $base = 'cargo-make-v{0}-{1}' -f $Meta.version, $rust.target
+      $file = $base + '.zip'
+      Invoke-ReleaseDownload $Meta $file
+      Expand-Archive $buildDir/$file $buildDir
+      Move-Item -LiteralPath $buildDir/$base/cargo-make$exe $binDir -Force
+      break
+    }
+    cargo-msrv {
+      $ext = $IsWindows ? $ext : '.tgz'
+      $file = 'cargo-msrv-{0}-{1}{2}' -f $rust.target, $Meta.tag, $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/cargo-msrv$exe $binDir -Force
+      break
+    }
+    cargo-nextest {
+      $base = 'cargo-nextest-{0}-{1}' -f $Meta.version, $rust.target
+      $file = $base + $ext
+      Invoke-ReleaseDownload $Meta $file, $base`.sha256
+      Assert-FileHash $file $base`.sha256
+      tar -xf $buildDir/$file -C $binDir
+      break
+    }
+    cargo-outdated {
+      $file = 'cargo-outdated-{0}-{1}{2}' -f $Meta.version, ($rust.target -replace '-gnu$', '-musl'), $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $binDir
       break
     }
     cargo-release {
@@ -774,12 +864,36 @@ function Install-Release {
       Move-Item -LiteralPath $buildDir/cargo-release$exe $binDir -Force
       break
     }
+    cargo-udeps {
+      $file = '{0}-{1}-{2}{3}' -f $_, $Meta.tag, $rust.target, $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
+      break
+    }
     cargo-valgrind {
       if ($IsWindows) {
         throw [System.NotImplementedException]::new()
       }
       $file = 'cargo-valgrind-{0}-{1}{2}' -f $Meta.tag, ($rust.target -replace '-gnu$', '-musl'), $ext
       Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $binDir
+      break
+    }
+    cargo-xwin {
+      $target = if ($IsWindows) {
+        switch ([RuntimeInformation]::OSArchitecture) {
+          X64 { 'windows-x64'; break }
+          X86 { 'windows-x86'; break }
+          default { throw [System.NotImplementedException]::new() }
+        }
+      }
+      else {
+        $rust.target -replace '-gnu$', '-musl'
+      }
+      $file = 'cargo-xwin-{0}.{1}{2}' -f $Meta.tag, $target, $ext
+      Invoke-ReleaseDownload $Meta $file, $file`.sha256
+      Assert-FileHash $file $file`.sha256
       tar -xf $buildDir/$file -C $binDir
       break
     }
@@ -925,7 +1039,8 @@ function Install-Release {
     gh {
       $ext = switch ($true) {
         $IsFedora { '.rpm'; break }
-        ($IsUbuntu -or $IsRaspi) { '.deb'; break }
+        ($IsUbuntu -or
+        $IsRaspi) { '.deb'; break }
         $IsLinux { '.tar.gz'; break }
         default { throw [System.NotImplementedException]::new() }
       }
@@ -934,7 +1049,8 @@ function Install-Release {
       Assert-FileHash $file "gh_$($Meta.version)_checksums.txt"
       switch ($true) {
         $IsFedora { sudo dnf install -y $buildDir/$file; break }
-        ($IsUbuntu -or $IsRaspi) { sudo dpkg -i $buildDir/$file; break }
+        ($IsUbuntu -or
+        $IsRaspi) { sudo dpkg -i $buildDir/$file; break }
         $IsLinux { tar -xf $buildDir/$file -C $binDir --strip-components=1; break }
       }
       break
@@ -951,7 +1067,8 @@ function Install-Release {
           sudo dnf install -y ghostty
           break
         }
-        ($IsUbuntu -or $IsRaspi) {
+        ($IsUbuntu -or
+        $IsRaspi) {
           sudo add-apt-repository -y ppa:avengemedia/danklinux
           sudo apt install -y ghostty
           break
@@ -1010,7 +1127,8 @@ function Install-Release {
       break
     }
     gswin64c {
-      if (!$IsWindows -or [RuntimeInformation]::OSArchitecture -cne 'X64') {
+      if (!$IsWindows -or
+        [RuntimeInformation]::OSArchitecture -cne 'X64') {
         throw [System.NotImplementedException]::new()
       }
       $file = '{0}w64.exe' -f $Meta.tag
@@ -1036,7 +1154,8 @@ function Install-Release {
       $file = switch ($true) {
         $IsWindows { 'Handy_{0}_{1}.msi' -f $Meta.version, [RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant(); break }
         $IsFedora { 'Handy-{0}-1.{1}.rpm' -f $Meta.version, $rust.arch; break }
-        ($IsUbuntu -or $IsRaspi) { 'Handy_{0}_{1}.deb' -f $Meta.version, $go.arch; break }
+        ($IsUbuntu -or
+        $IsRaspi) { 'Handy_{0}_{1}.deb' -f $Meta.version, $go.arch; break }
         default { throw [System.NotImplementedException]::new() }
       }
       if (!$Meta.pubkey) {
@@ -1048,7 +1167,8 @@ function Install-Release {
       switch ($true) {
         $IsWindows { sudo msiexec /qn /norestart /log $env:TEMP\msiexec.log /i $buildDir\$file; break }
         $IsFedora { sudo dnf install -y $buildDir/$file; break }
-        ($IsUbuntu -or $IsRaspi) { sudo apt install -y --fix-broken $buildDir/$file; break }
+        ($IsUbuntu -or
+        $IsRaspi) { sudo apt install -y --fix-broken $buildDir/$file; break }
       }
     }
     java {
@@ -1139,7 +1259,8 @@ StartupWMClass=localsend_app
       break
     }
     magick {
-      if (!$IsLinux -or [RuntimeInformation]::OSArchitecture -cne 'X64') {
+      if (!$IsLinux -or
+        [RuntimeInformation]::OSArchitecture -cne 'X64') {
         throw [System.NotImplementedException]::new()
       }
       $pattern = 'ImageMagick-*-gcc-x86_64.AppImage'
@@ -1167,7 +1288,8 @@ StartupWMClass=localsend_app
       break
     }
     nerd-fonts {
-      Invoke-ReleaseDownload $Meta $Meta.fonts.ForEach{ $_ + '.tar.xz' }
+      Invoke-ReleaseDownload $Meta $Meta.fonts.ForEach{
+        $_ + '.tar.xz' }
       switch ($true) {
         $IsWindows {
           $Meta.fonts.ForEach{ tar -xf $buildDir/$_.tar.xz -C $buildDir }
@@ -1324,7 +1446,10 @@ StartupWMClass=localsend_app
       break
     }
     sing-box {
-      $suffix = if ($IsLinux) { '-glibc.tar.gz' } else { $ext }
+      $suffix = if ($IsLinux) {
+        '-glibc.tar.gz'
+      }
+      else { $ext }
       $file = 'sing-box-{0}-{1}-{2}{3}' -f $Meta.version, $go.os, $go.arch, $suffix
       Invoke-ReleaseDownload $Meta $file
       tar -xf $buildDir/$file -C $buildDir --strip-components=1
@@ -1415,6 +1540,17 @@ StartupWMClass=localsend_app
       Move-Item -LiteralPath $buildDir/wasm-pack$exe $binDir -Force
       break
     }
+    watchexec {
+      $ext = $IsWindows ? $ext : '.tar.xz'
+      $file = '{0}-{1}-{2}{3}' -f $_, $Meta.version, $rust.target, $ext
+      Invoke-ReleaseDownload $Meta $file, $file`.sha256
+      Assert-FileHash $file $file`.sha256
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
+      Move-Item -LiteralPath $buildDir/$_.1 $dataDir/man/man1 -Force
+      Move-Item -LiteralPath $buildDir/completions/bash $dataDir/bash-completion/completions/_$_ -Force
+      break
+    }
     wechat {
       if (!$IsLinux) {
         throw [System.NotImplementedException]::new()
@@ -1459,9 +1595,10 @@ StartupWMClass=localsend_app
     }
     xan {
       $base = 'xan-{0}' -f $rust.target
-      Invoke-ReleaseDownload $Meta $base$ext, $base`.sha256
-      Assert-FileHash $file $file`.sha256
-      tar -xf $buildDir/$base$ext -C $binDir
+      $file = $base + $ext
+      Invoke-ReleaseDownload $Meta $file, $base`.sha256
+      Assert-FileHash $file $base`.sha256
+      tar -xf $buildDir/$file -C $binDir
       break
     }
     yq {
@@ -1494,7 +1631,13 @@ StartupWMClass=localsend_app
       }
       break
     }
-    { $_ -ceq 'bat' -or $_ -ceq 'diskus' -or $_ -ceq 'fd' -or $_ -ceq 'hexyl' -or $_ -ceq 'hyperfine' } {
+    {
+      $_ -ceq 'bat' -or
+      $_ -ceq 'diskus' -or
+      $_ -ceq 'fd' -or
+      $_ -ceq 'hexyl' -or
+      $_ -ceq 'hyperfine'
+    } {
       $base = $_, $Meta.tag, $rust.target -join '-'
       Invoke-ReleaseDownload $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $buildDir --strip-components=1
@@ -1502,7 +1645,60 @@ StartupWMClass=localsend_app
       Move-Item -LiteralPath $buildDir/$_.1 $dataDir/man/man1 -Force
       break
     }
-    { $_ -ceq 'crush' -or $_ -ceq 'glow' -or $_ -ceq 'gum' -or $_ -ceq 'vhs' } {
+    {
+      $_ -ceq 'cargo-about' -or
+      $_ -ceq 'cargo-deny'
+    } {
+      $file = '{0}-{1}-{2}.tar.gz' -f $_, $Meta.tag, ($rust.target -replace '-gnu$', '-musl')
+      Invoke-ReleaseDownload $Meta $file, $file`.sha256
+      Assert-FileHash $file $file`.sha256
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      Move-Item -LiteralPath $buildDir/$_$exe $binDir -Force
+      break
+    }
+    {
+      $_ -ceq 'cargo-auditable' -or
+      $_ -ceq 'cargo-dist' -or
+      $_ -ceq 'cargo-insta' -or
+      $_ -ceq 'cargo-vet' -or
+      $_ -ceq 'cargo-zigbuild'
+    } {
+      $ext = $IsWindows ? $ext : '.tar.xz'
+      $file = '{0}-{1}{2}' -f $_, $rust.target, $ext
+      Invoke-ReleaseDownload $Meta $file, $file`.sha256
+      Assert-FileHash $file $file`.sha256
+      tar -xf $buildDir/$file -C $buildDir --strip-components=1
+      $name = $_ -ceq 'cargo-dist' ? 'dist' : $_
+      Move-Item -LiteralPath $buildDir/$name$exe $binDir/$_$exe -Force
+      break
+    }
+    {
+      $_ -ceq 'cargo-bloat' -or
+      $_ -ceq 'cargo-cross' -or
+      $_ -ceq 'cargo-expand' -or
+      $_ -ceq 'cargo-flamegraph' -or
+      $_ -ceq 'cargo-geiger'
+    } {
+      cargo install-update -i $_
+      break
+    }
+    {
+      $_ -ceq 'cargo-hack' -or
+      $_ -ceq 'cargo-llvm-cov' -or
+      $_ -ceq 'cargo-semver-checks' -or
+      $_ -ceq 'cargo-tarpaulin'
+    } {
+      $file = '{0}-{1}{2}' -f $_, $rust.target, $ext
+      Invoke-ReleaseDownload $Meta $file
+      tar -xf $buildDir/$file -C $binDir
+      break
+    }
+    {
+      $_ -ceq 'crush' -or
+      $_ -ceq 'glow' -or
+      $_ -ceq 'gum' -or
+      $_ -ceq 'vhs'
+    } {
       $os = switch ($true) {
         $IsWindows { 'Windows'; break }
         $IsLinux { 'Linux'; break }
@@ -1530,13 +1726,20 @@ StartupWMClass=localsend_app
       Move-Item -LiteralPath $buildDir/manpages/$_.1.gz $dataDir/man/man1 -Force
       break
     }
-    { $_ -ceq 'mdbook' -or $_ -ceq 'mdbook-mermaid' } {
+    {
+      $_ -ceq 'mdbook' -or
+      $_ -ceq 'mdbook-mermaid'
+    } {
       $base = $_, $Meta.tag, $rust.target -join '-'
       Invoke-ReleaseDownload $Meta $base$ext
       tar -xf $buildDir/$base$ext -C $binDir
       break
     }
-    { $_ -ceq 'uv' -or $_ -ceq 'ruff' -or $_ -ceq 'ty' } {
+    {
+      $_ -ceq 'uv' -or
+      $_ -ceq 'ruff' -or
+      $_ -ceq 'ty'
+    } {
       if ($IsWindows) {
         throw [System.NotImplementedException]::new()
       }

@@ -485,6 +485,30 @@ function Get-DarkMode {
   }
 }
 
+function Get-Wallpaper {
+  if ($IsWindows) {
+  }
+  elseif ($IsMacOS) {
+  }
+  elseif ($IsLinux) {
+    if ($env:XDG_CURRENT_DESKTOP -clike '*GNOME') {
+      $dark = (Get-DarkMode) ? '-dark' : ''
+      (gsettings get org.gnome.desktop.background picture-uri$dark).Substring(7)
+    }
+    elseif ($env:XDG_CURRENT_DESKTOP -clike '*KDE') {
+    }
+    elseif (Get-Process dms -ea Ignore) {
+      dms ipc wallpaper get
+    }
+    else {
+      throw "unknown desktop $env:XDG_CURRENT_DESKTOP"
+    }
+  }
+  else {
+    throw [System.NotImplementedException]::new()
+  }
+}
+
 function Set-Wallpaper {
   [CmdletBinding()]
   param (
@@ -739,6 +763,9 @@ function de.f {
 }
 
 function figlet.f ([string]$Value) {
+  if ($IsWindows) {
+    throw [System.NotImplementedException]::new()
+  }
   if ([string]::IsNullOrEmpty($Value)) {
     $Value = if ($MyInvocation.ExpectingInput) {
       $input

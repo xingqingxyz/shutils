@@ -25,17 +25,13 @@ function Invoke-Z {
             return
           }
         }
+        $path
       }
       if (!$paths) {
         return
       }
       $itemsMap = @{}
-      try {
-        Get-Content -LiteralPath $_zConfig.dataFile -Raw | ConvertFrom-Json | ForEach-Object { $itemsMap[$_.path] = $_ }
-      }
-      catch {
-        return
-      }
+      Get-Content -LiteralPath $_zConfig.dataFile -Raw | ConvertFrom-Json | ForEach-Object { $itemsMap[$_.path] = $_ }
       [int]$now = Get-Date -UFormat %s
       $paths.ForEach{
         if ($itemsMap.Contains($_)) {
@@ -45,13 +41,13 @@ function Invoke-Z {
         }
         else {
           $itemsMap[$_] = [pscustomobject]@{
-            rank = 0.0
+            rank = 1.0
             time = $now
             path = $_
           }
         }
       }
-      $rankSum = ($itemsMap.Values | Measure-Object -Sum).Sum
+      $rankSum = ($itemsMap.Values | Measure-Object rank -Sum).Sum
       if ($rankSum -gt $_zConfig.maxHistory) {
         $itemsMap.Values.ForEach{
           if (($_.rank *= 0.99) -lt 1.0) {

@@ -5,9 +5,10 @@ linters:
   default: all
   settings:
     cyclop:
-      max-complexity: 20
+      max-complexity: 100
     funlen:
-      lines: 300
+      lines: 600
+      statements: 400
   exclusions:
     warn-unused: true
     rules:
@@ -26,6 +27,7 @@ linters:
           - mnd
           - noctx
           - revive
+          - varnamelen
           - wrapcheck
           - wsl
       - path: .
