@@ -10,6 +10,7 @@ astral-sh/ty
 astral-sh/uv
 AvengeMedia/DankMaterialShell
 awesome-css-group/awesome-css
+axodotdev/cargo-dist
 badboy/mdbook-mermaid
 belav/csharpier
 BurntSushi/jiff
@@ -21,24 +22,29 @@ charmbracelet/bubbletea
 charmbracelet/crush
 charmbracelet/glamour
 chenglou/pretext
-cjpais/Handy
-ClementTsang/bottom
 cli/cli
 crate-ci/cargo-release
 dandavison/delta
 DavidAnson/markdownlint
+dtolnay/cargo-expand
 EbookFoundation/free-programming-books
 eemeli/yaml
 element-plus/element-plus
 EmbarkStudios/cargo-about
+EmbarkStudios/cargo-deny
 eslint/eslint
+est31/cargo-udeps
 facebook/react
 facebook/react-native
 fastapi/fastapi
 fastapi/typer
 FFmpeg/FFmpeg
+flamegraph-rs/flamegraph
 fontforge/fontforge
+foresterre/cargo-msrv
+geiger-rs/cargo-geiger
 Genymobile/scrcpy
+gimli-rs/addr2line
 github/codeql-cli-binaries
 github/copilot-cli
 glideapps/quicktype
@@ -61,6 +67,7 @@ josephburnett/jd
 jqlang/jq
 jquery/jquery
 junegunn/fzf
+kbknapp/cargo-outdated
 koalaman/shellcheck
 lokesh/color-thief
 lovell/sharp
@@ -78,14 +85,24 @@ microsoft/vscode
 microsoft/vscode-eslint
 microsoft/vscode-vsce
 mikefarah/yq
+mitsuhiko/insta
 morphx666/CoreAudio
+mozilla/cargo-vet
+mozilla/sccache
 mui/base-ui
 mvdan/sh
 nabijaczleweli/cargo-update
+nextest-rs/nextest
 niri-wm/niri
 nodejs/node
 nushell/nushell
 nvim-telescope/telescope.nvim
+<<<<<<< HEAD
+obi1kenobi/cargo-semver-checks
+ocaml-ppx/ppx_deriving
+||||||| 4a3de24
+=======
+>>>>>>> af4fa716e69a43183596af5b441c03cd509e4593
 ocaml/ocaml
 ocaml/ocaml-lsp
 openclaw/openclaw
@@ -110,18 +127,24 @@ RalfJung/cargo-careful
 ratatui/ratatui
 rayon-rs/rayon
 raysan5/raylib
+RazrFalcon/cargo-bloat
 redhat-developer/yaml-language-server
 rolldown/rolldown
 rollup/rollup
 rui314/mold
+rust-cross/cargo-xwin
+rust-cross/cargo-zigbuild
+rust-fuzz/cargo-fuzz
 rust-lang/futures-rs
 rust-lang/mdBook
 rust-lang/rust
 rust-lang/rust-analyzer
+rust-secure-code/cargo-auditable
 rust-shell-script/rust_cmd_lib
 rustsec/advisory-db
 rustsec/rustsec
 ryanoasis/nerd-fonts
+sagiegurari/cargo-make
 sharkdp/bat
 sharkdp/diskus
 sharkdp/fd
@@ -134,11 +157,15 @@ smol-rs/smol
 spf13/cobra
 supabase-community/postgres-language-server
 swc-project/swc
+taiki-e/cargo-hack
+taiki-e/cargo-llvm-cov
 tailwindlabs/tailwindcss
 tamasfe/taplo
 Textualize/textual
 TigerVNC/tigervnc
 tokio-rs/io-uring
+tokio-rs/loom
+tokio-rs/slab
 tokio-rs/tokio
 tokio-rs/tokio-uring
 tree-sitter/tree-sitter
@@ -152,9 +179,16 @@ vuejs/core
 vuejs/language-tools
 vueuse/vueuse
 wasm-bindgen/wasm-bindgen
+watchexec/watchexec
 WebAssembly/binaryen
 xai-org/x-algorithm
+<<<<<<< HEAD
+xd009642/tarpaulin
+||||||| 4a3de24
+=======
+>>>>>>> af4fa716e69a43183596af5b441c03cd509e4593
 xoofx/Tomlyn
 yinkaisheng/Python-UIAutomation-for-Windows
 yt-dlp/yt-dlp
+zijiren233/cargo-cross
 zuruoke/watermark-removal
